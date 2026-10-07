@@ -13,8 +13,8 @@ Log your sets, say how the session felt, and get next week's plan with a one-lin
 | Area | What you get |
 | --- | --- |
 | Onboarding | Language, units, theme, optional body data, experience, goal, phase, days per week, equipment, region, recommended starting template |
-| Exercise library | 937 exercises (free-exercise-db + 60 additions) with English and Japanese names, fuzzy search in both languages (kana-insensitive, typo-tolerant), muscle / equipment / movement filters, favorites, recents, custom exercises with an optional photo, "Swap for…" alternatives within your equipment, two-frame demos that crossfade like a GIF |
-| Programs | Weekly program builder (sessions, sets, rep range, target RIR, rest, notes, supersets), templates (Full body 3×, Upper/Lower 4×, PPL 6×, Bro split 5×, Home dumbbells + bands, Blank), mesocycles of 3-8 weeks + deload |
+| Exercise library | 938 exercises (free-exercise-db + 61 additions) with English and Japanese names, fuzzy search in both languages (kana-insensitive, typo-tolerant), muscle / equipment / movement filters, favorites, recents, custom exercises with an optional photo, "Swap for…" alternatives within your equipment, two-frame demos that crossfade like a GIF |
+| Programs | Weekly program builder (sessions, sets, rep range, target RIR, rest, notes, supersets), templates (Full body 3×, Upper/Lower 4×, PPL 6×, Bro split 5×, Home dumbbells + bands, an example 4-day focus split, Blank), mesocycles of 3-8 weeks + deload |
 | Today | Today's session picked by date (the day starts at 04:00 by default), week strip, skip, move or swap a session, rest-day quick workout, resume an unfinished workout |
 | Workout | One page: compact set table (weight, reps, RIR, log), last session's numbers inline, copy last set, stepper strip, set types (warm-up, drop, myo-rep, failure), add / skip / reorder, notes, **rest timer docked at the bottom**: 1:30 / 2:00 / custom (last 5 kept, long-press to remove), ±15 s, pause, skip, sound, vibration, notification, keep-screen-awake; auto-saved draft |
 | Feedback | After an exercise: joint pain, soreness from last time for that muscle, pump, volume, difficulty. After the session: how it felt and fatigue |
@@ -92,7 +92,7 @@ Serve over HTTPS (all three do) so the service worker and installation work.
 ## Known limits
 
 - Phones may pause web pages while the screen is locked. The rest timer is timestamp-based, so it is always correct when you look, but the end-of-rest beep or notification can be late. "Keep screen on" avoids this.
-- Japanese names and step-by-step instructions cover all 937 exercises, but they are machine-assisted translations. Corrections are welcome in `scripts/i18n/` (see `CREDITS.md`).
+- Japanese names and step-by-step instructions cover all 938 exercises, but they are machine-assisted translations. Corrections are welcome in `scripts/i18n/` (see `CREDITS.md`).
 
 ## Credits and license
 

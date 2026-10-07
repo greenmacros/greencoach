@@ -17,7 +17,7 @@ const fromRow = (r: IndexRow): Exercise => ({
   frames: r.img,
 });
 
-/** The bundled library (937 exercises). Loaded lazily so it stays out of the initial JS. */
+/** The bundled library (938 exercises). Loaded lazily so it stays out of the initial JS. */
 export async function loadBundled(): Promise<Exercise[]> {
   if (!cache) {
     const rows = (await import("../data/library/index.json")).default as IndexRow[];

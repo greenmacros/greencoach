@@ -23,9 +23,9 @@ React 19 + Vite + TypeScript, Tailwind v4 (with CSS variables for the light/dark
 - `navigator.storage.persist()` is requested on startup.
 
 ## Exercise library (M2)
-- Seeded from free-exercise-db (Unlicense, verified), 876 entries + 60 GreenCoach extras = 937. Bundled as static data (lazy chunk), not copied into IndexedDB; only custom exercises and favorites/recents live in the database.
+- Seeded from free-exercise-db (Unlicense, verified), 876 entries + 61 GreenCoach extras = 938. Bundled as static data (lazy chunk), not copied into IndexedDB; only custom exercises and favorites/recents live in the database.
 - Equipment, movement pattern, fatigue cost and joint notes are derived by `scripts/build-library.mjs` (rules in that file) and spot-checked by tests.
-- Japanese names: complete, hand-written with gym-standard terms. Japanese step-by-step instructions: complete for all 937 exercises (`scripts/i18n/instr-ja-*.json`, machine-assisted, です/ます style, US units converted to metric, marked for community review). The English-fallback notice remains for any future gaps.
+- Japanese names: complete, hand-written with gym-standard terms. Japanese step-by-step instructions: complete for all 938 exercises (`scripts/i18n/instr-ja-*.json`, machine-assisted, です/ます style, US units converted to metric, marked for community review). The English-fallback notice remains for any future gaps.
 - Images recompressed to 360px WebP (15 MB total), cached at runtime by the service worker (not precached).
 
 ## Program and schedule (M3)

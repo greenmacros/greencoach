@@ -164,7 +164,15 @@ describe("templates", () => {
   });
 
   it("includes the required templates", () => {
-    expect(TEMPLATES.map(t => t.id)).toEqual(["full-body-3", "upper-lower-4", "ppl-6", "bro-5", "home-4", "blank"]);
+    expect(TEMPLATES.map(t => t.id)).toEqual(["full-body-3", "upper-lower-4", "ppl-6", "bro-5", "home-4", "example-4", "blank"]);
+  });
+
+  it("carries slot notes into the program in the user's language", () => {
+    const spec = TEMPLATES.find(t => t.id === "example-4")!;
+    const ja = instantiateTemplate(spec, "ja", "2026-10-07");
+    expect(ja.week.filter(Boolean)).toHaveLength(4);
+    expect(ja.sessions[0].exercises[0].notes).toContain("ウォームアップ");
+    expect(instantiateTemplate(spec, "en", "2026-10-07").sessions[1].exercises[0].notes).toContain("1-2 RIR");
   });
 
   it("instantiates an editable, localized copy anchored to this week", () => {
