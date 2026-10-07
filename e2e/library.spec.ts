@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 test("library: search, open, favorite, swap, language switch", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Program" }).click();
+  await page.getByRole("button", { name: "Library", exact: true }).click();
   await expect(page.getByText(/\d+ exercises/)).toBeVisible();
 
   await page.getByRole("searchbox").fill("bench press");
@@ -20,6 +21,7 @@ test("library: search, open, favorite, swap, language switch", async ({ page }) 
   await page.getByRole("button", { name: "Settings" }).click();
   await page.getByRole("button", { name: "日本語" }).click();
   await page.getByRole("button", { name: "プログラム" }).click();
+  await page.getByRole("button", { name: "ライブラリ", exact: true }).click();
   await page.getByRole("searchbox").fill("ラットプルダウン");
   await expect(page.getByRole("listitem").first()).toContainText("ラットプルダウン");
   await page.screenshot({ path: "test-results/library-ja.png" });
