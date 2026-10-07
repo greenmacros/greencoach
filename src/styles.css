@@ -13,7 +13,10 @@
   color-scheme: dark;
 }
 
-html, body, #root { height: 100%; }
+/* No fixed 100% height: in an iOS home-screen app that lets a short page (Today) scroll up under the status bar.
+   Overscroll is off so the whole page does not rubber-band; inner scrollers still scroll normally. */
+html, body { overscroll-behavior-y: none; }
+html { background: var(--bg); }
 body {
   margin: 0; background: var(--bg); color: var(--text);
   font-family: system-ui, -apple-system, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", Meiryo, sans-serif;
