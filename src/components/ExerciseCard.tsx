@@ -7,6 +7,7 @@ import type { ExerciseLog, SetLog } from "../workout/types";
 import type { WeightUnit } from "../db/types";
 import ExerciseMedia from "./ExerciseMedia";
 import SetRow from "./SetRow";
+import ExerciseFeedback from "./ExerciseFeedback";
 import Stepper from "./Stepper";
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
   ex: Exercise | undefined;
   unit: WeightUnit;
   prev: SetLog[];
+  prSets: Map<string, unknown>;
   index: number;
   count: number;
   onChange: (fn: (e: ExerciseLog) => ExerciseLog) => void;
@@ -24,7 +26,7 @@ interface Props {
   onSwap: () => void;
 }
 
-export default function ExerciseCard({ log, ex, unit, prev, index, count, onChange, onSetToggle, onAddSet, onMove, onRemove, onSwap }: Props) {
+export default function ExerciseCard({ log, ex, unit, prev, prSets, index, count, onChange, onSetToggle, onAddSet, onMove, onRemove, onSwap }: Props) {
   const { t, settings } = useApp();
   const [more, setMore] = useState(false);
   const name = ex ? ex.name[settings.lang] : t("prog.missing");
@@ -61,7 +63,7 @@ export default function ExerciseCard({ log, ex, unit, prev, index, count, onChan
 
       <ol className="grid gap-1">
         {log.sets.map((s, i) => (
-          <SetRow key={s.id} exLog={log} set={s} index={i} unit={unit} step={step} prev={prev[Math.min(i, prev.length - 1)]}
+          <SetRow key={s.id} exLog={log} set={s} index={i} unit={unit} step={step} prev={prev[Math.min(i, prev.length - 1)]} isPR={prSets.has(s.id)}
             onChange={patch => onChange(e => ({ ...e, sets: e.sets.map(x => (x.id === s.id ? { ...x, ...patch } : x)) }))}
             onToggleDone={() => onSetToggle(s.id)}
             onCopy={() => onChange(e => copyLastSet(e, s.id, prev))}
@@ -69,6 +71,7 @@ export default function ExerciseCard({ log, ex, unit, prev, index, count, onChan
         ))}
       </ol>
       <button className="btn" onClick={onAddSet}>＋ {t("wk.addSet")}</button>
+      {log.sets.length > 0 && log.sets.every(s => s.done) && <ExerciseFeedback log={log} name={name} onChange={patch => onChange(e => ({ ...e, ...patch }))} />}
     </article>
   );
 }

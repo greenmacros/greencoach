@@ -11,6 +11,7 @@ import { createWorkout } from "./workout/model";
 import type { WorkoutLog } from "./workout/types";
 import { useHistory } from "./workout/useHistory";
 import Program from "./pages/Program";
+import Progress from "./pages/Progress";
 import Settings from "./pages/Settings";
 import Soon from "./pages/Soon";
 import Today from "./pages/Today";
@@ -53,6 +54,8 @@ export default function App() {
           <Today prog={prog} lib={lib} hist={hist} selected={selectedDay} setSelected={setSelectedDay} onStart={(s, d) => void start(s, d)} goProgram={() => setTab("program")} />
         ) : tab === "program" ? (
           <Program prog={prog} lib={lib} />
+        ) : tab === "progress" ? (
+          <Progress lib={lib} hist={hist} />
         ) : tab === "settings" ? (
           <Settings />
         ) : (

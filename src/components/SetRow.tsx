@@ -12,6 +12,8 @@ interface Props {
   unit: WeightUnit;
   step: number;
   prev: SetLog | undefined;
+  /** Records this set broke (shows a trophy). */
+  isPR?: boolean;
   /** Whether weight applies (bodyweight moves may leave it blank). */
   onChange: (patch: Partial<SetLog>) => void;
   onToggleDone: () => void;
@@ -19,7 +21,7 @@ interface Props {
   onRemove: () => void;
 }
 
-export default function SetRow({ exLog, set, index, unit, step, prev, onChange, onToggleDone, onCopy, onRemove }: Props) {
+export default function SetRow({ exLog, set, index, unit, step, prev, isPR, onChange, onToggleDone, onCopy, onRemove }: Props) {
   const { t } = useApp();
   const tgt = exLog.target;
   const canDone = set.reps !== null && set.reps > 0;
@@ -39,6 +41,7 @@ export default function SetRow({ exLog, set, index, unit, step, prev, onChange, 
             : tgt && set.type !== "warmup" ? t("wk.target", { lo: tgt.repMin, hi: tgt.repMax, rir: tgt.rir }) : ""}
           {set.type !== "normal" && ` · ${t(`wk.type.${set.type}`)}`}
         </span>
+        {isPR && <span role="img" aria-label={t("pr.badge")} title={t("pr.badge")}>🏆</span>}
         <button type="button" className="btn" style={{ minWidth: 44, padding: 0, color: "var(--muted)" }} aria-label={`${t("wk.removeSet")}: ${label}`} onClick={onRemove}>✕</button>
       </div>
       <div className="grid grid-cols-2 gap-2">

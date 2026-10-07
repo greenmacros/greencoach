@@ -5,6 +5,8 @@ import { equipmentFor, substitutes } from "../library/search";
 import type { LibraryApi } from "../library/useLibrary";
 import type { Exercise } from "../library/types";
 import ExerciseMedia from "./ExerciseMedia";
+import ExerciseHistory from "./ExerciseHistory";
+import { useHistory } from "../workout/useHistory";
 
 interface Props {
   ex: Exercise;
@@ -22,6 +24,8 @@ export default function ExerciseDetail({ ex, lib, onClose, onOpen, onPick, onDel
   const lang = settings.lang;
   const [steps, setSteps] = useState<Steps | null>(null);
   const [showSwap, setShowSwap] = useState(false);
+  const [showHist, setShowHist] = useState(false);
+  const hist = useHistory();
 
   useEffect(() => {
     setSteps(null);
@@ -41,6 +45,7 @@ export default function ExerciseDetail({ ex, lib, onClose, onOpen, onPick, onDel
   const chips = (ids: string[], prefix: string) => ids.map(i => t(`${prefix}.${i}`)).join(" · ");
 
   return (
+    <>
     <div className="sheet" onClick={onClose}>
       <div className="sheet-body" role="dialog" aria-modal="true" aria-label={ex.name[lang]} onClick={e => e.stopPropagation()}>
         <div className="flex gap-3 items-start">
@@ -90,6 +95,7 @@ export default function ExerciseDetail({ ex, lib, onClose, onOpen, onPick, onDel
           {onPick && <button className="btn btn-primary" onClick={() => onPick(ex)}>{t("lib.pick")}</button>}
           <button className="btn" aria-pressed={fav} onClick={() => void lib.toggleFavorite(ex.id)}>{fav ? "★ " + t("lib.unfav") : "☆ " + t("lib.fav")}</button>
           <button className="btn" onClick={() => setShowSwap(s => !s)}>{t("lib.swap")}</button>
+          <button className="btn" onClick={() => setShowHist(true)}>{t("hist.viewHistory")}</button>
           {ex.custom && onDelete && <button className="btn btn-danger" onClick={() => onDelete(ex)}>{t("lib.delete")}</button>}
         </div>
 
@@ -105,5 +111,7 @@ export default function ExerciseDetail({ ex, lib, onClose, onOpen, onPick, onDel
         )}
       </div>
     </div>
+    {showHist && <ExerciseHistory ex={ex} workouts={hist.finished} onClose={() => setShowHist(false)} />}
+    </>
   );
 }

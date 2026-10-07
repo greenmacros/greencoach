@@ -8,11 +8,16 @@ import { repo } from "../db";
 import { formatDayLong } from "../lib/format";
 import type { LibraryApi } from "../library/useLibrary";
 import { primeAudio, acquireWakeLock } from "../workout/alerts";
-import { addSet, buildExerciseLog, hasAnyDoneSet, moveExercise, previousSets, pruneUnfinished, updateExercise } from "../workout/model";
+import { addSet, buildExerciseLog, moveExercise, previousSets, pruneUnfinished, updateExercise } from "../workout/model";
 import type { ExerciseLog, WorkoutLog } from "../workout/types";
 import { useRestTimer } from "../workout/useRestTimer";
 import { useWorkout } from "../workout/useWorkout";
 import { newSlot } from "../program/templates";
+import SorenessCard from "../components/SorenessCard";
+import { useSoreness } from "../feedback/useSoreness";
+import { livePRs, prSetKinds, topPR } from "../workout/pr";
+import { prText } from "../workout/prText";
+import { vibrate } from "../workout/alerts";
 
 interface Props {
   initial: WorkoutLog;
@@ -30,6 +35,11 @@ export default function Workout({ initial, lib, history, onExit, onClose }: Prop
   const timer = useRestTimer({ title: t("timer.done"), body: t("timer.doneBody") });
   const [picker, setPicker] = useState<{ swap: string | null } | null>(null);
   const [finishing, setFinishing] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const soreness = useSoreness(workout, history, lib.byId);
+  const prSets = useMemo(() => prSetKinds(history, workout), [history, workout]);
+
+  useEffect(() => { if (!toast) return; const id = setTimeout(() => setToast(null), 4500); return () => clearTimeout(id); }, [toast]);
 
   // Keep the screen awake while logging, and re-acquire after returning to the tab.
   useEffect(() => {
@@ -58,6 +68,12 @@ export default function Workout({ initial, lib, history, onExit, onClose }: Prop
       ...e, sets: e.sets.map(s => (s.id === setId ? { ...s, done: !s.done, doneAt: s.done ? null : new Date().toISOString() } : s)),
     })));
     if (!wasDone) {
+      const hits = livePRs(history, { ...workout, exercises: workout.exercises.map(e => e.id !== ex.id ? e : { ...e, sets: e.sets.map(s => s.id === setId ? { ...s, done: true } : s) }) }, ex.id, setId);
+      const top = topPR(hits);
+      if (top) {
+        setToast(t("pr.toast", { name: lib.byId(ex.exerciseId)?.name[settings.lang] ?? "", what: prText(top, workout.unit, t) }));
+        if (settings.restVibrate) vibrate(40);
+      }
       primeAudio(); // allowed here: inside a tap
       const inSuperset = ex.supersetGroup !== null && nextEx?.supersetGroup === ex.supersetGroup;
       if (!inSuperset) timer.start(ex.restSec);
@@ -113,10 +129,12 @@ export default function Workout({ initial, lib, history, onExit, onClose }: Prop
         <input type="checkbox" checked={settings.keepAwake} onChange={e => void update({ keepAwake: e.target.checked })} />{t("wk.keepAwake")}
       </label>
 
+      <SorenessCard questions={soreness.questions} answers={soreness.answers} onAnswer={(m, l, id) => void soreness.answer(m, l, id)} />
+
       {workout.exercises.length === 0 && <p className="card muted">{t("wk.empty")}</p>}
 
       {workout.exercises.map((log, i) => (
-        <ExerciseCard key={log.id} log={log} ex={lib.byId(log.exerciseId)} unit={workout.unit} prev={prevMap.get(log.exerciseId) ?? []}
+        <ExerciseCard key={log.id} log={log} ex={lib.byId(log.exerciseId)} unit={workout.unit} prev={prevMap.get(log.exerciseId) ?? []} prSets={prSets}
           index={i} count={workout.exercises.length}
           onChange={fn => mutate(w => updateExercise(w, log.id, fn))}
           onSetToggle={id => toggleSet(log, id)}
@@ -134,7 +152,7 @@ export default function Workout({ initial, lib, history, onExit, onClose }: Prop
       )}
 
       {finishing && (
-        <FinishSheet workout={workout} lookup={lib.byId} onKeepGoing={() => setFinishing(false)} onSave={save} onDiscard={discard}
+        <FinishSheet workout={workout} history={history} onFeel={patch => mutate(w => ({ ...w, ...patch }))} lookup={lib.byId} onKeepGoing={() => setFinishing(false)} onSave={save} onDiscard={discard}
           onNotes={notes => mutate(w => ({ ...w, notes }))} />
       )}
 
@@ -143,7 +161,9 @@ export default function Workout({ initial, lib, history, onExit, onClose }: Prop
         const lastDone = [...workout.exercises].reverse().find(e => e.sets.some(s => s.done));
         if (lastDone) mutate(w => updateExercise(w, lastDone.id, e => ({ ...e, restSec: sec })));
       }} />
-      {hasAnyDoneSet(workout) && null}
+      {toast && (
+        <div role="status" className="card fixed left-4 right-4 mx-auto max-w-xl font-semibold" style={{ bottom: "9.5rem", zIndex: 40, borderColor: "var(--accent)" }}>🏆 {toast}</div>
+      )}
     </section>
   );
 }
