@@ -117,7 +117,7 @@ export default function Library({ lib, onPick, listHeight = "calc(100dvh - 22rem
         }} />
       )}
       {undo && (
-        <div role="status" className="card flex items-center gap-3 fixed left-4 right-4 mx-auto max-w-xl" style={{ bottom: "calc(5rem + env(safe-area-inset-bottom))", zIndex: 40 }}>
+        <div role="status" className="card flex items-center gap-3 fixed left-4 right-4 mx-auto max-w-xl" style={{ bottom: "calc(6.5rem + env(safe-area-inset-bottom))", zIndex: 40 }}>
           <span className="flex-1">{t("lib.deleted")}</span>
           <button className="btn" onClick={async () => { await lib.restoreCustom(undo); setUndo(null); }}>{t("lib.undo")}</button>
           <button className="btn" aria-label={t("lib.close")} onClick={() => setUndo(null)}>✕</button>

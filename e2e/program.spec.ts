@@ -13,7 +13,7 @@ test("pick a template, see today's session, skip with undo, move it", async ({ p
   await page.getByRole("button", { name: "Choose a program" }).click();
   await page.getByRole("article").filter({ hasText: "Full body 3×" }).getByRole("button", { name: "Use this template" }).click();
 
-  await page.getByRole("button", { name: "Today" }).click();
+  await page.getByRole("button", { name: "Workout", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Full Body A" })).toBeVisible();
   await expect(page.getByText("Week 1 of 6")).toBeVisible();
   await expect(page.getByRole("button", { name: "Start workout" })).toBeVisible();
@@ -39,7 +39,7 @@ test("the training day flips at 04:00, not midnight", async ({ page }) => {
   await skipOnboarding(page);
   await page.getByRole("button", { name: "Program", exact: true }).click();
   await page.getByRole("article").filter({ hasText: "Full body 3×" }).getByRole("button", { name: "Use this template" }).click();
-  await page.getByRole("button", { name: "Today" }).click();
+  await page.getByRole("button", { name: "Workout", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Full Body A" })).toBeVisible(); // Monday's session
   await page.clock.setFixedTime(new Date(2026, 9, 6, 4, 5, 0));
   await page.clock.runFor(31_000); // let the 30 s ticker fire

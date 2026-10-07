@@ -11,6 +11,7 @@ export interface Entry { en: string; ja: string }
 const BASE = {
   "app.name": { en: "GreenCoach", ja: "グリーンコーチ" },
   "tab.today": { en: "Today", ja: "今日" },
+  "tab.workout": { en: "Workout", ja: "ワークアウト" },
   "tab.program": { en: "Program", ja: "プログラム" },
   "tab.progress": { en: "Progress", ja: "進捗" },
   "tab.coach": { en: "Coach", ja: "コーチ" },

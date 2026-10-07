@@ -155,7 +155,7 @@ export default function ProgramBuilder({ prog, lib, program, onNew }: Props) {
       {picker && <PickerSheet lib={lib} title={t("prog.pickFor")} onClose={() => setPicker(null)} onPick={ex => void pick(ex.id, ex.mechanic !== "isolation")} />}
 
       {undo && (
-        <div role="status" className="card flex items-center gap-3 fixed left-4 right-4 mx-auto max-w-xl" style={{ bottom: "calc(5rem + env(safe-area-inset-bottom))", zIndex: 40 }}>
+        <div role="status" className="card flex items-center gap-3 fixed left-4 right-4 mx-auto max-w-xl" style={{ bottom: "calc(6.5rem + env(safe-area-inset-bottom))", zIndex: 40 }}>
           <span className="flex-1">{undo.text}</span>
           <button className="btn" onClick={async () => { await undo.run(); setUndo(null); }}>{t("prog.undo")}</button>
           <button className="btn" aria-label={t("lib.close")} onClick={() => setUndo(null)}>✕</button>

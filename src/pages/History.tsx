@@ -55,7 +55,7 @@ export default function History({ lib, hist }: { lib: LibraryApi; hist: ReturnTy
       {exHist && <ExerciseHistory ex={exHist} workouts={hist.finished} onClose={() => setExHist(null)} />}
 
       {undo && (
-        <div role="status" className="card flex items-center gap-3 fixed left-4 right-4 mx-auto max-w-xl" style={{ bottom: "calc(5rem + env(safe-area-inset-bottom))", zIndex: 40 }}>
+        <div role="status" className="card flex items-center gap-3 fixed left-4 right-4 mx-auto max-w-xl" style={{ bottom: "calc(6.5rem + env(safe-area-inset-bottom))", zIndex: 40 }}>
           <span className="flex-1">{t("hist.deleted")}</span>
           <button className="btn" onClick={async () => { await repo.put("workouts", undo as never); setUndo(null); await hist.reload(); }}>{t("hist.undo")}</button>
           <button className="btn" aria-label={t("lib.close")} onClick={() => setUndo(null)}>✕</button>

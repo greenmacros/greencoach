@@ -9,7 +9,7 @@ async function startFullBody(page: Page) {
   await skipOnboarding(page);
   await page.getByRole("button", { name: "Program", exact: true }).click();
   await page.getByRole("article").filter({ hasText: "Full body 3×" }).getByRole("button", { name: "Use this template" }).click();
-  await page.getByRole("button", { name: "Today", exact: true }).click();
+  await page.getByRole("button", { name: "Workout", exact: true }).click();
   await page.getByRole("button", { name: "Start workout" }).click();
 }
 

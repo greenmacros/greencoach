@@ -159,7 +159,7 @@ export default function Today({ prog, lib, hist, selected, setSelected, onStart,
       )}
 
       {undo && (
-        <div role="status" className="card flex items-center gap-3 fixed left-4 right-4 mx-auto max-w-xl" style={{ bottom: "calc(5rem + env(safe-area-inset-bottom))", zIndex: 40 }}>
+        <div role="status" className="card flex items-center gap-3 fixed left-4 right-4 mx-auto max-w-xl" style={{ bottom: "calc(6.5rem + env(safe-area-inset-bottom))", zIndex: 40 }}>
           <span className="flex-1">{undo.text}</span>
           <button className="btn" onClick={async () => { await prog.restoreOverrides(undo.before, undo.touched); setUndo(null); }}>{t("today.undo")}</button>
           <button className="btn" aria-label={t("lib.close")} onClick={() => setUndo(null)}>✕</button>
