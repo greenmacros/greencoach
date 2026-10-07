@@ -60,9 +60,12 @@ describe("repository", () => {
     expect(await repo.list("goals")).toHaveLength(0);
   });
 
-  it("labels backups with the app name and rejects other files", () => {
+  it("recognises a backup by its shape, whatever its app label", () => {
     expect(buildBackup({}).app).toBe("GreenCoach");
-    expect(() => parseBackup({ app: "SomethingElse", version: 1, tables: {} })).toThrow("not-a-backup");
+    const old = { app: "OldName", version: 1, exportedAt: "2026-10-07T00:00:00.000Z", tables: { goals: [{ id: "g1", updatedAt: "2026-10-07T00:00:00.000Z" }] } };
+    expect(parseBackup(old).tables.goals).toHaveLength(1);
+    expect(() => parseBackup({ app: "SomethingElse", version: 1, tables: { notOurs: [] } })).toThrow("not-a-backup");
+    expect(() => parseBackup({ version: 1, tables: { goals: [] } })).toThrow("not-a-backup");
   });
 
   it("parseBackup accepts an empty backup", () => {

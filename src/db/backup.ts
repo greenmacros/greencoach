@@ -19,12 +19,17 @@ export function buildBackup(tables: Record<string, AnyRecord[]>, now = new Date(
 const isRecord = (r: unknown): r is AnyRecord =>
   typeof r === "object" && r !== null && typeof (r as AnyRecord).id === "string" && typeof (r as AnyRecord).updatedAt === "string";
 
-/** Validates an untrusted parsed JSON value. Throws a short Error('...') if it is not a usable backup. */
+/**
+ * Validates an untrusted parsed JSON value. Throws a short Error('...') if it is not a usable backup.
+ * A backup is recognised by its shape (version + our tables), not by the `app` label, so files exported
+ * before a rename still import.
+ */
 export function parseBackup(data: unknown): BackupFile {
   const d = data as Partial<BackupFile> | null;
-  if (!d || typeof d !== "object" || d.app !== "GreenCoach") throw new Error("not-a-backup");
-  if (typeof d.version !== "number" || d.version > BACKUP_VERSION) throw new Error("newer-version");
-  if (!d.tables || typeof d.tables !== "object") throw new Error("not-a-backup");
+  if (!d || typeof d !== "object" || typeof d.app !== "string" || typeof d.version !== "number") throw new Error("not-a-backup");
+  const keys = d.tables && typeof d.tables === "object" ? Object.keys(d.tables) : null;
+  if (!keys || (keys.length > 0 && !keys.some(k => (TABLES as readonly string[]).includes(k)))) throw new Error("not-a-backup");
+  if (d.version > BACKUP_VERSION) throw new Error("newer-version");
   const tables: Record<string, AnyRecord[]> = {};
   for (const t of TABLES) {
     const rows = (d.tables as Record<string, unknown>)[t] ?? [];
