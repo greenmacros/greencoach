@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Free training tracker with a smart coach. No accounts, no tracking, works offline." />
+    <meta name="theme-color" content="#0b0f14" />
+    <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+    <link rel="apple-touch-icon" href="./icon-192.png" />
+    <script>
+      // Apply theme + language before first paint (no flash of the wrong theme).
+      try {
+        var t = localStorage.getItem("gc_theme");
+        if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+        document.documentElement.dataset.theme = t;
+        var l = localStorage.getItem("gc_lang");
+        if (l === "en" || l === "ja") document.documentElement.lang = l;
+        else if ((navigator.language || "").toLowerCase().indexOf("ja") === 0) document.documentElement.lang = "ja";
+      } catch (e) {}
+    </script>
+    <title>GreenCoach</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
