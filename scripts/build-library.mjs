@@ -128,7 +128,7 @@ for (const e of src) {
       d: { beginner: 1, intermediate: 2, expert: 3 }[e.level] ?? 2, f: fatigue(e, pat, mech, eq, p[0]),
       cat: e.category, img: (e.images ?? []).length, jt: joints(e, pat, eq),
     },
-    e.instructions?.length ? e.instructions : FIXES[e.id]?.en ?? [],
+    FIXES[e.id]?.replace ? FIXES[e.id].en : e.instructions?.length ? e.instructions : FIXES[e.id]?.en ?? [],
     jaInstr[e.id] ?? FIXES[e.id]?.ja,
   );
 }

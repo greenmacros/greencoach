@@ -1,5 +1,10 @@
 // The upstream dataset has no instructions for these entries; these are original texts.
 export const FIXES = {
+  // Upstream text skips the lift itself; replaced so English and Japanese agree.
+  Leverage_Deadlift: {
+    replace: true,
+    en: ["Load the pins to an appropriate weight. Position yourself directly between the handles. Grasp the bottom handles with a comfortable grip, and then lower your hips as you take a breath. Look forward with your head and keep your chest up. This will be your starting position.", "Keeping your back straight, drive through your heels and extend your hips and knees until you are standing upright.", "Return the weight to the starting position."],
+  },
   Iron_Cross: {
     en: ["Stand holding a light dumbbell in each hand at your sides.", "Raise both arms out to the sides, keeping a slight bend in the elbows, until they are level with your shoulders.", "Pause, then lower slowly back to your sides."],
     ja: ["軽いダンベルを両手に持ち、体の横に下げて立ちます。", "肘を軽く曲げたまま、両腕を肩の高さまで横に持ち上げます。", "一瞬止めてから、ゆっくり体の横に戻します。"],
