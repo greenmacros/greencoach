@@ -1,4 +1,5 @@
 import { LIBRARY_MESSAGES } from "./messages-library";
+import { PROGRAM_MESSAGES } from "./messages-program";
 
 export interface Entry { en: string; ja: string }
 /** Flat key -> {en, ja}; `{name}` placeholders are interpolated. Same shape as GreenMacros. */
@@ -58,6 +59,6 @@ const BASE = {
   "about.free": { en: "Free for life. No accounts, no ads, no tracking.", ja: "ずっと無料。アカウント不要、広告なし、トラッキングなし。" },
 } as const satisfies Record<string, Entry>;
 
-export const MESSAGES = { ...BASE, ...LIBRARY_MESSAGES };
+export const MESSAGES = { ...BASE, ...LIBRARY_MESSAGES, ...PROGRAM_MESSAGES };
 
 export type MessageKey = keyof typeof MESSAGES;
