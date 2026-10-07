@@ -60,6 +60,7 @@ test("PR toast, soreness + exercise + session feedback, history and exercise his
 
   // history
   await page.getByRole("button", { name: "Progress", exact: true }).click();
+  await page.getByRole("button", { name: "History", exact: true }).click();
   await expect(page.getByRole("button", { name: /Quick workout/ })).toBeVisible();
   await page.getByRole("button", { name: /Quick workout/ }).click();
   const detail = page.getByRole("dialog", { name: "Workout details" });

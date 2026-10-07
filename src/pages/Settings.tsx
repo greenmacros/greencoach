@@ -6,12 +6,16 @@ import Seg from "../components/Seg";
 import { parseBackup } from "../db/backup";
 import { exportData } from "../lib/exportFile";
 import { requestNotifications } from "../workout/alerts";
+import GoalsEditor from "../components/GoalsEditor";
+import type { LibraryApi } from "../library/useLibrary";
+import type { ProgramApi } from "../program/useProgram";
+import type { WorkoutLog } from "../workout/types";
 import { formatBytes, formatDateTime } from "../lib/format";
 import type { BackupFile } from "../db/types";
 
 type Estimate = Awaited<ReturnType<typeof repo.storageEstimate>>;
 
-export default function Settings() {
+export default function Settings({ lib, prog, workouts }: { lib: LibraryApi; prog: ProgramApi; workouts: WorkoutLog[] }) {
   const { settings, update, profile, updateProfile, t, reloadAll, dataVersion } = useApp();
   const [estimate, setEstimate] = useState<Estimate>(null);
   const [pending, setPending] = useState<{ file: unknown; n: number } | null>(null);
@@ -92,6 +96,8 @@ export default function Settings() {
           </select>
         </label>
       </div>
+
+      <GoalsEditor lib={lib} prog={prog} workouts={workouts} />
 
       <div className="card grid gap-2">
         <h2 className="font-bold">{t("settings.workout")}</h2>

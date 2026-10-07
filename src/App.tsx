@@ -59,11 +59,11 @@ export default function App() {
         ) : tab === "program" ? (
           <Program prog={prog} lib={lib} />
         ) : tab === "progress" ? (
-          <Progress lib={lib} hist={hist} />
+          <Progress lib={lib} hist={hist} prog={prog} />
         ) : tab === "coach" ? (
           <Coach coach={coach} prog={prog} lib={lib} />
         ) : tab === "settings" ? (
-          <Settings />
+          <Settings lib={lib} prog={prog} workouts={hist.finished} />
         ) : null}
       </main>
       {!active && <TabBar tab={tab} onChange={tb => setTab(tb)} />}

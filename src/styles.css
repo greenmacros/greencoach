@@ -45,3 +45,19 @@ textarea.field { padding: 10px 12px; min-height: 96px; }
 .sheet-body { background: var(--bg); width: 100%; max-width: 42rem; max-height: 92dvh; overflow-y: auto; border-radius: 18px 18px 0 0; border: 1px solid var(--border); padding: 16px 16px calc(24px + env(safe-area-inset-bottom)); }
 @media (min-width: 700px) { .sheet { align-items: center; } .sheet-body { border-radius: 18px; } }
 .hscroll { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+
+/* Chart tokens. Categorical slots validated (scripts/validate_palette.js) against #ffffff and #151b23. */
+:root {
+  --series-1: #2a78d6; --series-2: #eb6834; --chart-grid: #e6e9ee; --band: #e9eef5;
+  --seq-0: #f1f4f8; --seq-1: #cde2fb; --seq-2: #9ec5f4; --seq-3: #6da7ec; --seq-4: #3987e5; --seq-5: #256abf; --seq-6: #184f95;
+}
+:root[data-theme="dark"] {
+  --series-1: #3987e5; --series-2: #d95926; --chart-grid: #232c38; --band: #1c2633;
+  --seq-0: #1b2330; --seq-1: #104281; --seq-2: #184f95; --seq-3: #1c5cab; --seq-4: #256abf; --seq-5: #3987e5; --seq-6: #6da7ec;
+}
+.chart-tip { position: absolute; pointer-events: none; z-index: 5; background: var(--surface); color: var(--text); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 8px; font-size: 12px; line-height: 1.4; box-shadow: 0 4px 14px rgb(0 0 0 / 0.15); white-space: nowrap; }
+.chart-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.chart-table th, .chart-table td { padding: 4px 6px; border-bottom: 1px solid var(--border); text-align: right; }
+.chart-table th:first-child, .chart-table td:first-child { text-align: left; }
+.chart-svg:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }

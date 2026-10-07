@@ -2,19 +2,9 @@ import { useState } from "react";
 import { useApp } from "../app-context";
 import { EQUIPMENT, MUSCLES, PATTERNS, type EquipmentId, type Muscle, type Pattern } from "../library/types";
 import type { CustomExerciseRecord } from "../library/types";
+import { compressImage as compressPhoto } from "../lib/image";
 
 type Input = Omit<CustomExerciseRecord, "id" | "createdAt" | "updatedAt" | "schemaVersion">;
-
-/** Resize a photo to a small JPEG data URL so it is cheap to store and export. Never uploaded. */
-async function compressPhoto(file: File, max = 320): Promise<string> {
-  const bmp = await createImageBitmap(file);
-  const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
-  const c = document.createElement("canvas");
-  c.width = Math.round(bmp.width * k);
-  c.height = Math.round(bmp.height * k);
-  c.getContext("2d")!.drawImage(bmp, 0, 0, c.width, c.height);
-  return c.toDataURL("image/jpeg", 0.7);
-}
 
 export default function CustomExerciseForm({ onSave, onCancel }: { onSave: (i: Input) => void | Promise<void>; onCancel: () => void }) {
   const { t } = useApp();
