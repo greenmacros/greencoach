@@ -49,4 +49,4 @@ React 19 + Vite + TypeScript, Tailwind v4 (with CSS variables for the light/dark
 
 - Renamed from GreenCoach to GreenCoach (another app already uses the GreenCoach name). Internal identifiers keep the old
   name on purpose so existing data survives: the IndexedDB database `greencoach`, the `lc_*` localStorage keys and the
-  GitHub Pages path. Backups exported under the old name (`"app": "GreenCoach"`) are still accepted.
+  GitHub Pages path. Backups are labelled `"app": "GreenCoach"` (no backups existed under the old name).

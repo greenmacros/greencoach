@@ -36,6 +36,7 @@ class GreenCoachDB extends Dexie {
   }
 }
 
+// The database keeps the app's earlier name so data logged before the rename stays.
 export function createDexieRepository(dbName = "greencoach"): Repository {
   const db = new GreenCoachDB(dbName);
   const table = (t: TableName) => db.table<AnyRecord, string>(t);

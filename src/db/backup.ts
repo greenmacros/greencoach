@@ -22,7 +22,7 @@ const isRecord = (r: unknown): r is AnyRecord =>
 /** Validates an untrusted parsed JSON value. Throws a short Error('...') if it is not a usable backup. */
 export function parseBackup(data: unknown): BackupFile {
   const d = data as Partial<BackupFile> | null;
-  if (!d || typeof d !== "object" || (d.app !== "GreenCoach" && d.app !== "GreenCoach")) throw new Error("not-a-backup");
+  if (!d || typeof d !== "object" || d.app !== "GreenCoach") throw new Error("not-a-backup");
   if (typeof d.version !== "number" || d.version > BACKUP_VERSION) throw new Error("newer-version");
   if (!d.tables || typeof d.tables !== "object") throw new Error("not-a-backup");
   const tables: Record<string, AnyRecord[]> = {};

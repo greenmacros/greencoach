@@ -66,8 +66,7 @@ export type TableName = (typeof TABLES)[number];
 export type AnyRecord = BaseRecord & Record<string, unknown>;
 
 export interface BackupFile {
-  /** "GreenCoach" was the app's earlier name; such backups are still accepted. */
-  app: "GreenCoach" | "GreenCoach";
+  app: "GreenCoach";
   version: number;
   exportedAt: string;
   counts: Record<string, number>;

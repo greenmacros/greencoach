@@ -60,9 +60,9 @@ describe("repository", () => {
     expect(await repo.list("goals")).toHaveLength(0);
   });
 
-  it("accepts backups made under the earlier name GreenCoach", () => {
+  it("labels backups with the app name and rejects other files", () => {
     expect(buildBackup({}).app).toBe("GreenCoach");
-    expect(() => parseBackup({ app: "GreenCoach", version: 1, tables: {} })).not.toThrow();
+    expect(() => parseBackup({ app: "GreenCoach", version: 1, tables: {} })).toThrow("not-a-backup");
   });
 
   it("parseBackup accepts an empty backup", () => {
