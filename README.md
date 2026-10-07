@@ -92,7 +92,7 @@ Serve over HTTPS (all three do) so the service worker and installation work.
 ## Known limits
 
 - Phones may pause web pages while the screen is locked. The rest timer is timestamp-based, so it is always correct when you look, but the end-of-rest beep or notification can be late. "Keep screen on" avoids this.
-- Japanese step-by-step instructions are complete for GreenCoach's own exercises; the upstream library's instructions are shown in English (with a note) until the translation pass lands. Japanese names cover every exercise.
+- Japanese names and step-by-step instructions cover all 937 exercises, but they are machine-assisted translations. Corrections are welcome in `scripts/i18n/` (see `CREDITS.md`).
 
 ## Credits and license
 
