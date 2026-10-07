@@ -32,6 +32,7 @@ function applyTheme(pref: Settings["theme"]) {
   const dark = pref === "dark" || (pref === "system" && !matchMedia("(prefers-color-scheme: light)").matches);
   document.documentElement.dataset.theme = dark ? "dark" : "light";
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#0b0f14" : "#f6f7f9");
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#0b0f14" : "#f6f7f9");
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
