@@ -34,7 +34,7 @@ test("pick a template, see today's session, skip with undo, move it", async ({ p
 test("the training day flips at 04:00, not midnight", async ({ page }) => {
   await page.clock.install({ time: new Date(2026, 9, 6, 2, 30, 0) }); // Tuesday 02:30 still counts as Monday
   await page.goto("/");
-  await page.getByRole("button", { name: "Program" }).click();
+  await page.getByRole("button", { name: "Program", exact: true }).click();
   await page.getByRole("article").filter({ hasText: "Full body 3×" }).getByRole("button", { name: "Use this template" }).click();
   await page.getByRole("button", { name: "Today" }).click();
   await expect(page.getByRole("heading", { name: "Full Body A" })).toBeVisible(); // Monday's session
@@ -46,7 +46,7 @@ test("the training day flips at 04:00, not midnight", async ({ page }) => {
 test("edit a program: add an exercise, change sets, reorder", async ({ page }) => {
   await page.clock.install({ time: MONDAY });
   await page.goto("/");
-  await page.getByRole("button", { name: "Program" }).click();
+  await page.getByRole("button", { name: "Program", exact: true }).click();
   await page.getByRole("article").filter({ hasText: "Blank" }).getByRole("button", { name: "Use this template" }).click();
   await page.getByRole("button", { name: "Add session" }).click();
   await page.getByRole("button", { name: "Add exercise" }).click();
@@ -58,7 +58,7 @@ test("edit a program: add an exercise, change sets, reorder", async ({ page }) =
   await page.getByRole("button", { name: /^Increase: Sets/ }).click();
   await expect(sets).toHaveValue("4");
   await page.reload();
-  await page.getByRole("button", { name: "Program" }).click();
+  await page.getByRole("button", { name: "Program", exact: true }).click();
   await page.getByRole("button", { name: "Edit" }).click();
   await expect(page.getByRole("textbox", { name: /^Sets:/ })).toHaveValue("4"); // persisted
 });

@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("library: search, open, favorite, swap, language switch", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Program" }).click();
+  await page.getByRole("button", { name: "Program", exact: true }).click();
   await page.getByRole("button", { name: "Library", exact: true }).click();
   await expect(page.getByText(/\d+ exercises/)).toBeVisible();
 
