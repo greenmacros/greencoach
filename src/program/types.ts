@@ -12,6 +12,8 @@ export interface ExerciseSlot {
   notes: string;
   /** Slots sharing the same non-null group number are performed as a superset. */
   supersetGroup: number | null;
+  /** Target working weight in kg, set when a coach suggestion is accepted (null/undefined = decide on the day). */
+  weightKg?: number | null;
 }
 
 export interface SessionTemplate {

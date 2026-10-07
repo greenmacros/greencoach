@@ -1,4 +1,4 @@
-import { SCHEMA_VERSION, type Lang, type Settings } from "./types";
+import { SCHEMA_VERSION, type Lang, type Profile, type Settings } from "./types";
 
 export const SETTINGS_ID = "settings";
 
@@ -22,5 +22,15 @@ export function defaultSettings(lang: Lang): Settings {
     restVibrate: true,
     restNotify: false,
     onboarded: false,
+  };
+}
+
+export const PROFILE_ID = "profile";
+
+export function defaultProfile(): Profile {
+  const now = new Date().toISOString();
+  return {
+    id: PROFILE_ID, createdAt: now, updatedAt: now, schemaVersion: SCHEMA_VERSION,
+    experience: "intermediate", goal: "muscle", phase: "maintain", daysPerWeek: 4, equipment: "gym",
   };
 }

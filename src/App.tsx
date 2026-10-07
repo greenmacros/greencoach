@@ -10,21 +10,23 @@ import { useProgram } from "./program/useProgram";
 import { createWorkout } from "./workout/model";
 import type { WorkoutLog } from "./workout/types";
 import { useHistory } from "./workout/useHistory";
+import Coach from "./pages/Coach";
+import { useCoach } from "./coach/useCoach";
 import Program from "./pages/Program";
 import Progress from "./pages/Progress";
 import Settings from "./pages/Settings";
-import Soon from "./pages/Soon";
 import Today from "./pages/Today";
 import Workout from "./pages/Workout";
 import { newId } from "./lib/id";
 
 export default function App() {
-  const { t, settings } = useApp();
+  const { settings } = useApp();
   const [tab, setTab] = useState<Tab>("today");
   const lib = useLibrary();
   const hist = useHistory();
   const completed = useMemo(() => new Set(hist.finished.map(w => w.dayKey)), [hist.finished]);
   const prog = useProgram(completed);
+  const coach = useCoach(prog, lib, hist.finished);
   const [active, setActive] = useState<WorkoutLog | null>(null);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
@@ -58,11 +60,11 @@ export default function App() {
           <Program prog={prog} lib={lib} />
         ) : tab === "progress" ? (
           <Progress lib={lib} hist={hist} />
+        ) : tab === "coach" ? (
+          <Coach coach={coach} prog={prog} lib={lib} />
         ) : tab === "settings" ? (
           <Settings />
-        ) : (
-          <Soon title={t(`tab.${tab}`)} />
-        )}
+        ) : null}
       </main>
       {!active && <TabBar tab={tab} onChange={tb => setTab(tb)} />}
     </>

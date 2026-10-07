@@ -1,0 +1,35 @@
+{
+  "mode": "normal",
+  "deload": null,
+  "newMeso": false,
+  "mesoWeek": "2/6",
+  "targetRir": 2,
+  "muscles": [
+    "quadriceps: 3 -> 4 (why.vol.add.mev)",
+    "hamstrings: 4.5 -> 6 (why.vol.add.mev)",
+    "glutes: 1.5 -> 2 (why.vol.add.mev)",
+    "chest: 6 -> 7 (why.vol.add.mev)",
+    "lats: 1.5 -> 2 (why.vol.add.mev)",
+    "middle-back: 3 -> 4 (why.vol.add.mev)",
+    "shoulders: 4.5 -> 5.5 (why.vol.add.mev)",
+    "lower-back: 1.5 -> 2 (why.vol.hold.cut)",
+    "triceps: 6 -> 6.5 (why.vol.hold.cut)",
+    "biceps: 4.5 -> 6 (why.vol.add.mev)",
+    "forearms: 1.5 -> 2 (why.vol.add.mev)",
+    "calves: 4.5 -> 6 (why.vol.add.mev)"
+  ],
+  "slots": [
+    "Barbell Bench Press - Medium Grip: 3x6-10 @40 -> 3x6-10 (target 10) @40 RIR2 rest150 (why.load.hold.reps)",
+    "Incline Dumbbell Press: 3x8-12 @- -> 4x8-12 (target 8) @- RIR2 rest150 (why.load.first)",
+    "Seated Cable Rows: 3x8-12 @35 -> 4x8-12 (target 8) @37.5 RIR2 rest150 (why.load.up)",
+    "Dumbbell Bicep Curl: 3x10-15 @- -> 4x10-15 (target 10) @- RIR2 rest120 (why.load.first)",
+    "Triceps Pushdown: 3x10-15 @- -> 3x10-15 (target 10) @- RIR2 rest120 (why.load.first)",
+    "Barbell Squat: 3x5-8 @50 -> 4x5-8 (target 5) @52.5 RIR2 rest180 (why.load.up)",
+    "Lying Leg Curls: 3x10-15 @- -> 4x10-15 (target 10) @- RIR2 rest120 (why.load.first)",
+    "Standing Calf Raises: 3x10-15 @- -> 4x10-15 (target 10) @- RIR2 rest120 (why.load.first)"
+  ],
+  "swaps": [],
+  "notes": [
+    "good:why.note.cut"
+  ]
+}

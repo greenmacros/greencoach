@@ -32,7 +32,7 @@ export function buildExerciseLog(slot: ExerciseSlot | null, exerciseId: string, 
   const n = slot?.sets ?? 3;
   const sets = Array.from({ length: n }, (_, i): SetLog => {
     const p = prev[i] ?? prev[prev.length - 1];
-    return { ...emptySet(), weightKg: p?.weightKg ?? null, reps: p?.reps ?? null };
+    return { ...emptySet(), weightKg: slot?.weightKg ?? p?.weightKg ?? null, reps: p?.reps ?? null };
   });
   return { id: newId(), exerciseId, slotId: slot?.id ?? null, restSec: slot?.restSec ?? fallbackRest, notes: slot?.notes ?? "", supersetGroup: slot?.supersetGroup ?? null, target, sets };
 }

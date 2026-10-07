@@ -12,7 +12,7 @@ import type { BackupFile } from "../db/types";
 type Estimate = Awaited<ReturnType<typeof repo.storageEstimate>>;
 
 export default function Settings() {
-  const { settings, update, t, reloadAll, dataVersion } = useApp();
+  const { settings, update, profile, updateProfile, t, reloadAll, dataVersion } = useApp();
   const [estimate, setEstimate] = useState<Estimate>(null);
   const [pending, setPending] = useState<{ file: unknown; n: number } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -64,6 +64,32 @@ export default function Settings() {
             {Array.from({ length: 8 }, (_, h) => <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>)}
           </select>
           <span className="muted text-sm">{t("settings.dayStartHint")}</span>
+        </label>
+      </div>
+
+      <div className="card grid gap-3">
+        <div><h2 className="font-bold">{t("profile.title")}</h2><p className="muted text-sm">{t("profile.hint")}</p></div>
+        {([
+          ["experience", "profile.experience", ["beginner", "intermediate", "advanced"], "profile.exp."],
+          ["goal", "profile.goal", ["muscle", "strength", "cut", "maintain", "recomp"], "profile.goal."],
+          ["phase", "profile.phase", ["bulk", "maintain", "cut"], "profile.phase."],
+          ["equipment", "profile.equipment", ["gym", "dumbbells", "bands", "home"], "profile.eq."],
+        ] as const).map(([field, label, options, prefix]) => (
+          <label key={field} className="grid gap-1"><span>{t(label)}</span>
+            <select className="field" value={profile[field]} onChange={e => void updateProfile({ [field]: e.target.value } as never)}>
+              {options.map(o => <option key={o} value={o}>{t(`${prefix}${o}`)}</option>)}
+            </select>
+          </label>
+        ))}
+        <label className="grid gap-1"><span>{t("profile.days")}</span>
+          <select className="field" value={profile.daysPerWeek} onChange={e => void updateProfile({ daysPerWeek: Number(e.target.value) })}>
+            {[2, 3, 4, 5, 6, 7].map(n => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </label>
+        <label className="grid gap-1"><span>{t("profile.region")}</span>
+          <select className="field" value={settings.region} onChange={e => void update({ region: e.target.value as never })}>
+            {(["JP", "north", "south"] as const).map(o => <option key={o} value={o}>{t(`profile.region.${o}`)}</option>)}
+          </select>
         </label>
       </div>
 
