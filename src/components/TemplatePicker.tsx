@@ -1,13 +1,18 @@
 import { useApp } from "../app-context";
+import { useState } from "react";
 import { TEMPLATES, type TemplateSpec } from "../program/templates";
+import PasteLinkSheet from "./PasteLinkSheet";
 
 export default function TemplatePicker({ onPick, onCancel }: { onPick: (t: TemplateSpec) => void | Promise<void>; onCancel?: () => void }) {
   const { t, settings } = useApp();
   const lang = settings.lang;
+  const [pasting, setPasting] = useState(false);
   return (
     <section className="grid gap-3" aria-label={t("prog.pick")}>
       <h2 className="text-xl font-bold">{t("prog.pick")}</h2>
       <p className="muted">{t("prog.pickBody")}</p>
+      <button className="btn justify-self-start" onClick={() => setPasting(true)}>{t("share.importPaste")}</button>
+      {pasting && <PasteLinkSheet onClose={() => setPasting(false)} />}
       {TEMPLATES.map(spec => (
         <article key={spec.id} className="card grid gap-2">
           <div className="flex items-baseline justify-between gap-2">

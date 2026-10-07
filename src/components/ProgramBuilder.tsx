@@ -11,6 +11,8 @@ import PickerSheet from "./PickerSheet";
 import SlotEditor from "./SlotEditor";
 import Stepper from "./Stepper";
 import TextInput from "./TextInput";
+import SharePlanSheet from "./SharePlanSheet";
+import PasteLinkSheet from "./PasteLinkSheet";
 
 interface Props { prog: ProgramApi; lib: LibraryApi; program: Program; onNew: () => void }
 
@@ -22,6 +24,8 @@ export default function ProgramBuilder({ prog, lib, program, onNew }: Props) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [picker, setPicker] = useState<Picker>(null);
   const [undo, setUndo] = useState<{ text: string; run: () => Promise<void> } | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const [pasting, setPasting] = useState(false);
 
   const patch = (p: Partial<Program>) => prog.save({ ...program, ...p });
   const patchSession = (id: string, fn: (s: SessionTemplate) => SessionTemplate) =>
@@ -83,6 +87,8 @@ export default function ProgramBuilder({ prog, lib, program, onNew }: Props) {
         </label>
         <div className="flex flex-wrap gap-2">
           <button className="btn" onClick={onNew}>＋ {t("prog.new")}</button>
+          <button className="btn" onClick={() => setSharing(true)}>{t("share.button")}</button>
+          <button className="btn" onClick={() => setPasting(true)}>{t("share.importPaste")}</button>
           <button className="btn btn-danger" onClick={async () => {
             const cur = await prog.remove(program.id);
             if (cur) setUndo({ text: t("prog.deleted"), run: async () => { await prog.restore(cur); } });
@@ -152,6 +158,8 @@ export default function ProgramBuilder({ prog, lib, program, onNew }: Props) {
         <button className="btn" onClick={() => void addSession()}>＋ {t("prog.addSession")}</button>
       </div>
 
+      {pasting && <PasteLinkSheet onClose={() => setPasting(false)} />}
+      {sharing && <SharePlanSheet program={program} lib={lib} onClose={() => setSharing(false)} />}
       {picker && <PickerSheet lib={lib} title={t("prog.pickFor")} onClose={() => setPicker(null)} onPick={ex => void pick(ex.id, ex.mechanic !== "isolation")} />}
 
       {undo && (

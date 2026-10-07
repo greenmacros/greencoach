@@ -9,6 +9,8 @@ import { useLibrary } from "./library/useLibrary";
 import { mesoPosition, trainingDayNumber, weekStart } from "./program/schedule";
 import type { AutoRecord } from "./coach/auto";
 import AutoCoachCard from "./components/AutoCoachCard";
+import ImportPlanSheet from "./components/ImportPlanSheet";
+import type { SharedPlan } from "./program/share";
 import { useProgram } from "./program/useProgram";
 import { createWorkout } from "./workout/model";
 import type { WorkoutLog } from "./workout/types";
@@ -24,7 +26,7 @@ const Workout = lazy(() => import("./pages/Workout"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 
 export default function App() {
-  const { settings, loaded, update, profile } = useApp();
+  const { settings, loaded, update, profile, t } = useApp();
   const [tab, setTabState] = useState<Tab>("today");
   const [coachTarget, setCoachTarget] = useState<"this" | undefined>();
   const setTab = (t: Tab) => { setCoachTarget(undefined); setTabState(t); };
@@ -51,6 +53,37 @@ export default function App() {
   };
 
   const close = async () => { setActive(null); await hist.reload(); };
+
+  // Opened from a shared-plan link (#plan=…): offer to import it.
+  const [shared, setShared] = useState<SharedPlan | "bad" | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importMsg, setImportMsg] = useState("");
+  useEffect(() => {
+    const read = () => void import("./program/share").then(async m => {
+      const code = m.codeFromHash(location.hash);
+      if (code) setShared(await m.decodePlan(code).catch(() => "bad" as const));
+    });
+    read();
+    window.addEventListener("hashchange", read);
+    return () => window.removeEventListener("hashchange", read);
+  }, []);
+  const clearShared = () => { setShared(null); history.replaceState(null, "", location.pathname + location.search); };
+  const importShared = async () => {
+    if (!shared || shared === "bad") return;
+    setImporting(true);
+    const m = await import("./program/share");
+    const ids = new Map<string, string>();
+    for (const c of shared.c ?? []) {
+      const ex = await lib.saveCustom({ nameEn: c.en, nameJa: c.ja, primary: c.p, secondary: c.s, equipment: c.eq, pattern: c.pat, mechanic: c.m, fatigue: c.f, notes: c.notes });
+      ids.set(c.id, ex.id);
+    }
+    for (const p of prog.programs) if (p.active) await repo.put("programs", { ...p, active: false } as never);
+    const saved = await prog.save({ ...m.fromShared(shared, prog.todayKey, ids), schemaVersion: SCHEMA_VERSION } as never);
+    setImporting(false);
+    clearShared();
+    setImportMsg(t("share.done", { name: saved.name }));
+    setTab("program");
+  };
 
   // Automatic coaching: once per week, on the first open, the coach applies this week's changes (or asks for review).
   const [auto, setAuto] = useState<AutoRecord | null>(null);
@@ -111,6 +144,13 @@ export default function App() {
         </Suspense>
       </main>
       {!active && !firstRun && <TabBar tab={tab} onChange={setTab} />}
+      {shared && lib.ready && <ImportPlanSheet plan={shared} lib={lib} busy={importing} onImport={() => void importShared()} onCancel={clearShared} />}
+      {importMsg && (
+        <div role="status" className="card flex items-center gap-3 fixed left-4 right-4 mx-auto max-w-xl" style={{ bottom: "calc(6.5rem + env(safe-area-inset-bottom))", zIndex: 40, borderColor: "var(--accent)" }}>
+          <span className="flex-1 font-semibold">{importMsg}</span>
+          <button className="btn" onClick={() => setImportMsg("")}>{t("auto.ok")}</button>
+        </div>
+      )}
     </>
   );
 }
