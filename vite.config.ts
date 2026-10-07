@@ -15,6 +15,14 @@ export default defineConfig({
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,webmanifest,woff2}"],
         navigateFallback: "index.html",
+        // Exercise images are not precached (15 MB); each is cached the first time it is seen.
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.includes("/ex/") && url.pathname.endsWith(".webp"),
+            handler: "CacheFirst",
+            options: { cacheName: "exercise-images", expiration: { maxEntries: 2000 }, cacheableResponse: { statuses: [0, 200] } },
+          },
+        ],
       },
       manifest: {
         name: "GreenCoach",

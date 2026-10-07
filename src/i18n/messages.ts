@@ -1,7 +1,8 @@
-export interface Entry { en: string; ja: string }
+import { LIBRARY_MESSAGES } from "./messages-library";
 
+export interface Entry { en: string; ja: string }
 /** Flat key -> {en, ja}; `{name}` placeholders are interpolated. Same shape as GreenMacros. */
-export const MESSAGES = {
+const BASE = {
   "app.name": { en: "GreenCoach", ja: "グリーンコーチ" },
   "tab.today": { en: "Today", ja: "今日" },
   "tab.program": { en: "Program", ja: "プログラム" },
@@ -56,5 +57,7 @@ export const MESSAGES = {
   "notice.gotIt": { en: "Got it", ja: "OK" },
   "about.free": { en: "Free for life. No accounts, no ads, no tracking.", ja: "ずっと無料。アカウント不要、広告なし、トラッキングなし。" },
 } as const satisfies Record<string, Entry>;
+
+export const MESSAGES = { ...BASE, ...LIBRARY_MESSAGES };
 
 export type MessageKey = keyof typeof MESSAGES;
