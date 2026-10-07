@@ -4,7 +4,7 @@ import type { Exercise } from "../library/types";
 import { addDays } from "../program/schedule";
 import { COACH_CONFIG } from "./config";
 import { increment } from "./load";
-import { bodyWeightRate } from "./stats";
+import { bodyWeightRate, plannedSessionCount, plannedSoFar } from "./stats";
 import { disruptionsIn, seasonFor } from "./seasons";
 import {
   BANDROW, BENCH, CALF, CURL, INCLINE, LEGCURL, PULLUP, PUSHDOWN, ROW, SQUAT, START,
@@ -368,6 +368,13 @@ describe("weekly volume per muscle", () => {
     const cut = muscleFor(run(all, { workouts: history([bench(x3(80, 8, 2), { joint: 3 })]) }), "chest");
     expect(cut.reason.key).toBe("why.vol.cut.joint");
     expect(cut.delta).toBe(-2);
+  });
+
+  it("days before the program existed do not count as missed sessions", () => {
+    const prog = standardProgram({ createdAt: `${week(2)}T09:00:00.000Z` });
+    expect(plannedSoFar(prog, week(1), addDays(week(2), 3))).toBe(0);
+    expect(plannedSoFar(prog, week(2), addDays(week(2), 6))).toBe(plannedSessionCount(prog));
+    expect(plannedSoFar(standardProgram({ createdAt: `${addDays(week(1), 2)}T09:00:00.000Z` }), week(1), week(2))).toBeLessThan(plannedSessionCount(prog));
   });
 
   it("low adherence holds volume", () => {

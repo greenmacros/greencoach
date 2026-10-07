@@ -2,6 +2,7 @@ import type { SorenessRecord } from "../feedback/soreness";
 import type { Exercise, Muscle } from "../library/types";
 import { addDays, daysBetween, weekStart } from "../program/schedule";
 import type { Program } from "../program/types";
+import { dayKey } from "../lib/id";
 import { estimate1RM, isWorkingSet } from "../workout/model";
 import type { ExerciseLog, SetLog, WorkoutLog } from "../workout/types";
 import type { CoachConfig } from "./config";
@@ -144,12 +145,17 @@ export function plannedSessionCount(program: Program): number {
   return program.week.filter(id => id && program.sessions.some(s => s.id === id)).length;
 }
 
-/** Sessions the template schedules in a week up to and including `today` (all of them for a finished week). */
+/**
+ * Sessions the template schedules in a week up to and including `today` (all of them for a finished week).
+ * Days before the program was created are not counted: nothing could have been missed then.
+ */
 export function plannedSoFar(program: Program, weekStartKey: string, today: string): number {
+  const created = program.createdAt ? dayKey(new Date(program.createdAt)) : "";
   let n = 0;
   for (let i = 0; i < 7; i++) {
     const day = addDays(weekStartKey, i);
     if (day > today) break;
+    if (day < created) continue;
     const id = program.week[i];
     if (id && program.sessions.some(s => s.id === id)) n++;
   }
