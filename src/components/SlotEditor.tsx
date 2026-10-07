@@ -3,6 +3,7 @@ import { formatRest } from "../lib/format";
 import type { Exercise } from "../library/types";
 import type { ExerciseSlot } from "../program/types";
 import Stepper from "./Stepper";
+import TextInput from "./TextInput";
 
 interface Props {
   slot: ExerciseSlot;
@@ -36,7 +37,7 @@ export default function SlotEditor({ slot, ex, index, count, hasNext, onChange, 
       <label className="grid gap-1 text-sm"><span className="muted">{t("prog.rest.label")} ({formatRest(slot.restSec)})</span>
         <Stepper label={`${t("prog.rest.label")}: ${name}`} value={slot.restSec} min={15} max={600} step={15} suffix="s" onChange={v => set({ restSec: v })} />
       </label>
-      <input className="field" placeholder={t("prog.notes")} aria-label={`${t("prog.notes")}: ${name}`} value={slot.notes} onChange={e => set({ notes: e.target.value })} />
+      <TextInput className="field" placeholder={t("prog.notes")} aria-label={`${t("prog.notes")}: ${name}`} value={slot.notes} onValue={v => set({ notes: v })} />
       <div className="flex flex-wrap gap-2">
         {hasNext && <button className="chip" aria-pressed={slot.supersetGroup !== null} onClick={() => set({ supersetGroup: slot.supersetGroup === null ? 1 : null })}>{t("prog.superset")}</button>}
         <button className="chip" onClick={onReplace}>{t("prog.replace")}</button>

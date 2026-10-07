@@ -38,28 +38,27 @@ export default function RestTimerBar({ timer, onChoose }: Props) {
     <div role="region" aria-label={t("timer.title")} className="fixed inset-x-0 bottom-0 z-20 border-t"
       style={{ background: "var(--surface)", borderColor: timer.finished ? "var(--accent)" : "var(--border)", paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}>
       <div className="mx-auto max-w-2xl px-3 pt-2 grid gap-2">
-        <div className="flex items-center gap-2">
-          {timer.active ? (
-            <>
-              <div className="flex-1 min-w-0">
-                <p role="timer" aria-live="off" className="font-bold" style={{ fontSize: 28, lineHeight: 1, color: low ? "var(--danger)" : "var(--text)", fontVariantNumeric: "tabular-nums" }}>
-                  {formatRest(timer.remaining)}
-                </p>
-                <div aria-hidden="true" style={{ height: 6, borderRadius: 3, background: "var(--border)", marginTop: 6, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${timer.progress * 100}%`, background: "var(--accent)", transition: "width 0.25s linear" }} />
-                </div>
-              </div>
-              <button className="btn" style={{ minWidth: 48, padding: 0 }} aria-label={t("timer.minus")} onClick={() => timer.adjust(-15)}>−15</button>
-              <button className="btn" style={{ minWidth: 48, padding: 0 }} aria-label={t("timer.plus")} onClick={() => timer.adjust(15)}>+15</button>
-              <button className="btn" style={{ minWidth: 48, padding: 0 }} aria-label={timer.paused ? t("timer.resume") : t("timer.pause")} onClick={timer.paused ? timer.resume : timer.pause}>{timer.paused ? "▶" : "⏸"}</button>
+        {timer.active ? (
+          <div className="grid gap-2 justify-items-center">
+            <p role="timer" aria-live="off" className="font-extrabold text-center"
+              style={{ fontSize: 56, lineHeight: 1, letterSpacing: -1, color: low ? "var(--danger)" : "var(--accent)", fontVariantNumeric: "tabular-nums", opacity: timer.paused ? 0.6 : 1 }}>
+              {formatRest(timer.remaining)}
+            </p>
+            <div aria-hidden="true" style={{ width: "100%", height: 6, borderRadius: 3, background: "var(--border)", overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${timer.progress * 100}%`, background: low ? "var(--danger)" : "var(--accent)", transition: "width 0.25s linear" }} />
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <button className="btn" style={{ minWidth: 56, padding: 0 }} aria-label={t("timer.minus")} onClick={() => timer.adjust(-15)}>−15</button>
+              <button className="btn btn-primary" style={{ minWidth: 56, padding: 0 }} aria-label={timer.paused ? t("timer.resume") : t("timer.pause")} onClick={timer.paused ? timer.resume : timer.pause}>{timer.paused ? "▶" : "⏸"}</button>
+              <button className="btn" style={{ minWidth: 56, padding: 0 }} aria-label={t("timer.plus")} onClick={() => timer.adjust(15)}>+15</button>
               <button className="btn" onClick={timer.skip}>{t("timer.skip")}</button>
-            </>
-          ) : (
-            <p className="muted flex-1" role="status">{timer.finished ? t("timer.done") : t("timer.idle")}</p>
-          )}
-        </div>
-        {timer.finished && <p role="status" className="font-semibold" style={{ color: "var(--accent)" }}>{t("timer.done")}</p>}
-        <div className="hscroll" role="group" aria-label={t("timer.title")}>
+            </div>
+          </div>
+        ) : !timer.finished && (
+          <p className="muted text-center" role="status">{t("timer.idle")}</p>
+        )}
+        {timer.finished && <p role="status" className="font-bold text-center" style={{ color: "var(--accent)", fontSize: 20 }}>{t("timer.done")}</p>}
+        <div className="hscroll hscroll-center" role="group" aria-label={t("timer.title")}>
           {PRESETS.map(sec => <button key={sec} className="chip" onClick={() => choose(sec)}>{formatRest(sec)}</button>)}
           {timer.recent.map(sec => (
             <button key={sec} className="chip" aria-label={`${formatRest(sec)} (${t("timer.recentHint")})`}

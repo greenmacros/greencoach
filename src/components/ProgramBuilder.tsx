@@ -10,6 +10,7 @@ import type { ProgramApi } from "../program/useProgram";
 import PickerSheet from "./PickerSheet";
 import SlotEditor from "./SlotEditor";
 import Stepper from "./Stepper";
+import TextInput from "./TextInput";
 
 interface Props { prog: ProgramApi; lib: LibraryApi; program: Program; onNew: () => void }
 
@@ -78,7 +79,7 @@ export default function ProgramBuilder({ prog, lib, program, onNew }: Props) {
           </label>
         )}
         <label className="grid gap-1"><span className="muted text-sm">{t("prog.name")}</span>
-          <input className="field" value={program.name} onChange={e => void patch({ name: e.target.value })} />
+          <TextInput className="field" value={program.name} onValue={v => void patch({ name: v })} />
         </label>
         <div className="flex flex-wrap gap-2">
           <button className="btn" onClick={onNew}>＋ {t("prog.new")}</button>
@@ -128,7 +129,7 @@ export default function ProgramBuilder({ prog, lib, program, onNew }: Props) {
               </div>
               {open && (
                 <>
-                  <input className="field" aria-label={t("prog.sessionName")} value={s.name} onChange={e => void patchSession(s.id, x => ({ ...x, name: e.target.value }))} />
+                  <TextInput className="field" aria-label={t("prog.sessionName")} value={s.name} onValue={v => void patchSession(s.id, x => ({ ...x, name: v }))} />
                   {s.exercises.length === 0 && <p className="muted">{t("prog.emptySession")}</p>}
                   <ol className="grid gap-3">
                     {s.exercises.map((slot, i) => (

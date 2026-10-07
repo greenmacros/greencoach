@@ -56,7 +56,7 @@ export default function App() {
 
   return (
     <>
-      <main className="mx-auto max-w-2xl px-4 pt-4" style={{ paddingBottom: active || firstRun ? undefined : "calc(5rem + env(safe-area-inset-bottom))" }}>
+      <main className="mx-auto max-w-2xl px-4" style={{ paddingTop: "calc(1rem + env(safe-area-inset-top))", paddingBottom: active || firstRun ? undefined : "calc(5rem + env(safe-area-inset-bottom))" }}>
         <Suspense fallback={<p className="muted" role="status">…</p>}>
           {firstRun ? (
             <Onboarding prog={prog} onDone={() => setTab("today")} />

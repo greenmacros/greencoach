@@ -19,6 +19,11 @@ const BASE = {
   "soon.body": { en: "This screen is built in a later milestone.", ja: "この画面は今後のアップデートで追加されます。" },
 
   "settings.appearance": { en: "Appearance", ja: "外観" },
+  "about.version": { en: "Version {v} · built {d} · {c}", ja: "バージョン {v} ・ ビルド {d} ・ {c}" },
+  "about.check": { en: "Check for updates", ja: "アップデートを確認" },
+  "about.latest": { en: "You have the latest version.", ja: "最新バージョンです。" },
+  "about.updating": { en: "New version found, reloading…", ja: "新しいバージョンがあります。再読み込みしています…" },
+  "about.offline": { en: "Could not check (offline?).", ja: "確認できませんでした（オフライン？）。" },
   "settings.theme": { en: "Theme", ja: "テーマ" },
   "theme.system": { en: "System", ja: "システム" },
   "theme.light": { en: "Light", ja: "ライト" },

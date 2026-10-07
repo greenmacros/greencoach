@@ -3,6 +3,7 @@ import { useApp } from "../app-context";
 import { EQUIPMENT, MUSCLES, PATTERNS, type EquipmentId, type Muscle, type Pattern } from "../library/types";
 import type { CustomExerciseRecord } from "../library/types";
 import { compressImage as compressPhoto } from "../lib/image";
+import TextInput from "./TextInput";
 
 type Input = Omit<CustomExerciseRecord, "id" | "createdAt" | "updatedAt" | "schemaVersion">;
 
@@ -34,8 +35,8 @@ export default function CustomExerciseForm({ onSave, onCancel }: { onSave: (i: I
       <form className="sheet-body grid gap-3" role="dialog" aria-modal="true" aria-label={t("lib.addCustom")} onClick={e => e.stopPropagation()}
         onSubmit={e => { e.preventDefault(); void submit(); }}>
         <h2 className="text-xl font-bold">{t("lib.addCustom")}</h2>
-        <label className="grid gap-1">{t("lib.form.nameEn")}<input className="field" value={nameEn} onChange={e => setNameEn(e.target.value)} /></label>
-        <label className="grid gap-1">{t("lib.form.nameJa")}<input className="field" value={nameJa} onChange={e => setNameJa(e.target.value)} /></label>
+        <label className="grid gap-1">{t("lib.form.nameEn")}<TextInput className="field" value={nameEn} onValue={setNameEn} /></label>
+        <label className="grid gap-1">{t("lib.form.nameJa")}<TextInput className="field" value={nameJa} onValue={setNameJa} /></label>
 
         <fieldset className="grid gap-1"><legend className="font-semibold mb-1">{t("lib.primary")}</legend>
           <div className="flex flex-wrap gap-1.5">{MUSCLES.map(m => <button type="button" key={m} className="chip" aria-pressed={primary === m} onClick={() => setPrimary(m)}>{t(`muscle.${m}`)}</button>)}</div>
@@ -58,7 +59,7 @@ export default function CustomExerciseForm({ onSave, onCancel }: { onSave: (i: I
             <select className="field" value={fatigue} onChange={e => setFatigue(Number(e.target.value) as 1 | 2 | 3 | 4 | 5)}>{[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}</select>
           </label>
         </div>
-        <label className="grid gap-1">{t("lib.form.notes")}<textarea className="field" value={notes} onChange={e => setNotes(e.target.value)} /></label>
+        <label className="grid gap-1">{t("lib.form.notes")}<TextInput multiline className="field" value={notes} onValue={setNotes} /></label>
         <label className="grid gap-1">{t("lib.form.photo")}
           <input type="file" accept="image/*" className="field" onChange={async e => { const f = e.target.files?.[0]; if (f) setPhoto(await compressPhoto(f)); }} />
         </label>

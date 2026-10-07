@@ -6,6 +6,7 @@ import { computeAllPRs } from "../workout/pr";
 import { prText, prValueText } from "../workout/prText";
 import ChipRow from "./ChipRow";
 import type { WorkoutLog } from "../workout/types";
+import TextInput from "./TextInput";
 
 interface Props {
   workout: WorkoutLog;
@@ -65,7 +66,7 @@ export default function FinishSheet({ workout, history, onFeel, lookup, onSave, 
               options={[1, 2, 3, 4, 5].map(n => ({ value: n as 1 | 2 | 3 | 4 | 5, label: t(`fb.feel.${n}`) }))} />
             <ChipRow<1 | 2 | 3 | 4 | 5> label={t("fb.fatigue")} value={workout.sessionFatigue} onChange={v => onFeel({ sessionFatigue: v })}
               options={[1, 2, 3, 4, 5].map(n => ({ value: n as 1 | 2 | 3 | 4 | 5, label: t(`fb.fatigue.${n}`) }))} />
-            <textarea className="field" placeholder={t("wk.sumNote")} aria-label={t("wk.sumNote")} value={workout.notes} onChange={e => onNotes(e.target.value)} />
+            <TextInput multiline className="field" placeholder={t("wk.sumNote")} aria-label={t("wk.sumNote")} value={workout.notes} onValue={onNotes} />
             {unfinished > 0 && <p className="muted text-sm">{t("wk.unfinishedNote", { n: unfinished })}</p>}
             <div className="flex gap-2">
               <button className="btn flex-1" onClick={onKeepGoing}>{t("wk.keepGoing")}</button>

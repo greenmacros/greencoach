@@ -99,3 +99,44 @@ test("next session shows last time's values; empty workout can be discarded", as
   await page.getByRole("button", { name: "Discard" }).click();
   await expect(page.getByRole("heading", { name: "Rest day" })).toBeVisible();
 });
+
+test("tap an exercise picture to see it larger with its target muscles", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await startFullBody(page);
+  await page.getByRole("button", { name: /^Show larger with target muscles: / }).first().click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText("Target", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Quads")).toBeVisible();
+  await page.screenshot({ path: "test-results/preview.png" });
+  await dialog.getByRole("button", { name: "Close" }).click();
+  await expect(dialog).toBeHidden();
+
+  await page.getByRole("textbox", { name: "Set 1 Reps" }).first().fill("8");
+  await page.getByRole("button", { name: "Mark set done: Set 1" }).first().click();
+  await expect(page.getByRole("timer")).toBeVisible();
+  await page.screenshot({ path: "test-results/timer.png" });
+});
+
+test("text typed through an IME composition is kept intact", async ({ page }) => {
+  await page.goto("/");
+  await skipOnboarding(page);
+  await page.getByRole("button", { name: "Program", exact: true }).click();
+  await page.getByRole("article").filter({ hasText: "Full body 3×" }).getByRole("button", { name: "Use this template" }).click();
+  const name = page.getByRole("textbox", { name: "Program name" }).first();
+  await name.fill("");
+  // Simulate kana composition: intermediate values arrive while composing, then the final text.
+  await name.dispatchEvent("compositionstart");
+  for (const v of ["ぷ", "ぷろ", "ぷろぐ", "ぷろぐら", "ぷろぐらむ"]) await name.fill(v);
+  await name.fill("プログラム");
+  await name.dispatchEvent("compositionend");
+  await page.waitForTimeout(300);
+  await expect(name).toHaveValue("プログラム");
+  await name.blur();
+  await page.reload();
+  await page.getByRole("button", { name: "Program", exact: true }).click();
+  await expect(page.getByRole("textbox", { name: "Program name" }).first()).toHaveValue("プログラム");
+
+  // App version is shown in Settings
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await expect(page.getByTestId("app-version")).toHaveText(/^Version \d+\.\d+\.\d+ · built .+ · \w+$/);
+});

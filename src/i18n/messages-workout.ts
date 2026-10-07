@@ -2,6 +2,9 @@ import type { Entry } from "./messages";
 
 export const WORKOUT_MESSAGES = {
   "wk.back": { en: "Back", ja: "戻る" },
+  "wk.targetMuscles": { en: "Target", ja: "メインターゲット" },
+  "wk.alsoWorks": { en: "Also works", ja: "補助的に使う筋肉" },
+  "wk.enlarge": { en: "Show larger with target muscles", ja: "拡大してターゲット筋を表示" },
   "wk.finish": { en: "Finish", ja: "終了" },
   "wk.quick": { en: "Quick workout", ja: "クイックワークアウト" },
   "wk.empty": { en: "Add your first exercise to begin.", ja: "最初の種目を追加して始めましょう。" },

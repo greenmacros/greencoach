@@ -7,6 +7,7 @@ import VirtualList from "../components/VirtualList";
 import { emptyFilters, equipmentFor, searchExercises, type Filters } from "../library/search";
 import { EQUIPMENT, MUSCLES, PATTERNS, type CustomExerciseRecord, type Exercise } from "../library/types";
 import type { LibraryApi } from "../library/useLibrary";
+import TextInput from "../components/TextInput";
 
 const ROW = 76;
 
@@ -48,8 +49,8 @@ export default function Library({ lib, onPick, listHeight = "calc(100dvh - 22rem
 
   return (
     <section className="grid gap-3" aria-label={t("lib.title")}>
-      <input type="search" className="field" placeholder={t("lib.search")} aria-label={t("lib.search")} value={f.query}
-        onChange={e => setF({ ...f, query: e.target.value })} />
+      <TextInput type="search" className="field" placeholder={t("lib.search")} aria-label={t("lib.search")} value={f.query}
+        onValue={v => setF(x => ({ ...x, query: v }))} />
 
       <div className="hscroll" role="group" aria-label={t("lib.muscles")}>
         {MUSCLES.map(m => (

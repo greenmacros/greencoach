@@ -6,8 +6,10 @@ import { addSetAfter, copyLastSet } from "../workout/model";
 import type { ExerciseLog, SetLog } from "../workout/types";
 import type { WeightUnit } from "../db/types";
 import ExerciseMedia from "./ExerciseMedia";
+import ExercisePreview from "./ExercisePreview";
 import SetRow from "./SetRow";
 import Stepper from "./Stepper";
+import TextInput from "./TextInput";
 
 interface Props {
   log: ExerciseLog;
@@ -39,6 +41,7 @@ function weightKind(ex: Exercise | undefined): Kind {
 export default function ExerciseCard({ log, ex, unit, prev, prSets, index, count, onChange, onSetToggle, onAddSet, onMove, onRemove, onSwap, onFeedback }: Props) {
   const { t, settings } = useApp();
   const [more, setMore] = useState(false);
+  const [zoom, setZoom] = useState(false);
   const name = ex ? ex.name[settings.lang] : t("prog.missing");
   const step = weightStep(ex?.equipment ?? [], unit);
   const doneCount = log.sets.filter(s => s.done).length;
@@ -49,7 +52,12 @@ export default function ExerciseCard({ log, ex, unit, prev, prSets, index, count
   return (
     <article className="card grid gap-2" aria-label={name}>
       <div className="flex items-start gap-3">
-        {ex && <ExerciseMedia ex={ex} size={56} />}
+        {ex && (
+          <button type="button" aria-label={`${t("wk.enlarge")}: ${name}`} onClick={() => setZoom(true)}
+            style={{ padding: 0, border: 0, background: "none", cursor: "zoom-in", borderRadius: 10 }}>
+            <ExerciseMedia ex={ex} size={64} />
+          </button>
+        )}
         <div className="flex-1 min-w-0">
           {ex && <span className="chip" style={{ cursor: "default", minHeight: 24, fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase", padding: "0 8px" }}>{t(`muscle.${ex.primary[0]}`)}</span>}
           <h2 className="font-bold leading-tight mt-1">{log.supersetGroup !== null && "⇄ "}{name}</h2>
@@ -65,7 +73,7 @@ export default function ExerciseCard({ log, ex, unit, prev, prSets, index, count
           <label className="grid gap-1 text-sm"><span className="muted">{t("wk.restSetting")}</span>
             <Stepper label={t("wk.restSetting")} value={log.restSec} min={15} max={600} step={15} suffix="s" onChange={v => onChange(e => ({ ...e, restSec: v }))} />
           </label>
-          <input className="field" placeholder={t("wk.notes")} aria-label={`${t("wk.notes")}: ${name}`} value={log.notes} onChange={e => onChange(x => ({ ...x, notes: e.target.value }))} />
+          <TextInput className="field" placeholder={t("wk.notes")} aria-label={`${t("wk.notes")}: ${name}`} value={log.notes} onValue={v => onChange(x => ({ ...x, notes: v }))} />
           <div className="flex flex-wrap gap-2">
             <button className="chip" disabled={index === 0} onClick={() => onMove(-1)}>↑ {t("wk.up")}</button>
             <button className="chip" disabled={index === count - 1} onClick={() => onMove(1)}>↓ {t("wk.down")}</button>
@@ -95,6 +103,7 @@ export default function ExerciseCard({ log, ex, unit, prev, prSets, index, count
         <button className="btn flex-1" onClick={onAddSet}>＋ {t("wk.addSet")}</button>
         {(allDone || hasFeedback) && <button className={hasFeedback ? "btn" : "btn btn-primary"} onClick={onFeedback}>{hasFeedback ? "✓ " : ""}{t("fb.open")}</button>}
       </div>
+      {zoom && ex && <ExercisePreview ex={ex} onClose={() => setZoom(false)} />}
     </article>
   );
 }

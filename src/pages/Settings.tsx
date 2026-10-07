@@ -159,6 +159,29 @@ export default function Settings({ lib, prog, workouts }: { lib: LibraryApi; pro
         {msg && <p role="status" className="font-semibold">{msg}</p>}
       </div>
       <p className="muted text-sm text-center">{t("about.free")}</p>
+      <AppVersion />
     </section>
+  );
+}
+
+/** Build identity so the user can tell whether the installed app is the newest one. */
+function AppVersion() {
+  const { t, settings } = useApp();
+  const [msg, setMsg] = useState("");
+  const check = async () => {
+    try {
+      const reg = await navigator.serviceWorker?.getRegistration();
+      if (!reg) return setMsg(t("about.latest"));
+      await reg.update();
+      if (reg.installing || reg.waiting) { setMsg(t("about.updating")); setTimeout(() => location.reload(), 2500); }
+      else setMsg(t("about.latest"));
+    } catch { setMsg(t("about.offline")); }
+  };
+  return (
+    <div className="grid gap-2 justify-items-center text-center">
+      <p className="muted text-xs" data-testid="app-version">{t("about.version", { v: __APP_VERSION__, d: formatDateTime(__BUILD_TIME__, settings.lang), c: __COMMIT__ })}</p>
+      <button className="chip" onClick={() => void check()}>{t("about.check")}</button>
+      {msg && <p role="status" className="text-sm">{msg}</p>}
+    </div>
   );
 }

@@ -122,7 +122,7 @@ export default function Workout({ initial, lib, history, onExit, onClose }: Prop
   const totalSets = workout.exercises.reduce((n, e) => n + e.sets.length, 0);
 
   return (
-    <section className="grid gap-3" style={{ paddingBottom: "9rem" }}>
+    <section className="grid gap-3" style={{ paddingBottom: "calc(14rem + env(safe-area-inset-bottom))" }}>
       <header className="flex items-center gap-2">
         <button className="btn" onClick={() => { void flush(); onExit(); }}>← {t("wk.back")}</button>
         <div className="flex-1 min-w-0 text-center">
@@ -184,7 +184,7 @@ export default function Workout({ initial, lib, history, onExit, onClose }: Prop
         if (lastDone) mutate(w => updateExercise(w, lastDone.id, e => ({ ...e, restSec: sec })));
       }} />
       {toast && (
-        <div role="status" className="card fixed left-4 right-4 mx-auto max-w-xl font-semibold" style={{ bottom: "9.5rem", zIndex: 25, borderColor: "var(--accent)" }}>🏆 {toast}</div>
+        <div role="status" className="card fixed left-4 right-4 mx-auto max-w-xl font-semibold" style={{ bottom: "calc(13rem + env(safe-area-inset-bottom))", zIndex: 25, borderColor: "var(--accent)" }}>🏆 {toast}</div>
       )}
     </section>
   );
