@@ -12,7 +12,9 @@ export default function BackupNotice() {
   if (hidden) return null;
 
   const days = settings.lastBackupAt ? daysSince(settings.lastBackupAt) : null;
-  const overdue = settings.backupReminderDays > 0 && (days === null ? settings.onboarded : days >= settings.backupReminderDays);
+  // Never exported: wait one reminder interval from first use instead of nagging on day one.
+  const since = days ?? daysSince(settings.createdAt);
+  const overdue = settings.backupReminderDays > 0 && settings.onboarded && since >= settings.backupReminderDays;
   const ios = !overdue && isIosSafari();
   if (!overdue && !ios) return null;
 

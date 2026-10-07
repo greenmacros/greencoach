@@ -12,6 +12,8 @@ interface Ctx {
   t: TFn;
   /** Bumps after import/delete so screens reload their data. */
   dataVersion: number;
+  /** True once stored settings/profile have been read (avoids a flash of first-run UI). */
+  loaded: boolean;
   reloadAll: () => Promise<void>;
 }
 
@@ -39,6 +41,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }));
   const [profile, setProfile] = useState<Profile>(() => defaultProfile());
   const [dataVersion, setDataVersion] = useState(0);
+  const [loaded, setLoaded] = useState(false);
 
   const load = useCallback(async () => {
     const stored = await repo.get<Settings>("settings", SETTINGS_ID);
@@ -46,6 +49,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     else setSettings(s => s); // keep first-run defaults; persisted on first change
     const p = await repo.get<Profile>("profile", PROFILE_ID);
     setProfile(p ? { ...defaultProfile(), ...p } : defaultProfile());
+    setLoaded(true);
   }, []);
 
   useEffect(() => { void load(); }, [load]);
@@ -84,8 +88,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [load]);
 
   const value = useMemo<Ctx>(
-    () => ({ settings, update, profile, updateProfile, dataVersion, reloadAll, t: (k, v) => translate(settings.lang, k, v) }),
-    [settings, update, profile, updateProfile, dataVersion, reloadAll],
+    () => ({ settings, update, profile, updateProfile, dataVersion, loaded, reloadAll, t: (k, v) => translate(settings.lang, k, v) }),
+    [settings, update, profile, updateProfile, dataVersion, loaded, reloadAll],
   );
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

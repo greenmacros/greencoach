@@ -144,8 +144,21 @@ export function plannedSessionCount(program: Program): number {
   return program.week.filter(id => id && program.sessions.some(s => s.id === id)).length;
 }
 
-export const adherence = (workouts: readonly WorkoutLog[], program: Program, weekStartKey: string): number | null => {
-  const planned = plannedSessionCount(program);
+/** Sessions the template schedules in a week up to and including `today` (all of them for a finished week). */
+export function plannedSoFar(program: Program, weekStartKey: string, today: string): number {
+  let n = 0;
+  for (let i = 0; i < 7; i++) {
+    const day = addDays(weekStartKey, i);
+    if (day > today) break;
+    const id = program.week[i];
+    if (id && program.sessions.some(s => s.id === id)) n++;
+  }
+  return n;
+}
+
+/** Done / planned-so-far for a week; null when nothing was due yet. A week still in progress is not penalised. */
+export const adherence = (workouts: readonly WorkoutLog[], program: Program, weekStartKey: string, today: string): number | null => {
+  const planned = plannedSoFar(program, weekStartKey, today);
   return planned === 0 ? null : Math.min(1, sessionsInWeek(workouts, weekStartKey).length / planned);
 };
 

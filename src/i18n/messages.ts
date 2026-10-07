@@ -4,6 +4,7 @@ import { WORKOUT_MESSAGES } from "./messages-workout";
 import { FEEDBACK_MESSAGES } from "./messages-feedback";
 import { COACH_MESSAGES } from "./messages-coach";
 import { PROGRESS_MESSAGES } from "./messages-progress";
+import { ONBOARDING_MESSAGES } from "./messages-onboarding";
 
 export interface Entry { en: string; ja: string }
 /** Flat key -> {en, ja}; `{name}` placeholders are interpolated. Same shape as GreenMacros. */
@@ -63,6 +64,6 @@ const BASE = {
   "about.free": { en: "Free for life. No accounts, no ads, no tracking.", ja: "ずっと無料。アカウント不要、広告なし、トラッキングなし。" },
 } as const satisfies Record<string, Entry>;
 
-export const MESSAGES = { ...BASE, ...LIBRARY_MESSAGES, ...PROGRAM_MESSAGES, ...WORKOUT_MESSAGES, ...FEEDBACK_MESSAGES, ...COACH_MESSAGES, ...PROGRESS_MESSAGES };
+export const MESSAGES = { ...BASE, ...LIBRARY_MESSAGES, ...PROGRAM_MESSAGES, ...WORKOUT_MESSAGES, ...FEEDBACK_MESSAGES, ...COACH_MESSAGES, ...PROGRESS_MESSAGES, ...ONBOARDING_MESSAGES };
 
 export type MessageKey = keyof typeof MESSAGES;

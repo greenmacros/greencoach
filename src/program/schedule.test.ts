@@ -3,7 +3,7 @@ import { loadBundled } from "../library/data";
 import {
   addDays, daysBetween, estimateMinutes, mesoPosition, movePatch, resolveDay, skipPatch, trainingDayKey, trainingDayNumber, unskipPatch, weekDays, weekdayIndex, weekStart,
 } from "./schedule";
-import { TEMPLATES, exerciseIdsInTemplates, instantiateTemplate } from "./templates";
+import { TEMPLATES, exerciseIdsInTemplates, instantiateTemplate, recommendTemplate } from "./templates";
 import type { DayOverride, Program } from "./types";
 
 const mk = (over: Partial<Program> = {}): Program => ({
@@ -176,6 +176,18 @@ describe("templates", () => {
     const ids = ja.sessions.flatMap(s => s.exercises.map(e => e.id));
     expect(new Set(ids).size).toBe(ids.length); // fresh ids, not shared with the template
     expect(instantiateTemplate(spec, "en", "2026-10-07").sessions[0].name).toBe("Upper A");
+  });
+
+  it("recommends a template from equipment, days and experience", () => {
+    const r = (equipment: "home" | "bands" | "dumbbells" | "gym", daysPerWeek: number, experience: "beginner" | "intermediate" | "advanced" = "intermediate") => recommendTemplate({ equipment, daysPerWeek, experience });
+    expect(r("dumbbells", 5)).toBe("home-4");
+    expect(r("home", 3)).toBe("home-4");
+    expect(r("gym", 2)).toBe("full-body-3");
+    expect(r("gym", 3)).toBe("full-body-3");
+    expect(r("gym", 4)).toBe("upper-lower-4");
+    expect(r("gym", 6, "beginner")).toBe("upper-lower-4");
+    expect(r("gym", 5)).toBe("bro-5");
+    expect(r("gym", 6)).toBe("ppl-6");
   });
 
   it("blank has no sessions", () => {

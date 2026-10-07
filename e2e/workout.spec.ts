@@ -1,3 +1,4 @@
+import { skipOnboarding } from "./helpers";
 import { expect, test, type Page } from "@playwright/test";
 
 const MONDAY = new Date(2026, 9, 5, 10, 0, 0);
@@ -5,6 +6,7 @@ const MONDAY = new Date(2026, 9, 5, 10, 0, 0);
 async function startFullBody(page: Page) {
   await page.clock.install({ time: MONDAY });
   await page.goto("/");
+  await skipOnboarding(page);
   await page.getByRole("button", { name: "Program", exact: true }).click();
   await page.getByRole("article").filter({ hasText: "Full body 3×" }).getByRole("button", { name: "Use this template" }).click();
   await page.getByRole("button", { name: "Today", exact: true }).click();

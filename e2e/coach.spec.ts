@@ -1,3 +1,4 @@
+import { skipOnboarding } from "./helpers";
 import { expect, test } from "@playwright/test";
 
 const MONDAY = new Date(2026, 9, 5, 10, 0, 0);
@@ -5,6 +6,7 @@ const MONDAY = new Date(2026, 9, 5, 10, 0, 0);
 test("log a session, see next week's plan with reasons, accept it, and the next workout uses it", async ({ page }) => {
   await page.clock.install({ time: MONDAY });
   await page.goto("/");
+  await skipOnboarding(page);
   await page.getByRole("button", { name: "Program", exact: true }).click();
   await page.getByRole("article").filter({ hasText: "Full body 3×" }).getByRole("button", { name: "Use this template" }).click();
   await page.getByRole("button", { name: "Today", exact: true }).click();
@@ -52,6 +54,7 @@ test("log a session, see next week's plan with reasons, accept it, and the next 
 test("Japanese coach screen", async ({ page }) => {
   await page.clock.install({ time: MONDAY });
   await page.goto("/");
+  await skipOnboarding(page);
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "日本語" }).click();
   await page.getByRole("button", { name: "プログラム", exact: true }).click();

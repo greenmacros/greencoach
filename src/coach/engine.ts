@@ -7,7 +7,7 @@ import { planSlot } from "./load";
 import { disruptionsIn, seasonFor } from "./seasons";
 import {
   actualMuscleSets, adherence, bodyWeightRate, exerciseSessions, finished, gapDays, muscleFeedback, muscleTrend,
-  plannedMuscleSets, plannedSessionCount, recentPeakSets, sessionsInWeek,
+  plannedMuscleSets, plannedSessionCount, plannedSoFar, recentPeakSets, sessionsInWeek,
 } from "./stats";
 import type { CoachInput, CoachNote, CoachPlan, MuscleSuggestion, PlanMode, Reason, SlotSuggestion, SwapSuggestion, Trend } from "./types";
 import { bandFor, nextMuscleTarget, startVolume, type Modifiers } from "./volume";
@@ -68,9 +68,9 @@ export function planNextWeek(input: CoachInput): CoachPlan {
   // ---- Context numbers ------------------------------------------------------
   const planned = plannedMuscleSets(program, lookup, cfg);
   const slots = allocSlots(program, lookup);
-  const adh = adherence(allDone, program, basisWeek);
+  const adh = adherence(allDone, program, basisWeek, today);
   const doneN = sessionsInWeek(allDone, basisWeek).length;
-  const plannedN = plannedSessionCount(program);
+  const plannedN = plannedSoFar(program, basisWeek, today);
   const peak = recentPeakSets(allDone, targetWeekStart, 8, deloadWeekNo, lookup, cfg);
   const rate = bodyWeightRate(input.bodyWeights, today, cfg.bodyWeight.window, cfg.bodyWeight.minPoints);
   const cutTooFast = profile.phase === "cut" && rate !== null && rate < -cfg.bodyWeight.cutMaxLossPerWeek;
@@ -163,7 +163,7 @@ export function planNextWeek(input: CoachInput): CoachPlan {
   }
 
   // ---- Notes ----------------------------------------------------------------------
-  if (program.sessions.length === 0 || plannedN === 0) notes.push({ kind: "info", reason: P("why.note.emptyProgram") });
+  if (program.sessions.length === 0 || plannedSessionCount(program) === 0) notes.push({ kind: "info", reason: P("why.note.emptyProgram") });
   if (mode === "first") notes.push({ kind: "info", reason: P("why.note.first") });
   if (mode === "ramp") notes.push({ kind: "warn", reason: P("why.note.ramp", { days: gap ?? 0 }) });
   if (mode === "welcome-back") notes.push({ kind: "info", reason: P("why.note.welcome", { days: gap ?? 0 }) });

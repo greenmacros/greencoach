@@ -1,7 +1,8 @@
 import { useApp } from "../app-context";
 import CoachSlotCard from "../components/CoachSlotCard";
 import { explain } from "../coach/explain";
-import type { CoachApi } from "../coach/useCoach";
+import { useCoach } from "../coach/useCoach";
+import type { WorkoutLog } from "../workout/types";
 import { formatDayKey } from "../lib/format";
 import type { LibraryApi } from "../library/useLibrary";
 import type { ProgramApi } from "../program/useProgram";
@@ -10,7 +11,8 @@ import type { Trend } from "../coach/types";
 const COLOR: Record<Trend, string> = { up: "var(--accent)", down: "var(--danger)", same: "var(--muted)" };
 const NOTE_ICON = { info: "ℹ️", warn: "⚠️", good: "✅" } as const;
 
-export default function Coach({ coach, prog, lib }: { coach: CoachApi; prog: ProgramApi; lib: LibraryApi }) {
+export default function Coach({ prog, lib, finished }: { prog: ProgramApi; lib: LibraryApi; finished: WorkoutLog[] }) {
+  const coach = useCoach(prog, lib, finished);
   const { t, settings, profile } = useApp();
   const lang = settings.lang;
   const plan = coach.plan;

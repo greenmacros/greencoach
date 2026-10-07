@@ -94,3 +94,12 @@ export function instantiateTemplate(spec: TemplateSpec, lang: Lang, todayKey: st
     mesoStartDayKey: weekStart(todayKey),
   };
 }
+
+/** The template that fits a profile best: equipment first, then training days, then experience. */
+export function recommendTemplate(p: { equipment: "home" | "bands" | "dumbbells" | "gym"; daysPerWeek: number; experience: "beginner" | "intermediate" | "advanced" }): string {
+  if (p.equipment !== "gym") return "home-4";
+  if (p.daysPerWeek <= 3) return "full-body-3";
+  if (p.daysPerWeek === 4 || p.experience === "beginner") return "upper-lower-4";
+  if (p.daysPerWeek === 5) return "bro-5";
+  return "ppl-6";
+}

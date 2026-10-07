@@ -1,0 +1,84 @@
+import { expect, test, type Page } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+
+const MONDAY = new Date(2026, 9, 5, 10, 0, 0);
+
+const L = {
+  en: { next: "Next", lang: "English", start: "Start with this", startWorkout: "Start workout", done: (n: number) => `Mark set done: Set ${n}`, reps: (n: number) => `Set ${n} Reps`, finish: "Finish", save: "Save workout", coach: "Coach", why: /Why:/, fbSave: "Save" },
+  ja: { next: "次へ", lang: "日本語", start: "これで始める", startWorkout: "ワークアウト開始", done: (n: number) => `セット完了: セット${n}`, reps: (n: number) => `セット${n} 回数`, finish: "終了", save: "ワークアウトを保存", coach: "コーチ", why: /理由:/, fbSave: "保存" },
+} as const;
+
+async function journey(page: Page, lang: "en" | "ja", theme: "light" | "dark") {
+  const s = L[lang];
+  await page.emulateMedia({ colorScheme: theme });
+  await page.clock.install({ time: MONDAY });
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", theme); // no flash of the wrong theme
+
+  // 1. onboarding
+  await page.getByRole("button", { name: s.lang, exact: true }).click();
+  await page.getByRole("button", { name: s.next }).click();
+  await page.getByRole("textbox").nth(1).fill("80"); // body weight
+  await page.getByRole("button", { name: s.next }).click();
+  await page.getByRole("button", { name: s.next }).click();
+  await page.getByRole("button", { name: s.start }).first().click();
+
+  // 2. today's workout with the docked rest timer
+  await page.getByRole("button", { name: s.startWorkout }).click();
+  const first = page.getByRole("article").first();
+  await first.getByRole("textbox").first().fill("60");
+  await first.getByRole("textbox", { name: s.reps(1) }).fill("8");
+  await first.getByRole("button", { name: s.done(1) }).click();
+  await expect(page.getByRole("timer")).toBeVisible();
+  await page.getByRole("button", { name: s.finish, exact: true }).click();
+  await page.getByRole("button", { name: s.save }).click();
+
+  // 3. next week's suggestions with reasons
+  await page.getByRole("button", { name: s.coach, exact: true }).click();
+  await expect(page.getByText(s.why).first()).toBeVisible();
+  await page.screenshot({ path: `test-results/journey-${lang}-${theme}.png` });
+}
+
+test("new user journey in English, light mode", async ({ page }) => { await journey(page, "en", "light"); });
+test("new user journey in Japanese, dark mode", async ({ page }) => { await journey(page, "ja", "dark"); });
+
+test("works offline after the first load", async ({ page, context }) => {
+  await page.goto("/");
+  await page.evaluate(async () => { await navigator.serviceWorker.ready; });
+  await page.reload(); // now controlled by the service worker
+  await page.evaluate(async () => { await navigator.serviceWorker.ready; });
+  await context.setOffline(true);
+  await page.reload();
+  await expect(page.getByRole("button", { name: /^(Skip setup|設定をスキップ)$/ })).toBeVisible();
+  await page.getByRole("button", { name: /^(Skip setup|設定をスキップ)$/ }).click();
+  await page.getByRole("button", { name: "Program", exact: true }).click(); // lazy chunk must come from the cache
+  await expect(page.getByText("Start from a template")).toBeVisible();
+  await page.getByRole("button", { name: "Library", exact: true }).click();
+  await expect(page.getByText(/\d+ exercises/)).toBeVisible();
+  await context.setOffline(false);
+});
+
+for (const theme of ["light", "dark"] as const) {
+  test(`no serious accessibility violations on main screens (${theme})`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: theme });
+    await page.clock.install({ time: MONDAY });
+    await page.goto("/");
+    const scan = async (where: string) => {
+      const r = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+      const bad = r.violations.filter(v => v.impact === "serious" || v.impact === "critical");
+      expect(bad.map(v => `${where}: ${v.id} (${v.nodes.length}) ${v.nodes.slice(0, 2).map(n => n.target.join(" ")).join(" | ")}`)).toEqual([]);
+    };
+    await scan("onboarding");
+    await page.getByRole("button", { name: "Next" }).click(); await page.getByRole("button", { name: "Next" }).click(); await page.getByRole("button", { name: "Next" }).click();
+    await page.getByRole("button", { name: "Start with this" }).first().click();
+    await scan("today");
+    await page.getByRole("button", { name: "Start workout" }).click();
+    await scan("workout");
+    await page.getByRole("button", { name: "← Back" }).click();
+    for (const tab of ["Program", "Progress", "Coach", "Settings"]) {
+      await page.getByRole("button", { name: tab, exact: true }).click();
+      await page.waitForTimeout(150);
+      await scan(tab);
+    }
+  });
+}

@@ -1,3 +1,4 @@
+import { skipOnboarding } from "./helpers";
 import { expect, test } from "@playwright/test";
 
 // Monday 2026-10-05, mid-morning local time.
@@ -6,6 +7,7 @@ const MONDAY = new Date(2026, 9, 5, 10, 0, 0);
 test("pick a template, see today's session, skip with undo, move it", async ({ page }) => {
   await page.clock.install({ time: MONDAY });
   await page.goto("/");
+  await skipOnboarding(page);
 
   await expect(page.getByText("No program yet")).toBeVisible();
   await page.getByRole("button", { name: "Choose a program" }).click();
@@ -34,6 +36,7 @@ test("pick a template, see today's session, skip with undo, move it", async ({ p
 test("the training day flips at 04:00, not midnight", async ({ page }) => {
   await page.clock.install({ time: new Date(2026, 9, 6, 2, 30, 0) }); // Tuesday 02:30 still counts as Monday
   await page.goto("/");
+  await skipOnboarding(page);
   await page.getByRole("button", { name: "Program", exact: true }).click();
   await page.getByRole("article").filter({ hasText: "Full body 3×" }).getByRole("button", { name: "Use this template" }).click();
   await page.getByRole("button", { name: "Today" }).click();
@@ -46,6 +49,7 @@ test("the training day flips at 04:00, not midnight", async ({ page }) => {
 test("edit a program: add an exercise, change sets, reorder", async ({ page }) => {
   await page.clock.install({ time: MONDAY });
   await page.goto("/");
+  await skipOnboarding(page);
   await page.getByRole("button", { name: "Program", exact: true }).click();
   await page.getByRole("article").filter({ hasText: "Blank" }).getByRole("button", { name: "Use this template" }).click();
   await page.getByRole("button", { name: "Add session" }).click();

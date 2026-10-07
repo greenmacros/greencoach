@@ -376,6 +376,13 @@ describe("weekly volume per muscle", () => {
     expect(p.notes.some(n => n.reason.key === "why.note.adherence")).toBe(true);
   });
 
+  it("a week still in progress is not counted as missed sessions", () => {
+    // Planning on Monday of week 2 (basis = week 2 itself): only Monday's session was due so far, and it was done.
+    const p = run(all, { today: week(2), targetWeekStart: week(3), workouts: [workout(week(1), [bench(x3(80, 8, 2))]), workout(addDays(week(1), 3), [{ ex: SQUAT, sets: x3(100, 6, 2) }]), workout(week(2), [bench(x3(80, 8, 2))])] });
+    expect(p.notes.some(n => n.reason.key === "why.note.adherence")).toBe(false);
+    expect(muscleFor(p, "chest").reason.key).not.toBe("why.vol.hold.adherence");
+  });
+
   it("default progression below MEV adds a set toward MEV", () => {
     const m = muscleFor(run(all, { workouts: history([bench(x3(80, 8, 2))]) }), "chest");
     expect(m.reason.key).toBe("why.vol.add.mev");

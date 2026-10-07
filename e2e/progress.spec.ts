@@ -1,3 +1,4 @@
+import { skipOnboarding } from "./helpers";
 import { expect, test } from "@playwright/test";
 
 const TODAY = new Date(2026, 9, 7, 10, 0, 0); // Wed 2026-10-07
@@ -29,6 +30,7 @@ function backup() {
 test("import a backup, then progress charts, table view, body log and goals", async ({ page }) => {
   await page.clock.install({ time: TODAY });
   await page.goto("/");
+  await skipOnboarding(page);
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByTestId("import-input").setInputFiles({ name: "backup.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(backup())) });
   await page.getByRole("button", { name: "Replace everything" }).click();

@@ -25,6 +25,7 @@ export default defineConfig({
         ],
       },
       manifest: {
+        id: "./",
         name: "GreenCoach",
         short_name: "GreenCoach",
         description: "Free training tracker with a smart coach. No accounts, no tracking, works offline.",
