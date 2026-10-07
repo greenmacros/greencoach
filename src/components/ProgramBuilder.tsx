@@ -7,7 +7,7 @@ import { estimateMinutes, totalSets, weekDays, weekStart } from "../program/sche
 import { newSlot } from "../program/templates";
 import { MESO_MAX, MESO_MIN, type ExerciseSlot, type Program, type SessionTemplate } from "../program/types";
 import type { ProgramApi } from "../program/useProgram";
-import Library from "../pages/Library";
+import PickerSheet from "./PickerSheet";
 import SlotEditor from "./SlotEditor";
 import Stepper from "./Stepper";
 
@@ -151,17 +151,7 @@ export default function ProgramBuilder({ prog, lib, program, onNew }: Props) {
         <button className="btn" onClick={() => void addSession()}>＋ {t("prog.addSession")}</button>
       </div>
 
-      {picker && (
-        <div className="sheet" onClick={() => setPicker(null)}>
-          <div className="sheet-body" role="dialog" aria-modal="true" aria-label={t("prog.pickFor")} onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-xl font-bold">{t("prog.pickFor")}</h2>
-              <button className="btn" aria-label={t("lib.close")} onClick={() => setPicker(null)}>✕</button>
-            </div>
-            <Library lib={lib} listHeight="50dvh" onPick={ex => void pick(ex.id, ex.mechanic !== "isolation")} />
-          </div>
-        </div>
-      )}
+      {picker && <PickerSheet lib={lib} title={t("prog.pickFor")} onClose={() => setPicker(null)} onPick={ex => void pick(ex.id, ex.mechanic !== "isolation")} />}
 
       {undo && (
         <div role="status" className="card flex items-center gap-3 fixed left-4 right-4 mx-auto max-w-xl" style={{ bottom: "calc(5rem + env(safe-area-inset-bottom))", zIndex: 40 }}>

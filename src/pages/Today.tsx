@@ -5,18 +5,23 @@ import { estimateMinutes, mesoPosition, movePatch, skipPatch, totalSets, unskipP
 import type { ProgramApi } from "../program/useProgram";
 import type { LibraryApi } from "../library/useLibrary";
 import type { DayOverride } from "../program/types";
+import { repo } from "../db";
+import type { useHistory } from "../workout/useHistory";
 
 interface Props {
   prog: ProgramApi;
   lib: LibraryApi;
+  hist: ReturnType<typeof useHistory>;
+  /** Selected day (null = today); lives in App so it survives opening a workout. */
+  selected: string | null;
+  setSelected: (k: string | null) => void;
   onStart: (sessionId: string | null, dayKey: string) => void;
   goProgram: () => void;
 }
 
-export default function Today({ prog, lib, onStart, goProgram }: Props) {
+export default function Today({ prog, lib, hist, selected, setSelected, onStart, goProgram }: Props) {
   const { t, settings } = useApp();
   const lang = settings.lang;
-  const [selected, setSelected] = useState<string | null>(null);
   const [moving, setMoving] = useState(false);
   const [undo, setUndo] = useState<{ before: DayOverride[]; touched: string[]; text: string } | null>(null);
 
@@ -42,6 +47,7 @@ export default function Today({ prog, lib, onStart, goProgram }: Props) {
   const session = program.sessions.find(s => s.id === day.sessionId);
   const meso = mesoPosition(program, dayKey);
   const days = weekDays(dayKey);
+  const draft = hist.drafts[0];
 
   const run = async (patches: ReturnType<typeof skipPatch>, text: string) => {
     const touched = patches.map(p => p.dayKey);
@@ -83,6 +89,14 @@ export default function Today({ prog, lib, onStart, goProgram }: Props) {
           );
         })}
       </div>
+
+      {draft && (
+        <div className="card flex flex-wrap items-center gap-2" style={{ borderColor: "var(--accent)" }} role="status">
+          <span className="flex-1 min-w-40"><strong>{t("wk.resume")}</strong><br /><span className="muted text-sm">{draft.sessionName || t("wk.quick")} · {formatDayLong(draft.dayKey, lang)}</span></span>
+          <button className="btn btn-primary" onClick={() => onStart(draft.sessionId, draft.dayKey)}>{t("wk.resumeBtn")}</button>
+          <button className="btn btn-danger" onClick={async () => { await repo.remove("workouts", draft.id); await hist.reload(); }}>{t("wk.discard")}</button>
+        </div>
+      )}
 
       {selected && <button className="btn" onClick={() => { setSelected(null); setMoving(false); }}>{t("today.backToToday")}</button>}
 

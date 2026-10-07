@@ -61,6 +61,12 @@ export function score(ex: Exercise, q: string, haystack: { en: string; ja: strin
   if (!q) return 1;
   const words = q.split(" ");
   let total = 0;
+  // Whole-phrase bonuses so "barbell squat" ranks "Barbell Squat" above "Barbell Full Squat".
+  for (const field of [haystack.en, haystack.ja]) {
+    if (field === q) { total += 30; break; }
+    if (field.startsWith(q + " ") || field.startsWith(q)) { total += 10; break; }
+    if (field.includes(q)) { total += 5; break; }
+  }
   for (const w of words) {
     let best = 0;
     for (const field of [haystack.en, haystack.ja]) {
@@ -112,7 +118,8 @@ export function searchExercises(all: Exercise[], f: Filters, o: SearchOptions): 
     if (b.s !== a.s) return b.s - a.s;
     const ra = o.recent?.get(a.ex.id), rb = o.recent?.get(b.ex.id);
     if (ra || rb) return (rb ?? "").localeCompare(ra ?? "");
-    return collator.compare(a.ex.name[o.lang], b.ex.name[o.lang]);
+    // Equal relevance: the shorter (more basic) name first, then alphabetical.
+    return a.ex.name[o.lang].length - b.ex.name[o.lang].length || collator.compare(a.ex.name[o.lang], b.ex.name[o.lang]);
   });
   return rows.map(r => r.ex);
 }

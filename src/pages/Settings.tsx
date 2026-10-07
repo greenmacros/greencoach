@@ -5,6 +5,7 @@ import type { Lang, ThemePref, WeightUnit } from "../db/types";
 import Seg from "../components/Seg";
 import { parseBackup } from "../db/backup";
 import { exportData } from "../lib/exportFile";
+import { requestNotifications } from "../workout/alerts";
 import { formatBytes, formatDateTime } from "../lib/format";
 import type { BackupFile } from "../db/types";
 
@@ -64,6 +65,20 @@ export default function Settings() {
           </select>
           <span className="muted text-sm">{t("settings.dayStartHint")}</span>
         </label>
+      </div>
+
+      <div className="card grid gap-2">
+        <h2 className="font-bold">{t("settings.workout")}</h2>
+        <label className="flex items-center gap-2"><input type="checkbox" checked={settings.keepAwake} onChange={e => void update({ keepAwake: e.target.checked })} />{t("wk.keepAwake")}</label>
+        <label className="flex items-center gap-2"><input type="checkbox" checked={settings.restSound} onChange={e => void update({ restSound: e.target.checked })} />{t("settings.sound")}</label>
+        <label className="flex items-center gap-2"><input type="checkbox" checked={settings.restVibrate} onChange={e => void update({ restVibrate: e.target.checked })} />{t("settings.vibrate")}</label>
+        <label className="flex items-center gap-2"><input type="checkbox" checked={settings.restNotify} onChange={async e => {
+          if (!e.target.checked) return void update({ restNotify: false });
+          const ok = await requestNotifications();
+          await update({ restNotify: ok });
+          if (!ok) setMsg(t("settings.notifyDenied"));
+        }} />{t("settings.notify")}</label>
+        <p className="muted text-sm">{t("settings.notifyHint")}</p>
       </div>
 
       <div className="card grid gap-3" aria-labelledby="data-h">

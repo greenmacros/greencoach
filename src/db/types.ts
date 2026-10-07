@@ -24,6 +24,9 @@ export interface Settings extends BaseRecord {
   backupReminderDays: number;
   lastBackupAt: string | null;
   keepAwake: boolean;
+  restSound: boolean;
+  restVibrate: boolean;
+  restNotify: boolean;
   onboarded: boolean;
 }
 

@@ -30,3 +30,24 @@ export const formatDayLong = (key: string, lang: Lang) => formatDayKey(key, lang
 export function formatRest(sec: number): string {
   return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 }
+
+/** Weight for display: convert from kg, round to a sensible step, trim trailing zeros. */
+export function fmtWeight(kg: number | null | undefined, unit: WeightUnit): string {
+  if (kg == null) return "";
+  const v = toDisplayWeight(kg, unit);
+  return String(Math.round(v * 100) / 100);
+}
+
+/** Default +/- step for a weight field, by equipment. */
+export function weightStep(equipment: readonly string[], unit: WeightUnit): number {
+  const small = equipment.includes("dumbbell") || equipment.includes("kettlebell") || equipment.includes("bands");
+  if (unit === "kg") return small ? 1 : 2.5;
+  return small ? 2.5 : 5;
+}
+
+export function formatClock(sec: number): string {
+  const s = Math.max(0, Math.round(sec));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return h ? `${h}:${String(m).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}` : `${m}:${String(s % 60).padStart(2, "0")}`;
+}

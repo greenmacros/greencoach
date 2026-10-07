@@ -18,6 +18,9 @@ export function defaultSettings(lang: Lang): Settings {
     backupReminderDays: 14,
     lastBackupAt: null,
     keepAwake: false,
+    restSound: true,
+    restVibrate: true,
+    restNotify: false,
     onboarded: false,
   };
 }

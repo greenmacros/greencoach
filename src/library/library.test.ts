@@ -78,6 +78,16 @@ describe("search", () => {
     expect(searchExercises(all, { ...emptyFilters, query: "deadlfit" }, opts).some(e => e.name.en === "Barbell Deadlift")).toBe(true);
   });
 
+  it("ranks exact and phrase matches first", async () => {
+    const all = await loadBundled();
+    const top = (q: string) => searchExercises(all, { ...emptyFilters, query: q }, opts)[0].name.en;
+    expect(top("barbell squat")).toBe("Barbell Squat");
+    expect(top("leg press")).toBe("Leg Press");
+    expect(top("pullups")).toBe("Pullups");
+    expect(top("goblet squat")).toBe("Goblet Squat");
+    expect(top("hammer curls")).toBe("Hammer Curls");
+  });
+
   it("returns nothing for gibberish", async () => {
     expect(searchExercises(await loadBundled(), { ...emptyFilters, query: "qzxwv" }, opts)).toEqual([]);
   });
