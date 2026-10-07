@@ -13,7 +13,7 @@ export interface ProgramApi {
   active: Program | undefined;
   overrides: Map<string, DayOverride>;
   /** Day keys that have a finished workout (filled in from workout history). */
-  completed: Set<string>;
+  completed: ReadonlySet<string>;
   /** Training day for "now", ticking so it flips at the day-start hour. */
   todayKey: string;
   resolve: (dayKey: string) => ResolvedDay | null;
@@ -28,12 +28,12 @@ export interface ProgramApi {
 }
 
 /** Programs, one-off day overrides and the current training day. */
-export function useProgram(): ProgramApi {
+/** `completed` = day keys with a finished workout (derived from history by the caller, so it is always fresh). */
+export function useProgram(completed: ReadonlySet<string>): ProgramApi {
   const { settings, dataVersion } = useApp();
   const [ready, setReady] = useState(false);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [overrides, setOverrides] = useState<Map<string, DayOverride>>(new Map());
-  const [completed, setCompleted] = useState<Set<string>>(new Set());
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -47,8 +47,6 @@ export function useProgram(): ProgramApi {
     const rows = await repo.list("programs");
     setPrograms((rows.filter(r => r.id.startsWith(PROGRAM_PREFIX)) as unknown as Program[]).sort((a, b) => a.createdAt.localeCompare(b.createdAt)));
     setOverrides(new Map((rows.filter(r => r.id.startsWith(OVERRIDE_PREFIX)) as unknown as DayOverride[]).map(o => [o.dayKey, o])));
-    const w = await repo.list("workouts");
-    setCompleted(new Set(w.filter(x => x.finishedAt).map(x => x.dayKey as string)));
     setReady(true);
   }, []);
 

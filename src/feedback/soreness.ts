@@ -4,8 +4,8 @@ import { daysBetween } from "../program/schedule";
 import { isWorkingSet } from "../workout/model";
 import type { WorkoutLog } from "../workout/types";
 
-/** 0 = healed before today's session, 1 = healed just in time, 2 = still sore. Stored in `feedback`. */
-export type SorenessLevel = 0 | 1 | 2;
+/** 0 = never got sore, 1 = healed a while ago, 2 = healed just in time, 3 = still sore. Stored in `feedback`. */
+export type SorenessLevel = 0 | 1 | 2 | 3;
 
 export interface SorenessRecord extends BaseRecord {
   kind: "soreness";

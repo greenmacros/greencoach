@@ -2,12 +2,11 @@ import { useState } from "react";
 import { useApp } from "../app-context";
 import { formatRest, weightStep } from "../lib/format";
 import type { Exercise } from "../library/types";
-import { copyLastSet } from "../workout/model";
+import { addSetAfter, copyLastSet } from "../workout/model";
 import type { ExerciseLog, SetLog } from "../workout/types";
 import type { WeightUnit } from "../db/types";
 import ExerciseMedia from "./ExerciseMedia";
 import SetRow from "./SetRow";
-import ExerciseFeedback from "./ExerciseFeedback";
 import Stepper from "./Stepper";
 
 interface Props {
@@ -24,24 +23,41 @@ interface Props {
   onMove: (dir: -1 | 1) => void;
   onRemove: () => void;
   onSwap: () => void;
+  onFeedback: () => void;
 }
 
-export default function ExerciseCard({ log, ex, unit, prev, prSets, index, count, onChange, onSetToggle, onAddSet, onMove, onRemove, onSwap }: Props) {
+type Kind = "weight" | "addWeight" | "assist";
+
+/** Which label the weight column carries: loaded bodyweight moves add weight, assisted machines subtract it. */
+function weightKind(ex: Exercise | undefined): Kind {
+  if (!ex) return "weight";
+  if (/assisted/i.test(ex.name.en)) return "assist";
+  const bw = ex.equipment.every(e => ["bodyweight", "pullup-bar", "dip-bars", "bench", "trx"].includes(e));
+  return bw ? "addWeight" : "weight";
+}
+
+export default function ExerciseCard({ log, ex, unit, prev, prSets, index, count, onChange, onSetToggle, onAddSet, onMove, onRemove, onSwap, onFeedback }: Props) {
   const { t, settings } = useApp();
   const [more, setMore] = useState(false);
   const name = ex ? ex.name[settings.lang] : t("prog.missing");
   const step = weightStep(ex?.equipment ?? [], unit);
   const doneCount = log.sets.filter(s => s.done).length;
+  const kind = weightKind(ex);
+  const allDone = log.sets.length > 0 && log.sets.every(s => s.done || s.skipped) && doneCount > 0;
+  const hasFeedback = log.difficulty !== undefined || log.pump !== undefined || log.jointPain !== undefined || log.volume !== undefined;
 
   return (
     <article className="card grid gap-2" aria-label={name}>
       <div className="flex items-start gap-3">
         {ex && <ExerciseMedia ex={ex} size={56} />}
         <div className="flex-1 min-w-0">
-          <h2 className="font-bold leading-tight">{log.supersetGroup !== null && "⇄ "}{name}</h2>
-          <p className="muted text-sm">{t("wk.workingSets", { n: doneCount })} / {log.sets.length} · {t("wk.rest", { t: formatRest(log.restSec) })}</p>
+          {ex && <span className="chip" style={{ cursor: "default", minHeight: 24, fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase", padding: "0 8px" }}>{t(`muscle.${ex.primary[0]}`)}</span>}
+          <h2 className="font-bold leading-tight mt-1">{log.supersetGroup !== null && "⇄ "}{name}</h2>
+          <p className="muted text-xs uppercase">
+            {kind === "addWeight" ? t("wk.bwLoadable") : kind === "assist" ? t("wk.assisted") : ex?.equipment.map(e => t(`equip.${e}`)).join(" · ")} · {t("wk.rest", { t: formatRest(log.restSec) })}
+          </p>
         </div>
-        <button className="btn" style={{ minWidth: 44, padding: 0 }} aria-expanded={more} aria-label={`${t("prog.edit")}: ${name}`} onClick={() => setMore(m => !m)}>⋯</button>
+        <button className="btn" style={{ minWidth: 44, padding: 0 }} aria-expanded={more} aria-label={`${t("prog.edit")}: ${name}`} onClick={() => setMore(m => !m)}>⋮</button>
       </div>
 
       {more && (
@@ -54,6 +70,7 @@ export default function ExerciseCard({ log, ex, unit, prev, prSets, index, count
             <button className="chip" disabled={index === 0} onClick={() => onMove(-1)}>↑ {t("wk.up")}</button>
             <button className="chip" disabled={index === count - 1} onClick={() => onMove(1)}>↓ {t("wk.down")}</button>
             <button className="chip" onClick={onSwap}>⇄ {t("wk.swapExercise")}</button>
+            <button className="chip" onClick={onFeedback}>{t("fb.open")}</button>
             <button className="chip" style={{ color: "var(--danger)" }} onClick={onRemove}>{t("wk.removeExercise")}</button>
           </div>
         </div>
@@ -61,17 +78,23 @@ export default function ExerciseCard({ log, ex, unit, prev, prSets, index, count
 
       {log.notes && !more && <p className="muted text-sm">📝 {log.notes}</p>}
 
-      <ol className="grid gap-1">
+      <div className="grid text-xs font-bold uppercase muted" aria-hidden="true" style={{ gridTemplateColumns: "40px minmax(0,1.3fr) minmax(0,1fr) 54px 48px", gap: 4, textAlign: "center" }}>
+        <span /><span>{t(`wk.col.${kind}`)} ({unit})</span><span>{t("wk.col.reps")}</span><span>{t("wk.rir")}</span><span>{t("wk.col.log")}</span>
+      </div>
+      <ol className="grid">
         {log.sets.map((s, i) => (
           <SetRow key={s.id} exLog={log} set={s} index={i} unit={unit} step={step} prev={prev[Math.min(i, prev.length - 1)]} isPR={prSets.has(s.id)}
             onChange={patch => onChange(e => ({ ...e, sets: e.sets.map(x => (x.id === s.id ? { ...x, ...patch } : x)) }))}
             onToggleDone={() => onSetToggle(s.id)}
             onCopy={() => onChange(e => copyLastSet(e, s.id, prev))}
+            onAddBelow={() => onChange(e => addSetAfter(e, s.id))}
             onRemove={() => onChange(e => ({ ...e, sets: e.sets.filter(x => x.id !== s.id) }))} />
         ))}
       </ol>
-      <button className="btn" onClick={onAddSet}>＋ {t("wk.addSet")}</button>
-      {log.sets.length > 0 && log.sets.every(s => s.done) && <ExerciseFeedback log={log} name={name} onChange={patch => onChange(e => ({ ...e, ...patch }))} />}
+      <div className="flex gap-2">
+        <button className="btn flex-1" onClick={onAddSet}>＋ {t("wk.addSet")}</button>
+        {(allDone || hasFeedback) && <button className={hasFeedback ? "btn" : "btn btn-primary"} onClick={onFeedback}>{hasFeedback ? "✓ " : ""}{t("fb.open")}</button>}
+      </div>
     </article>
   );
 }

@@ -26,26 +26,29 @@ test("PR toast, soreness + exercise + session feedback, history and exercise his
   await page.getByRole("dialog").getByRole("listitem").first().click();
   await page.getByRole("dialog").getByRole("dialog").getByRole("button", { name: "Add", exact: true }).click();
 
-  // soreness from Monday's squats
-  const sore = page.getByRole("region", { name: "Soreness from last time" });
-  await expect(sore).toBeVisible();
-  await sore.getByRole("group", { name: /Quads/ }).getByRole("button", { name: "Just in time" }).click();
-  await expect(sore.getByText("Thanks, noted.")).toBeVisible();
-
-  await page.getByRole("button", { name: "Remove set: Set 3" }).click();
-  await page.getByRole("button", { name: "Remove set: Set 2" }).click();
+  // delete sets 3 and 2 through the per-set menu
+  for (const n of [3, 2]) {
+    await page.getByRole("button", { name: new RegExp(`^Set ${n}: Working`) }).click();
+    await page.getByRole("dialog", { name: new RegExp(`Set ${n}`) }).getByRole("button", { name: "Delete set" }).click();
+  }
   await page.getByRole("textbox", { name: /^Set 1 Weight/ }).fill("105");
   await page.getByRole("textbox", { name: "Set 1 Reps" }).fill("5");
   await page.getByRole("button", { name: "Mark set done: Set 1" }).click();
   await expect(page.getByText(/New PR! Barbell Squat/)).toBeVisible();
   await expect(page.getByRole("img", { name: "Personal record" })).toBeVisible();
 
-  // exercise feedback appears because every set is done
-  const fb = page.getByRole("group", { name: /How did Barbell Squat feel/ });
+  // last set done -> feedback sheet opens by itself, with the soreness question for Monday's squats
+  const fb = page.getByRole("dialog", { name: "Feedback" });
   await expect(fb).toBeVisible();
+  await fb.getByRole("group", { name: /How sore did you get in your quads/ }).getByRole("button", { name: "Healed just in time" }).click();
+  await page.screenshot({ path: "test-results/feedback-sheet.png" });
   await fb.getByRole("button", { name: "Hard" }).click();
-  await fb.getByRole("button", { name: "Good", exact: true }).first().click();
-  await expect(fb.getByRole("button", { name: "Hard" })).toHaveAttribute("aria-pressed", "true");
+  await fb.getByRole("button", { name: "Amazing pump" }).click();
+  await fb.getByRole("button", { name: "Pushed my limits" }).click();
+  await fb.getByRole("button", { name: "Low pain" }).click();
+  await fb.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(fb).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /✓ Feedback/ })).toBeVisible();
 
   // finish: records list + session feel
   await page.getByRole("button", { name: "Finish", exact: true }).click();
@@ -62,6 +65,7 @@ test("PR toast, soreness + exercise + session feedback, history and exercise his
   const detail = page.getByRole("dialog", { name: "Workout details" });
   await expect(detail.getByText("105 kg × 5")).toBeVisible();
   await expect(detail.getByText(/Difficulty: Hard/)).toBeVisible();
+  await expect(detail.getByText(/Joint pain: Low pain/)).toBeVisible();
   await expect(detail.getByText(/Session: Great/)).toBeVisible();
   await detail.getByRole("button", { name: "Barbell Squat" }).click();
   const exh = page.getByRole("dialog", { name: /Exercise history: Barbell Squat/ });

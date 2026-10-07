@@ -119,3 +119,10 @@ export function estimateMinutes(session: SessionTemplate): number {
 export function totalSets(session: SessionTemplate): number {
   return session.exercises.reduce((n, s) => n + s.sets, 0);
 }
+
+/** 1-based number of this training day within its week ("Day 3"), from the weekly template. */
+export function trainingDayNumber(program: Pick<Program, "week">, dayKey: string): number {
+  const idx = weekdayIndex(dayKey);
+  const n = program.week.slice(0, idx + 1).filter(Boolean).length;
+  return Math.max(1, n);
+}

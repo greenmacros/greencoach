@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { loadBundled } from "../library/data";
 import {
-  addDays, daysBetween, estimateMinutes, mesoPosition, movePatch, resolveDay, skipPatch, trainingDayKey, unskipPatch, weekDays, weekdayIndex, weekStart,
+  addDays, daysBetween, estimateMinutes, mesoPosition, movePatch, resolveDay, skipPatch, trainingDayKey, trainingDayNumber, unskipPatch, weekDays, weekdayIndex, weekStart,
 } from "./schedule";
 import { TEMPLATES, exerciseIdsInTemplates, instantiateTemplate } from "./templates";
 import type { DayOverride, Program } from "./types";
@@ -136,6 +136,16 @@ describe("mesocycle position", () => {
   it("is Sunday-safe: Sunday belongs to the same week as its Monday", () => {
     expect(mesoPosition(p, "2026-10-11").week).toBe(1);
     expect(mesoPosition(p, "2026-10-12").week).toBe(2);
+  });
+});
+
+describe("trainingDayNumber", () => {
+  it("numbers training days within the week from the template", () => {
+    const p = mk({ week: ["push", null, "pull", null, "push", null, null] });
+    expect(trainingDayNumber(p, "2026-10-05")).toBe(1); // Mon
+    expect(trainingDayNumber(p, "2026-10-07")).toBe(2); // Wed
+    expect(trainingDayNumber(p, "2026-10-09")).toBe(3); // Fri
+    expect(trainingDayNumber(p, "2026-10-06")).toBe(1); // rest day after day 1 -> never below 1
   });
 });
 

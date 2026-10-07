@@ -38,7 +38,7 @@ export function buildExerciseLog(slot: ExerciseSlot | null, exerciseId: string, 
 }
 
 export function createWorkout(opts: {
-  dayKey: string; programId: string | null; session: SessionTemplate | null; unit: WorkoutLog["unit"]; history: readonly WorkoutLog[]; mesoWeek?: number; now?: Date;
+  dayKey: string; programId: string | null; session: SessionTemplate | null; unit: WorkoutLog["unit"]; history: readonly WorkoutLog[]; mesoWeek?: number; mesoDay?: number; now?: Date;
 }): Omit<WorkoutLog, "id" | "createdAt" | "updatedAt" | "schemaVersion"> {
   const { session, history } = opts;
   return {
@@ -52,6 +52,7 @@ export function createWorkout(opts: {
     exercises: (session?.exercises ?? []).map(slot => buildExerciseLog(slot, slot.exerciseId, previousSets(history, slot.exerciseId))),
     notes: "",
     mesoWeek: opts.mesoWeek,
+    mesoDay: opts.mesoDay,
   };
 }
 
@@ -127,4 +128,13 @@ export const hasAnyDoneSet = (w: WorkoutLog) => w.exercises.some(e => e.sets.som
 export function nextSet(w: WorkoutLog): { exerciseId: string; setId: string } | null {
   for (const e of w.exercises) for (const s of e.sets) if (!s.done) return { exerciseId: e.id, setId: s.id };
   return null;
+}
+
+/** Insert a new set directly below `setId`, copying its weight and reps. */
+export function addSetAfter(e: ExerciseLog, setId: string): ExerciseLog {
+  const i = e.sets.findIndex(s => s.id === setId);
+  if (i < 0) return e;
+  const src = e.sets[i];
+  const next = { ...emptySet(), weightKg: src.weightKg, reps: src.reps };
+  return { ...e, sets: [...e.sets.slice(0, i + 1), next, ...e.sets.slice(i + 1)] };
 }

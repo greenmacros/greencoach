@@ -13,7 +13,7 @@ import type { ExerciseLog, WorkoutLog } from "../workout/types";
 import { useRestTimer } from "../workout/useRestTimer";
 import { useWorkout } from "../workout/useWorkout";
 import { newSlot } from "../program/templates";
-import SorenessCard from "../components/SorenessCard";
+import FeedbackSheet from "../components/FeedbackSheet";
 import { useSoreness } from "../feedback/useSoreness";
 import { livePRs, prSetKinds, topPR } from "../workout/pr";
 import { prText } from "../workout/prText";
@@ -37,6 +37,8 @@ export default function Workout({ initial, lib, history, onExit, onClose }: Prop
   const [finishing, setFinishing] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const soreness = useSoreness(workout, history, lib.byId);
+  const [fbFor, setFbFor] = useState<string | null>(null);
+  const [asked] = useState(() => new Set<string>());
   const prSets = useMemo(() => prSetKinds(history, workout), [history, workout]);
 
   useEffect(() => { if (!toast) return; const id = setTimeout(() => setToast(null), 4500); return () => clearTimeout(id); }, [toast]);
@@ -67,6 +69,11 @@ export default function Workout({ initial, lib, history, onExit, onClose }: Prop
     mutate(w => updateExercise(w, ex.id, e => ({
       ...e, sets: e.sets.map(s => (s.id === setId ? { ...s, done: !s.done, doneAt: s.done ? null : new Date().toISOString() } : s)),
     })));
+    // Finishing the last set of an exercise opens the feedback sheet once.
+    if (!wasDone && !asked.has(ex.id) && ex.sets.every(s => s.id === setId || s.done || s.skipped)) {
+      asked.add(ex.id);
+      setFbFor(ex.id);
+    }
     if (!wasDone) {
       const hits = livePRs(history, { ...workout, exercises: workout.exercises.map(e => e.id !== ex.id ? e : { ...e, sets: e.sets.map(s => s.id === setId ? { ...s, done: true } : s) }) }, ex.id, setId);
       const top = topPR(hits);
@@ -119,6 +126,7 @@ export default function Workout({ initial, lib, history, onExit, onClose }: Prop
       <header className="flex items-center gap-2">
         <button className="btn" onClick={() => { void flush(); onExit(); }}>← {t("wk.back")}</button>
         <div className="flex-1 min-w-0 text-center">
+          {workout.mesoWeek && workout.mesoDay && <p className="text-xs font-bold uppercase muted" style={{ letterSpacing: 0.5 }}>{t("wk.dayLabel", { w: workout.mesoWeek, d: workout.mesoDay })}</p>}
           <h1 className="font-bold truncate">{title}</h1>
           <p className="muted text-xs">{formatDayLong(workout.dayKey, settings.lang)} · {doneSets}/{totalSets}</p>
         </div>
@@ -128,8 +136,6 @@ export default function Workout({ initial, lib, history, onExit, onClose }: Prop
       <label className="flex items-center gap-2 text-sm muted">
         <input type="checkbox" checked={settings.keepAwake} onChange={e => void update({ keepAwake: e.target.checked })} />{t("wk.keepAwake")}
       </label>
-
-      <SorenessCard questions={soreness.questions} answers={soreness.answers} onAnswer={(m, l, id) => void soreness.answer(m, l, id)} />
 
       {workout.exercises.length === 0 && <p className="card muted">{t("wk.empty")}</p>}
 
@@ -141,7 +147,7 @@ export default function Workout({ initial, lib, history, onExit, onClose }: Prop
           onAddSet={() => mutate(w => updateExercise(w, log.id, e => addSet(e)))}
           onMove={d => mutate(w => moveExercise(w, log.id, d))}
           onRemove={() => mutate(w => ({ ...w, exercises: w.exercises.filter(e => e.id !== log.id) }))}
-          onSwap={() => setPicker({ swap: log.id })} />
+          onSwap={() => setPicker({ swap: log.id })} onFeedback={() => setFbFor(log.id)} />
       ))}
 
       <button className="btn" onClick={() => setPicker({ swap: null })}>＋ {t("wk.addExercise")}</button>
@@ -150,6 +156,22 @@ export default function Workout({ initial, lib, history, onExit, onClose }: Prop
         <PickerSheet lib={lib} title={picker.swap ? t("wk.swapExercise") : t("wk.addExercise")} onClose={() => setPicker(null)}
           onPick={ex => { picker.swap ? swapExercise(picker.swap, ex.id) : addExercise(ex.id); setPicker(null); }} />
       )}
+
+      {fbFor && (() => {
+        const log = workout.exercises.find(e => e.id === fbFor);
+        const ex = log && lib.byId(log.exerciseId);
+        if (!log || !ex) return null;
+        const muscle = ex.primary[0];
+        const q = soreness.questions.find(x => x.muscle === muscle && !soreness.answers.has(muscle));
+        return (
+          <FeedbackSheet log={log} name={ex.name[settings.lang]} muscle={muscle} soreness={q} onCancel={() => setFbFor(null)}
+            onSave={(patch, level) => {
+              mutate(w => updateExercise(w, log.id, e => ({ ...e, ...patch })));
+              if (q && level !== undefined) void soreness.answer(muscle, level, q.prevWorkoutId);
+              setFbFor(null);
+            }} />
+        );
+      })()}
 
       {finishing && (
         <FinishSheet workout={workout} history={history} onFeel={patch => mutate(w => ({ ...w, ...patch }))} lookup={lib.byId} onKeepGoing={() => setFinishing(false)} onSave={save} onDiscard={discard}
@@ -162,7 +184,7 @@ export default function Workout({ initial, lib, history, onExit, onClose }: Prop
         if (lastDone) mutate(w => updateExercise(w, lastDone.id, e => ({ ...e, restSec: sec })));
       }} />
       {toast && (
-        <div role="status" className="card fixed left-4 right-4 mx-auto max-w-xl font-semibold" style={{ bottom: "9.5rem", zIndex: 40, borderColor: "var(--accent)" }}>🏆 {toast}</div>
+        <div role="status" className="card fixed left-4 right-4 mx-auto max-w-xl font-semibold" style={{ bottom: "9.5rem", zIndex: 25, borderColor: "var(--accent)" }}>🏆 {toast}</div>
       )}
     </section>
   );

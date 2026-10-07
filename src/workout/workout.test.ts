@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { loadBundled } from "../library/data";
 import type { SessionTemplate } from "../program/types";
 import {
-  addSet, buildExerciseLog, copyLastSet, createWorkout, emptySet, estimate1RM, hasAnyDoneSet, isWorkingSet, moveExercise, nextSet, previousSets, pruneUnfinished, removeSet, summarize, updateSet,
+  addSetAfter, addSet, buildExerciseLog, copyLastSet, createWorkout, emptySet, estimate1RM, hasAnyDoneSet, isWorkingSet, moveExercise, nextSet, previousSets, pruneUnfinished, removeSet, summarize, updateSet,
 } from "./model";
 import * as timer from "./timer";
 import type { SetLog, WorkoutLog } from "./types";
@@ -82,6 +82,16 @@ describe("editing sets", () => {
     expect(moveExercise(w, w.exercises[1].id, -1).exercises.map(e => e.exerciseId)).toEqual(["b", "a", "c"]);
     expect(moveExercise(w, w.exercises[0].id, -1)).toBe(w);
     expect(moveExercise(w, w.exercises[2].id, 1)).toBe(w);
+  });
+});
+
+describe("addSetAfter", () => {
+  it("inserts below the chosen set, copying weight and reps", () => {
+    const e = exLog("a", [set(50, 10), set(60, 8)]);
+    const next = addSetAfter(e, e.sets[0].id);
+    expect(next.sets.map(s => s.weightKg)).toEqual([50, 50, 60]);
+    expect(next.sets[1]).toMatchObject({ reps: 10, done: false });
+    expect(addSetAfter(e, "missing")).toBe(e);
   });
 });
 

@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useApp } from "./app-context";
 import TabBar, { type Tab } from "./components/TabBar";
 import BackupNotice from "./components/BackupNotice";
 import { repo } from "./db";
 import { SCHEMA_VERSION } from "./db/types";
 import { useLibrary } from "./library/useLibrary";
-import { mesoPosition } from "./program/schedule";
+import { mesoPosition, trainingDayNumber } from "./program/schedule";
 import { useProgram } from "./program/useProgram";
 import { createWorkout } from "./workout/model";
 import type { WorkoutLog } from "./workout/types";
@@ -22,8 +22,9 @@ export default function App() {
   const { t, settings } = useApp();
   const [tab, setTab] = useState<Tab>("today");
   const lib = useLibrary();
-  const prog = useProgram();
   const hist = useHistory();
+  const completed = useMemo(() => new Set(hist.finished.map(w => w.dayKey)), [hist.finished]);
+  const prog = useProgram(completed);
   const [active, setActive] = useState<WorkoutLog | null>(null);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
@@ -36,6 +37,7 @@ export default function App() {
     const base = createWorkout({
       dayKey, programId: program?.id ?? null, session, unit: settings.weightUnit, history: hist.finished,
       mesoWeek: program ? mesoPosition(program, dayKey).week : undefined,
+      mesoDay: program && session ? trainingDayNumber(program, dayKey) : undefined,
     });
     const saved = (await repo.put("workouts", { ...base, id: newId(), schemaVersion: SCHEMA_VERSION } as never)) as unknown as WorkoutLog;
     setActive(saved);

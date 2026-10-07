@@ -10,9 +10,9 @@ export default function ChipRow<T extends number>({ label, value, options, onCha
   return (
     <div className="grid gap-1" role="group" aria-label={label}>
       <span className="text-sm muted">{label}</span>
-      <div className="hscroll">
+      <div className="flex flex-wrap gap-2">
         {options.map(o => (
-          <button key={o.value} type="button" className="chip" style={{ minHeight: 44 }} aria-pressed={value === o.value} onClick={() => onChange(o.value)}>{o.label}</button>
+          <button key={o.value} type="button" className="chip" style={{ minHeight: 44, flex: "1 1 40%", whiteSpace: "normal", textAlign: "center", lineHeight: 1.2, padding: "6px 10px" }} aria-pressed={value === o.value} onClick={() => onChange(o.value)}>{o.label}</button>
         ))}
       </div>
     </div>

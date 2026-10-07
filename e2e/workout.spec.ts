@@ -21,6 +21,10 @@ test("log a set, rest timer on the same page, draft survives reload, finish and 
   // Done is disabled until reps are entered
   const done1 = page.getByRole("button", { name: "Mark set done: Set 1" }).first();
   await expect(done1).toHaveAttribute("aria-disabled", "true");
+  // stepper strip under the focused field: barbell steps by 2.5 kg
+  await page.getByRole("textbox", { name: /^Set 1 Weight/ }).first().fill("100");
+  await page.getByRole("button", { name: "+ Set 1 weight" }).click();
+  await expect(page.getByRole("textbox", { name: /^Set 1 Weight/ }).first()).toHaveValue("102.5");
   await page.getByRole("textbox", { name: /^Set 1 Weight/ }).first().fill("100");
   await page.getByRole("textbox", { name: "Set 1 Reps" }).first().fill("8");
   await done1.click();
