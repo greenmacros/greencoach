@@ -113,6 +113,15 @@ export default function Settings({ lib, prog, workouts }: { lib: LibraryApi; pro
         <p className="muted text-sm">{t("settings.notifyHint")}</p>
       </div>
 
+      <div className="card grid gap-2">
+        <h2 className="font-bold">{t("settings.coach")}</h2>
+        <div className="seg" role="group" aria-label={t("settings.coach")}>
+          <button aria-pressed={settings.coachMode !== "ask"} onClick={() => void update({ coachMode: "auto" })}>{t("settings.coachAuto")}</button>
+          <button aria-pressed={settings.coachMode === "ask"} onClick={() => void update({ coachMode: "ask" })}>{t("settings.coachAsk")}</button>
+        </div>
+        <p className="muted text-sm">{t("settings.coachHint")}</p>
+      </div>
+
       <div className="card grid gap-3" aria-labelledby="data-h">
         <h2 id="data-h" className="font-bold">{t("data.title")}</h2>
         <p className="font-semibold">{t("data.storage")}</p>

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useApp } from "./app-context";
 import TabBar, { type Tab } from "./components/TabBar";
 import BackupNotice from "./components/BackupNotice";
@@ -6,7 +6,9 @@ import { repo } from "./db";
 import { SCHEMA_VERSION } from "./db/types";
 import { newId } from "./lib/id";
 import { useLibrary } from "./library/useLibrary";
-import { mesoPosition, trainingDayNumber } from "./program/schedule";
+import { mesoPosition, trainingDayNumber, weekStart } from "./program/schedule";
+import type { AutoRecord } from "./coach/auto";
+import AutoCoachCard from "./components/AutoCoachCard";
 import { useProgram } from "./program/useProgram";
 import { createWorkout } from "./workout/model";
 import type { WorkoutLog } from "./workout/types";
@@ -22,8 +24,10 @@ const Workout = lazy(() => import("./pages/Workout"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 
 export default function App() {
-  const { settings, loaded, update } = useApp();
-  const [tab, setTab] = useState<Tab>("today");
+  const { settings, loaded, update, profile } = useApp();
+  const [tab, setTabState] = useState<Tab>("today");
+  const [coachTarget, setCoachTarget] = useState<"this" | undefined>();
+  const setTab = (t: Tab) => { setCoachTarget(undefined); setTabState(t); };
   const lib = useLibrary();
   const hist = useHistory();
   const completed = useMemo(() => new Set(hist.finished.map(w => w.dayKey)), [hist.finished]);
@@ -48,6 +52,26 @@ export default function App() {
 
   const close = async () => { setActive(null); await hist.reload(); };
 
+  // Automatic coaching: once per week, on the first open, the coach applies this week's changes (or asks for review).
+  const [auto, setAuto] = useState<AutoRecord | null>(null);
+  const program = prog.active;
+  useEffect(() => {
+    if (!loaded || !prog.ready || !hist.ready || !lib.ready || !program || active) return;
+    if (settings.coachMode === "ask") return setAuto(null);
+    let live = true;
+    void import("./coach/auto")
+      .then(m => m.runAutoCoach({ program, save: prog.save, finished: hist.finished, lib, profile, settings, today: prog.todayKey }))
+      .then(r => { if (live) setAuto(r); });
+    return () => { live = false; };
+    // Re-run only when the inputs that matter change (not on every program save, which the run itself causes).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, prog.ready, hist.ready, lib.ready, program?.id, prog.todayKey, hist.finished.length, settings.coachMode, active === null]);
+  const autoAct = (fn: (m: typeof import("./coach/auto")) => Promise<AutoRecord>) => void import("./coach/auto").then(fn).then(setAuto);
+  const coachChanges = useMemo(
+    () => (auto?.status === "applied" && active && weekStart(active.dayKey) === auto.weekKey ? new Map(auto.changes.map(c => [c.slotId, c])) : undefined),
+    [auto, active],
+  );
+
   if (!loaded || !prog.ready || !hist.ready) return null;
 
   // First run: no settings flag and nothing logged yet. Existing data marks the user as onboarded.
@@ -61,18 +85,24 @@ export default function App() {
           {firstRun ? (
             <Onboarding prog={prog} onDone={() => setTab("today")} />
           ) : active ? (
-            <Workout key={active.id} initial={active} lib={lib} history={hist.finished} onExit={() => void close()} onClose={() => void close()} />
+            <Workout key={active.id} initial={active} lib={lib} history={hist.finished} coachChanges={coachChanges} onExit={() => void close()} onClose={() => void close()} />
           ) : (
             <>
               <BackupNotice />
               {tab === "today" ? (
-                <Today prog={prog} lib={lib} hist={hist} selected={selectedDay} setSelected={setSelectedDay} onStart={(s, d) => void start(s, d)} goProgram={() => setTab("program")} />
+                <Today prog={prog} lib={lib} hist={hist} selected={selectedDay} setSelected={setSelectedDay} onStart={(s, d) => void start(s, d)} goProgram={() => setTab("program")}
+                  banner={auto && !auto.seen && program ? (
+                    <AutoCoachCard rec={auto} lib={lib}
+                      onDismiss={() => autoAct(m => m.dismissAutoCoach(auto))}
+                      onUndo={() => autoAct(m => m.undoAutoCoach(auto, program, prog.save))}
+                      onReview={() => { setTabState("coach"); setCoachTarget("this"); }} />
+                  ) : null} />
               ) : tab === "program" ? (
                 <Program prog={prog} lib={lib} />
               ) : tab === "progress" ? (
                 <Progress lib={lib} hist={hist} prog={prog} />
               ) : tab === "coach" ? (
-                <Coach prog={prog} lib={lib} finished={hist.finished} />
+                <Coach prog={prog} lib={lib} finished={hist.finished} initialTarget={coachTarget} />
               ) : (
                 <Settings lib={lib} prog={prog} workouts={hist.finished} />
               )}

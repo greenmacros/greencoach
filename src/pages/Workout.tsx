@@ -18,6 +18,7 @@ import { useSoreness } from "../feedback/useSoreness";
 import { livePRs, prSetKinds, topPR } from "../workout/pr";
 import { prText } from "../workout/prText";
 import { vibrate } from "../workout/alerts";
+import type { AutoChange } from "../coach/auto";
 
 interface Props {
   initial: WorkoutLog;
@@ -27,9 +28,11 @@ interface Props {
   onExit: () => void;
   /** Called after the workout is saved or discarded. */
   onClose: (saved: WorkoutLog | null) => void;
+  /** This week's automatic coach changes, by program slot id. */
+  coachChanges?: Map<string, AutoChange>;
 }
 
-export default function Workout({ initial, lib, history, onExit, onClose }: Props) {
+export default function Workout({ initial, lib, history, onExit, onClose, coachChanges }: Props) {
   const { t, settings, update } = useApp();
   const { workout, mutate, flush } = useWorkout(initial);
   const timer = useRestTimer({ title: t("timer.done"), body: t("timer.doneBody") });
@@ -140,7 +143,7 @@ export default function Workout({ initial, lib, history, onExit, onClose }: Prop
       {workout.exercises.length === 0 && <p className="card muted">{t("wk.empty")}</p>}
 
       {workout.exercises.map((log, i) => (
-        <ExerciseCard key={log.id} log={log} ex={lib.byId(log.exerciseId)} unit={workout.unit} prev={prevMap.get(log.exerciseId) ?? []} prSets={prSets}
+        <ExerciseCard key={log.id} log={log} ex={lib.byId(log.exerciseId)} coach={log.slotId ? coachChanges?.get(log.slotId) : undefined} unit={workout.unit} prev={prevMap.get(log.exerciseId) ?? []} prSets={prSets}
           index={i} count={workout.exercises.length}
           onChange={fn => mutate(w => updateExercise(w, log.id, fn))}
           onSetToggle={id => toggleSet(log, id)}

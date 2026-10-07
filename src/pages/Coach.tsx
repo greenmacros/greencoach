@@ -11,8 +11,8 @@ import type { Trend } from "../coach/types";
 const COLOR: Record<Trend, string> = { up: "var(--accent)", down: "var(--danger)", same: "var(--muted)" };
 const NOTE_ICON = { info: "ℹ️", warn: "⚠️", good: "✅" } as const;
 
-export default function Coach({ prog, lib, finished }: { prog: ProgramApi; lib: LibraryApi; finished: WorkoutLog[] }) {
-  const coach = useCoach(prog, lib, finished);
+export default function Coach({ prog, lib, finished, initialTarget }: { prog: ProgramApi; lib: LibraryApi; finished: WorkoutLog[]; initialTarget?: "this" | "next" }) {
+  const coach = useCoach(prog, lib, finished, initialTarget);
   const { t, settings, profile } = useApp();
   const lang = settings.lang;
   const plan = coach.plan;

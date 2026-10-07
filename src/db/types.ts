@@ -28,6 +28,8 @@ export interface Settings extends BaseRecord {
   restVibrate: boolean;
   restNotify: boolean;
   onboarded: boolean;
+  /** "auto" (default when missing): weekly coach changes are applied with a summary. "ask": every change is reviewed. */
+  coachMode?: "auto" | "ask";
 }
 
 export type Goal = "muscle" | "cut" | "strength" | "maintain" | "recomp";

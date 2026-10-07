@@ -7,6 +7,9 @@ import type { ExerciseLog, SetLog } from "../workout/types";
 import type { WeightUnit } from "../db/types";
 import ExerciseMedia from "./ExerciseMedia";
 import ExercisePreview from "./ExercisePreview";
+import type { AutoChange } from "../coach/auto";
+import { changeParts, isMajor } from "../coach/changeText";
+import { explain } from "../coach/explain";
 import SetRow from "./SetRow";
 import Stepper from "./Stepper";
 import TextInput from "./TextInput";
@@ -26,6 +29,8 @@ interface Props {
   onRemove: () => void;
   onSwap: () => void;
   onFeedback: () => void;
+  /** What the coach changed for this exercise this week. */
+  coach?: AutoChange;
 }
 
 type Kind = "weight" | "addWeight" | "assist";
@@ -38,10 +43,12 @@ function weightKind(ex: Exercise | undefined): Kind {
   return bw ? "addWeight" : "weight";
 }
 
-export default function ExerciseCard({ log, ex, unit, prev, prSets, index, count, onChange, onSetToggle, onAddSet, onMove, onRemove, onSwap, onFeedback }: Props) {
+export default function ExerciseCard({ log, ex, unit, prev, prSets, index, count, onChange, onSetToggle, onAddSet, onMove, onRemove, onSwap, onFeedback, coach }: Props) {
   const { t, settings } = useApp();
   const [more, setMore] = useState(false);
   const [zoom, setZoom] = useState(false);
+  const [coachWhy, setCoachWhy] = useState(false);
+  const coachBits = coach && isMajor(coach) ? changeParts(coach, unit, t, true) : [];
   const name = ex ? ex.name[settings.lang] : t("prog.missing");
   const step = weightStep(ex?.equipment ?? [], unit);
   const doneCount = log.sets.filter(s => s.done).length;
@@ -64,6 +71,15 @@ export default function ExerciseCard({ log, ex, unit, prev, prSets, index, count
           <p className="muted text-xs uppercase">
             {kind === "addWeight" ? t("wk.bwLoadable") : kind === "assist" ? t("wk.assisted") : ex?.equipment.map(e => t(`equip.${e}`)).join(" · ")} · {t("wk.rest", { t: formatRest(log.restSec) })}
           </p>
+          {coach && coachBits.length > 0 && (
+            <button type="button" className="text-xs font-semibold text-left mt-0.5" aria-expanded={coachWhy} aria-label={`${t("auto.mark")}: ${coachBits.map(b => b.text).join(", ")}`}
+              style={{ background: "none", border: 0, padding: 0, cursor: "pointer", color: "var(--text)" }} onClick={() => setCoachWhy(w => !w)}>
+              {coachBits.map((b, i) => (
+                <span key={i} className="whitespace-nowrap" style={{ color: b.dir === "up" ? "var(--accent)" : "var(--danger)" }}>{i > 0 && <span className="muted"> · </span>}{b.dir === "up" ? "▲" : "▼"} {b.text}</span>
+              ))}
+              {coachWhy && <span className="block muted font-normal">{explain(coach.reason, t)}</span>}
+            </button>
+          )}
         </div>
         <button className="btn" style={{ minWidth: 44, padding: 0 }} aria-expanded={more} aria-label={`${t("prog.edit")}: ${name}`} onClick={() => setMore(m => !m)}>⋮</button>
       </div>

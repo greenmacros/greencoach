@@ -3,18 +3,16 @@ import { useApp } from "../app-context";
 import { repo } from "../db";
 import { SCHEMA_VERSION } from "../db/types";
 import type { LibraryApi } from "../library/useLibrary";
-import { equipmentFor, substitutes } from "../library/search";
 import { addDays, weekStart } from "../program/schedule";
 import type { Program } from "../program/types";
 import type { ProgramApi } from "../program/useProgram";
 import type { SorenessRecord } from "../feedback/soreness";
 import type { WorkoutLog } from "../workout/types";
 import { applyDecisions, beforeValues, toRecords, type Decision } from "./apply";
-import { planNextWeek } from "./engine";
+import { BASE, loadCoachData, makePlan } from "./run";
 import { rejectionsFrom, type CoachSuggestionRecord, type SlotValues } from "./records";
 import type { BodyWeightPoint, CoachPlan } from "./types";
 
-const BASE = "base:";
 
 export interface CoachApi {
   ready: boolean;
@@ -31,7 +29,7 @@ export interface CoachApi {
 }
 
 /** Runs the coach on real data and persists accept / edit / reject decisions. */
-export function useCoach(prog: ProgramApi, lib: LibraryApi, finished: readonly WorkoutLog[]): CoachApi {
+export function useCoach(prog: ProgramApi, lib: LibraryApi, finished: readonly WorkoutLog[], initialTarget?: "this" | "next"): CoachApi {
   const { settings, profile, dataVersion } = useApp();
   const [soreness, setSoreness] = useState<SorenessRecord[]>([]);
   const [bodyWeights, setBodyWeights] = useState<BodyWeightPoint[]>([]);
@@ -40,18 +38,16 @@ export function useCoach(prog: ProgramApi, lib: LibraryApi, finished: readonly W
   const [ready, setReady] = useState(false);
   const today = prog.todayKey;
   // A brand-new user plans the week they are in; everyone else plans the coming week unless they ask for this one.
-  const [chosen, setChosen] = useState<"next" | "this" | null>(null);
+  const [chosen, setChosen] = useState<"next" | "this" | null>(initialTarget ?? null);
   const target: "next" | "this" = chosen ?? (finished.length === 0 ? "this" : "next");
   const targetWeekStart = target === "this" ? weekStart(today) : addDays(weekStart(today), 7);
 
   const reload = useCallback(async () => {
-    const fb = await repo.list("feedback");
-    setSoreness(fb.filter(r => r.kind === "soreness") as unknown as SorenessRecord[]);
-    const bm = await repo.list("bodyMetrics");
-    setBodyWeights(bm.filter(r => typeof r.weightKg === "number").map(r => ({ dayKey: r.dayKey as string, kg: r.weightKg as number })));
-    const sg = await repo.list("suggestions");
-    setRecords(sg.filter(r => r.id.startsWith("sug:")) as unknown as CoachSuggestionRecord[]);
-    setBaselines(new Map(sg.filter(r => r.id.startsWith(BASE)).map(r => [r.weekKey as string, r.program as Program])));
+    const d = await loadCoachData();
+    setSoreness(d.soreness);
+    setBodyWeights(d.bodyWeights);
+    setRecords(d.records);
+    setBaselines(d.baselines);
     setReady(true);
   }, []);
   useEffect(() => { void reload(); }, [reload, dataVersion]);
@@ -64,13 +60,9 @@ export function useCoach(prog: ProgramApi, lib: LibraryApi, finished: readonly W
 
   const plan = useMemo<CoachPlan | null>(() => {
     const base = baseline ?? program;
-    if (!base || !lib.ready) return null;
-    const avail = equipmentFor(profile.equipment);
-    return planNextWeek({
-      today, targetWeekStart, program: base, workouts: finished, soreness, bodyWeights, rejections,
-      profile: { experience: profile.experience, goal: profile.goal, phase: profile.phase, equipment: profile.equipment, region: settings.region, weightUnit: settings.weightUnit },
-      lookup: lib.byId, substitutes: ex => substitutes(lib.all, ex, avail),
-    });
+    if (!base) return null;
+    return makePlan({ program: base, lib, finished, soreness, bodyWeights, rejections, profile, settings, today, targetWeekStart });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- lib is a fresh object each render; its data is what matters
   }, [baseline, program, lib.ready, lib.all, lib.byId, finished, soreness, bodyWeights, rejections, profile, settings.region, settings.weightUnit, today, targetWeekStart]);
 
   const decide = useCallback(async (decisions: Map<string, Decision>) => {

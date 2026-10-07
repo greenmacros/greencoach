@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useApp } from "../app-context";
 import { formatDayKey, formatDayLong, weekdayLong, weekdayShort } from "../lib/format";
 import { estimateMinutes, mesoPosition, movePatch, skipPatch, totalSets, unskipPatch, weekDays } from "../program/schedule";
@@ -17,9 +17,11 @@ interface Props {
   setSelected: (k: string | null) => void;
   onStart: (sessionId: string | null, dayKey: string) => void;
   goProgram: () => void;
+  /** Shown under the heading, e.g. the automatic coach summary. */
+  banner?: ReactNode;
 }
 
-export default function Today({ prog, lib, hist, selected, setSelected, onStart, goProgram }: Props) {
+export default function Today({ prog, lib, hist, selected, setSelected, onStart, goProgram, banner }: Props) {
   const { t, settings } = useApp();
   const lang = settings.lang;
   const [moving, setMoving] = useState(false);
@@ -65,6 +67,7 @@ export default function Today({ prog, lib, hist, selected, setSelected, onStart,
           {meso.started && meso.isDeload ? ` (${meso.week}/${meso.total})` : ""}
         </p>
       </div>
+      {banner}
 
       <div className="grid grid-cols-7 gap-1" role="group" aria-label="Week">
         {days.map(k => {
