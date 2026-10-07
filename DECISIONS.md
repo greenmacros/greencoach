@@ -44,9 +44,3 @@ React 19 + Vite + TypeScript, Tailwind v4 (with CSS variables for the light/dark
 ## Progress (M7)
 - Charts are small hand-written SVG/HTML components instead of uPlot/Recharts: no dependency weight, exact control of the data-viz rules (2px lines, 8px markers with surface ring, 4px rounded bar ends, recessive grid, crosshair + tooltip with keyboard support, table view for every chart, validated light/dark palettes).
 - Hard sets per muscle use the same weighting as the coach (secondary muscles count half) and are drawn against the user's MEV-MRV band.
-
-## Name
-
-- Renamed from GreenCoach to GreenCoach (another app already uses the GreenCoach name). Internal identifiers keep the old
-  name on purpose so existing data survives: the IndexedDB database `greencoach`, the `lc_*` localStorage keys and the
-  GitHub Pages path. Backups are labelled `"app": "GreenCoach"` (no backups existed under the old name).

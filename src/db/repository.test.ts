@@ -62,7 +62,7 @@ describe("repository", () => {
 
   it("labels backups with the app name and rejects other files", () => {
     expect(buildBackup({}).app).toBe("GreenCoach");
-    expect(() => parseBackup({ app: "GreenCoach", version: 1, tables: {} })).toThrow("not-a-backup");
+    expect(() => parseBackup({ app: "SomethingElse", version: 1, tables: {} })).toThrow("not-a-backup");
   });
 
   it("parseBackup accepts an empty backup", () => {
