@@ -15,6 +15,8 @@ export interface SetLog {
   doneAt: string | null;
   /** Skipped on purpose: kept visible but never counted. */
   skipped?: boolean;
+  /** Resistance bands used (ids from settings.bands), for band exercises. */
+  bands?: string[];
 }
 
 export interface ExerciseTarget { sets: number; repMin: number; repMax: number; rir: number }

@@ -140,3 +140,15 @@ test("text typed through an IME composition is kept intact", async ({ page }) =>
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await expect(page.getByTestId("app-version")).toHaveText(/^Version \d+\.\d+\.\d+ · built .+ · \w+$/);
 });
+
+test("Add set works right after typing reps or finishing a set (the stepper strip does not swallow the tap)", async ({ page }) => {
+  await startFullBody(page);
+  const sq = page.getByRole("article", { name: "Barbell Squat" });
+  await sq.getByRole("textbox", { name: "Set 1 Reps" }).fill("8");
+  await sq.getByRole("button", { name: /Add set/ }).click();
+  await expect(sq.getByRole("textbox", { name: "Set 4 Reps" })).toBeVisible();
+  await sq.getByRole("textbox", { name: "Set 2 Reps" }).fill("8");
+  await sq.getByRole("button", { name: "Mark set done: Set 2" }).click();
+  await sq.getByRole("button", { name: /Add set/ }).click();
+  await expect(sq.getByRole("textbox", { name: "Set 5 Reps" })).toBeVisible();
+});

@@ -71,6 +71,8 @@ export const COACH_MESSAGES = {
   "why.load.welcome": { en: "Welcome back after {days} days: {pct}% lighter to ease in.", ja: "{days}日ぶりの再開：慣らしとして{pct}%軽くします。" },
   "why.load.stale": { en: "Not done for {days} days: {pct}% lighter to ease back in.", ja: "{days}日ぶりの種目：慣らしとして{pct}%軽くします。" },
   "why.load.hold.rejected": { en: "You declined a heavier weight recently: holding and adding a rep.", ja: "最近、重量アップを見送られたため、据え置いて1回増やします。" },
+  "why.load.bandNext": { en: "You reached the top of the range, so moving up to the {band} band.", ja: "範囲の上限に達したので、{band}のバンドに上げます。" },
+  "why.load.bandTop": { en: "Already on your heaviest band: slow the tempo, pause at the hardest point, or add a second band.", ja: "最も強いバンドを使っています。テンポを遅くする、最もきつい位置で止める、またはバンドを重ねてください。" },
   "why.load.bands": { en: "Bands: move to the next band tier, or slow the tempo, when you reach the top of the range.", ja: "バンド：範囲の上限に達したら、次の強さのバンドにするかテンポをゆっくりにします。" },
   "why.load.bw": { en: "Bodyweight reps at the top of the range: add {inc} {u} of extra load.", ja: "自重で範囲の上限に達したため、{inc} {u}の加重を加えます。" },
   "why.load.plateau": { en: "No progress in {n} sessions.", ja: "{n}回のセッションで伸びていません。" },

@@ -3,7 +3,7 @@ import type { Reason, Rejection } from "./types";
 
 export type SuggestionStatus = "accepted" | "rejected" | "edited";
 
-export interface SlotValues { sets: number; repMin: number; repMax: number; rir: number; restSec: number; weightKg: number | null }
+export interface SlotValues { sets: number; repMin: number; repMax: number; rir: number; restSec: number; weightKg: number | null; bands?: string[] | null }
 
 /** One decision on one exercise suggestion, stored in the `suggestions` table (id `sug:<weekKey>:<slotId>`). */
 export interface CoachSuggestionRecord extends BaseRecord {

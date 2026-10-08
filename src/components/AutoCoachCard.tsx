@@ -3,6 +3,7 @@ import { useApp } from "../app-context";
 import type { AutoRecord } from "../coach/auto";
 import { changeParts, isMajor } from "../coach/changeText";
 import { explain } from "../coach/explain";
+import { bandsOf } from "../bands/bands";
 import type { LibraryApi } from "../library/useLibrary";
 
 interface Props {
@@ -57,7 +58,7 @@ export default function AutoCoachCard({ rec, lib, onUndo, onDismiss, onReview }:
           {list.map(c => (
             <li key={c.slotId} className="text-sm">
               <span className="font-semibold">{name(c.exerciseId)}</span>{" "}
-              {changeParts(c, settings.weightUnit, t).map((p, i) => (
+              {changeParts(c, settings.weightUnit, t, false, bandsOf(settings)).map((p, i) => (
                 <span key={i} className="whitespace-nowrap" style={{ color: p.dir === "up" ? "var(--accent)" : "var(--danger)" }}>
                   {i > 0 && <span className="muted"> · </span>}{p.dir === "up" ? "▲" : "▼"} {p.text}
                 </span>

@@ -144,14 +144,14 @@ export function planNextWeek(input: CoachInput): CoachPlan {
     const sessions = exerciseSessions(perfWorkouts, a.exercise.id);
     const sets = a.mult === 0 && mode !== "deload" ? a.slot.sets : a.sets;
     const plan = planSlot(a.slot, a.exercise, sets, sessions, {
-      m: mods, mode, targetRir, unit: profile.weightUnit, restAddSec: season?.restAddSec ?? 0, today, rejectedLoad: rejectedRecently("slot", a.slot.id, "load"),
+      m: mods, mode, targetRir, unit: profile.weightUnit, restAddSec: season?.restAddSec ?? 0, today, rejectedLoad: rejectedRecently("slot", a.slot.id, "load"), bands: input.bands,
     });
     const lastSession = sessions[sessions.length - 1];
     const lastW = lastSession?.weightKg ?? a.slot.weightKg ?? null;
     const lastReps = lastSession ? Math.round(lastSession.avgReps) : a.slot.repMin;
     slotRows.push({
       sessionId: a.sessionId, slotId: a.slot.id, exerciseId: a.exercise.id,
-      last: { sets: a.slot.sets, repMin: a.slot.repMin, repMax: a.slot.repMax, rir: a.slot.rir, restSec: a.slot.restSec, weightKg: lastW },
+      last: { sets: a.slot.sets, repMin: a.slot.repMin, repMax: a.slot.repMax, rir: a.slot.rir, restSec: a.slot.restSec, weightKg: lastW, bands: lastSession?.bands ?? a.slot.bands ?? null },
       next: plan.next,
       trend: { sets: trend(a.slot.sets, plan.next.sets), weight: trend(lastW, plan.next.weightKg), reps: trend(lastReps, plan.next.targetReps), rir: trend(a.slot.rir, plan.next.rir) },
       reason: plan.reason, extra: plan.extra,

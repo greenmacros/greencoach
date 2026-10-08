@@ -32,7 +32,8 @@ export function buildExerciseLog(slot: ExerciseSlot | null, exerciseId: string, 
   const n = slot?.sets ?? 3;
   const sets = Array.from({ length: n }, (_, i): SetLog => {
     const p = prev[i] ?? prev[prev.length - 1];
-    return { ...emptySet(), weightKg: slot?.weightKg ?? p?.weightKg ?? null, reps: p?.reps ?? null };
+    const bands = slot?.bands ?? p?.bands;
+    return { ...emptySet(), weightKg: slot?.weightKg ?? p?.weightKg ?? null, reps: p?.reps ?? null, ...(bands?.length ? { bands: [...bands] } : {}) };
   });
   return { id: newId(), exerciseId, slotId: slot?.id ?? null, restSec: slot?.restSec ?? fallbackRest, notes: slot?.notes ?? "", supersetGroup: slot?.supersetGroup ?? null, target, sets };
 }
@@ -65,7 +66,7 @@ export const updateSet = (w: WorkoutLog, exId: string, setId: string, fn: (s: Se
 /** New set copies the weight/reps of the last set so progressing a lift is one tap. */
 export function addSet(e: ExerciseLog, type: SetType = "normal"): ExerciseLog {
   const last = e.sets[e.sets.length - 1];
-  return { ...e, sets: [...e.sets, { ...emptySet(type), weightKg: last?.weightKg ?? null, reps: last?.reps ?? null }] };
+  return { ...e, sets: [...e.sets, { ...emptySet(type), weightKg: last?.weightKg ?? null, reps: last?.reps ?? null, ...(last?.bands ? { bands: [...last.bands] } : {}) }] };
 }
 
 export const removeSet = (e: ExerciseLog, setId: string): ExerciseLog => ({ ...e, sets: e.sets.filter(s => s.id !== setId) });
@@ -75,7 +76,7 @@ export function copyLastSet(e: ExerciseLog, setId: string, prev: readonly SetLog
   const i = e.sets.findIndex(s => s.id === setId);
   const src = i > 0 ? e.sets[i - 1] : prev[0];
   if (!src) return e;
-  return { ...e, sets: e.sets.map(s => (s.id === setId ? { ...s, weightKg: src.weightKg, reps: src.reps, rir: src.rir } : s)) };
+  return { ...e, sets: e.sets.map(s => (s.id === setId ? { ...s, weightKg: src.weightKg, reps: src.reps, rir: src.rir, ...(src.bands ? { bands: [...src.bands] } : {}) } : s)) };
 }
 
 export function moveExercise(w: WorkoutLog, exId: string, dir: -1 | 1): WorkoutLog {

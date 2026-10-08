@@ -65,3 +65,4 @@ textarea.field { padding: 10px 12px; min-height: 96px; }
 .chart-table th:first-child, .chart-table td:first-child { text-align: left; }
 .chart-svg:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .hscroll-center > :first-child { margin-left: auto; } .hscroll-center > :last-child { margin-right: auto; }
+.btn:disabled, .chip:disabled, .seg button:disabled { opacity: 0.4; cursor: default; }

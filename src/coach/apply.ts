@@ -12,11 +12,11 @@ export interface Decision {
 }
 
 export const proposedValues = (s: SlotSuggestion): SlotValues => ({
-  sets: s.next.sets, repMin: s.next.repMin, repMax: s.next.repMax, rir: s.next.rir, restSec: s.next.restSec, weightKg: s.next.weightKg,
+  sets: s.next.sets, repMin: s.next.repMin, repMax: s.next.repMax, rir: s.next.rir, restSec: s.next.restSec, weightKg: s.next.weightKg, bands: s.next.bands ?? null,
 });
 
 export const beforeValues = (s: SlotSuggestion): SlotValues => ({
-  sets: s.last.sets, repMin: s.last.repMin, repMax: s.last.repMax, rir: s.last.rir, restSec: s.last.restSec, weightKg: s.last.weightKg,
+  sets: s.last.sets, repMin: s.last.repMin, repMax: s.last.repMax, rir: s.last.rir, restSec: s.last.restSec, weightKg: s.last.weightKg, bands: s.last.bands ?? null,
 });
 
 /**
@@ -41,6 +41,7 @@ export function applyDecisions(program: Program, plan: CoachPlan, decisions: Rea
         sets: v.sets, repMin: v.repMin, repMax: v.repMax, rir: v.rir, restSec: v.restSec,
         // A swapped exercise starts without a remembered weight.
         weightKg: d.swapTo ? null : v.weightKg,
+        bands: d.swapTo ? null : v.bands ?? slot.bands ?? null,
       };
     }),
   }));
@@ -68,8 +69,11 @@ export function toRecords(plan: CoachPlan, decisions: ReadonlyMap<string, Decisi
   return out;
 }
 
+export const sameBands = (x: readonly string[] | null | undefined, y: readonly string[] | null | undefined) =>
+  [...(x ?? [])].sort().join("+") === [...(y ?? [])].sort().join("+");
+
 /** True when the proposal changes nothing, so the UI can show "No change" and skip the buttons. */
 export const isNoChange = (s: SlotSuggestion): boolean => {
   const a = proposedValues(s), b = beforeValues(s);
-  return (Object.keys(a) as (keyof SlotValues)[]).every(k => a[k] === b[k]);
+  return (Object.keys(a) as (keyof SlotValues)[]).every(k => (k === "bands" ? sameBands(a.bands, b.bands) : a[k] === b[k]));
 };

@@ -3,6 +3,7 @@ import type { Exercise, Muscle } from "../library/types";
 import { addDays, daysBetween, weekStart } from "../program/schedule";
 import type { Program } from "../program/types";
 import { dayKey } from "../lib/id";
+import { bandKey } from "../bands/bands";
 import { estimate1RM, isWorkingSet } from "../workout/model";
 import type { ExerciseLog, SetLog, WorkoutLog } from "../workout/types";
 import type { CoachConfig } from "./config";
@@ -72,6 +73,8 @@ export interface SessionPerf {
   avgRir: number | null;
   allAtTop: boolean;
   log: ExerciseLog;
+  /** Band combination used most in working sets (band exercises), else null. */
+  bands: string[] | null;
 }
 
 /** One exercise's history, oldest first. */
@@ -89,10 +92,16 @@ export function exerciseSessions(workouts: readonly WorkoutLog[], exerciseId: st
     const rirs = sets.map(s => s.rir).filter((r): r is number => r !== null);
     const e1rm = Math.max(...sets.map(s => ((s.weightKg ?? 0) > 0 ? estimate1RM(s.weightKg!, s.reps!, s.rir ?? 0) : s.reps! * 1)));
     const top = log.target?.repMax ?? Infinity;
+    const bandCounts = new Map<string, { ids: string[]; n: number }>();
+    for (const s of sets) if (s.bands?.length) {
+      const k = bandKey(s.bands);
+      bandCounts.set(k, { ids: [...s.bands].sort(), n: (bandCounts.get(k)?.n ?? 0) + 1 });
+    }
+    const bands = [...bandCounts.values()].sort((a, b) => b.n - a.n)[0]?.ids ?? null;
     out.push({
       workoutId: w.id, dayKey: w.dayKey, e1rm, weightKg: modeW > 0 ? modeW : null, sets,
       avgReps: mean(sets.map(s => s.reps!)), avgRir: rirs.length ? mean(rirs) : null,
-      allAtTop: sets.every(s => s.reps! >= top), log,
+      allAtTop: sets.every(s => s.reps! >= top), log, bands,
     });
   }
   return out;

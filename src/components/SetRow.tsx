@@ -5,6 +5,8 @@ import type { WeightUnit } from "../db/types";
 import type { ExerciseLog, SetLog, SetType } from "../workout/types";
 import NumInput from "./NumInput";
 import SetMenu from "./SetMenu";
+import BandPicker, { BandDot } from "./BandPicker";
+import { bandLabel, bandsIn, bandsOf } from "../bands/bands";
 
 interface Props {
   exLog: ExerciseLog;
@@ -15,6 +17,8 @@ interface Props {
   prev: SetLog | undefined;
   /** Records this set broke (shows a trophy). */
   isPR?: boolean;
+  /** Band exercise: the weight column becomes a band picker. */
+  bandMode?: boolean;
   onChange: (patch: Partial<SetLog>) => void;
   onToggleDone: () => void;
   onCopy: () => void;
@@ -25,8 +29,11 @@ interface Props {
 type Field = "weight" | "reps" | null;
 
 /** One compact line per set: menu | weight | reps | RIR | log. A stepper strip appears under the focused field. */
-export default function SetRow({ exLog, set, index, unit, step, prev, isPR, onChange, onToggleDone, onCopy, onAddBelow, onRemove }: Props) {
-  const { t } = useApp();
+export default function SetRow({ exLog, set, index, unit, step, prev, isPR, bandMode, onChange, onToggleDone, onCopy, onAddBelow, onRemove }: Props) {
+  const { t, settings } = useApp();
+  const [picking, setPicking] = useState(false);
+  const allBands = bandsOf(settings);
+  const setBands = bandsIn(set.bands, allBands);
   const [field, setField] = useState<Field>(null);
   const [menu, setMenu] = useState(false);
   const tgt = exLog.target;
@@ -44,18 +51,36 @@ export default function SetRow({ exLog, set, index, unit, step, prev, isPR, onCh
   };
 
   const hint = prev
-    ? prev.weightKg != null ? t("wk.last", { w: fmtWeight(prev.weightKg, unit), r: prev.reps ?? "–" }) : t("wk.lastBw", { r: prev.reps ?? "–" })
+    ? bandMode && prev.bands?.length ? t("wk.lastBand", { b: bandLabel(prev.bands, allBands), r: prev.reps ?? "–" })
+    : prev.weightKg != null ? t("wk.last", { w: fmtWeight(prev.weightKg, unit), r: prev.reps ?? "–" }) : t("wk.lastBw", { r: prev.reps ?? "–" })
     : tgt && set.type !== "warmup" ? t("wk.target", { lo: tgt.repMin, hi: tgt.repMax, rir: tgt.rir }) : "";
 
   return (
     <li style={{ borderTop: "1px solid var(--border)", opacity: set.skipped ? 0.5 : 1 }}
-      onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setField(null); }}>
+      onBlur={e => {
+        // Close the stepper strip a moment later: closing it at once shifts the layout mid-tap, so a tap on the
+        // button below (e.g. "Add set") would land on empty space.
+        const li = e.currentTarget;
+        if (!li.contains(e.relatedTarget as Node | null)) setTimeout(() => { if (!li.contains(document.activeElement)) setField(null); }, 250);
+      }}>
       <div className="grid items-center gap-1 py-1.5" style={{ gridTemplateColumns: "40px minmax(0,1.3fr) minmax(0,1fr) 54px 48px", background: set.done ? "color-mix(in srgb, var(--accent) 14%, transparent)" : undefined, borderRadius: 8 }}>
         <button type="button" className="chip" style={{ minWidth: 40, padding: 0 }} aria-haspopup="dialog" aria-label={`${label}: ${t(`wk.type.${set.type}`)}. ${t("wk.menu.title")}`} onClick={() => setMenu(true)}>
           {typeShort}
         </button>
-        <NumInput bare decimal label={`${label} ${t("wk.weight", { unit })}`} value={weightDisp} step={step} max={1000}
-          onChange={v => onChange({ weightKg: v === null ? null : fromDisplayWeight(v, unit) })} dim={set.done} onFocus={() => setField("weight")} />
+        {bandMode ? (
+          <button type="button" className="field flex items-center justify-center gap-1" style={{ minHeight: 44, padding: "0 4px", opacity: set.done ? 0.6 : 1, fontWeight: 600, fontSize: 14 }}
+            aria-label={`${label} ${t("wk.col.band")}: ${setBands.length ? setBands.map(b => b.name).join(" + ") : t("band.none")}`} onClick={() => setPicking(true)}>
+            {setBands.length ? (
+              <>
+                {setBands.map(b => <BandDot key={b.id} band={b} />)}
+                <span className="truncate">{setBands.length === 1 ? setBands[0].name : `×${setBands.length}`}</span>
+              </>
+            ) : <span className="muted">{t("band.choose")}</span>}
+          </button>
+        ) : (
+          <NumInput bare decimal label={`${label} ${t("wk.weight", { unit })}`} value={weightDisp} step={step} max={1000}
+            onChange={v => onChange({ weightKg: v === null ? null : fromDisplayWeight(v, unit) })} dim={set.done} onFocus={() => setField("weight")} />
+        )}
         <NumInput bare label={`${label} ${t("wk.reps")}`} value={set.reps} placeholder={tgt && workingIdx > 0 ? String(tgt.repMax) : undefined} max={200}
           onChange={v => onChange({ reps: v })} dim={set.done} onFocus={() => setField("reps")} />
         <select className="field" style={{ minHeight: 44, padding: "0 2px", textAlign: "center" }} aria-label={`${label} ${t("wk.rir")} (${t("wk.rirHint")})`} title={t("wk.rirHint")}
@@ -66,7 +91,7 @@ export default function SetRow({ exLog, set, index, unit, step, prev, isPR, onCh
         <button type="button" className={set.done ? "btn btn-primary" : "btn"} style={{ minHeight: 44, padding: 0, fontSize: 20 }}
           aria-pressed={set.done} aria-disabled={!canDone && !set.done} title={!canDone && !set.done ? t("wk.needReps") : undefined}
           aria-label={set.done ? `${t("wk.undone")}: ${label}` : `${t("wk.done")}: ${label}`}
-          onClick={() => { if (canDone || set.done) onToggleDone(); }}>
+          onClick={() => { if (canDone || set.done) { setField(null); onToggleDone(); } }}>
           {set.done ? "✓" : "○"}
         </button>
       </div>
@@ -86,6 +111,7 @@ export default function SetRow({ exLog, set, index, unit, step, prev, isPR, onCh
           onType={(ty: SetType) => onChange({ type: ty })} onAddBelow={onAddBelow} onCopy={onCopy}
           onSkip={() => onChange({ skipped: !set.skipped, done: false, doneAt: null })} onDelete={onRemove} />
       )}
+      {picking && <BandPicker value={set.bands ?? []} label={`${label} ${t("wk.col.band")}`} onChange={ids => onChange({ bands: ids })} onClose={() => setPicking(false)} />}
     </li>
   );
 }

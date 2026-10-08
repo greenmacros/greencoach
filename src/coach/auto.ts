@@ -52,7 +52,7 @@ export function undoProgram(program: Program, baseline: Program, slotIds: Readon
       ...sess,
       exercises: sess.exercises.map(slot => {
         const b = before.get(slot.id);
-        return b ? { ...slot, exerciseId: b.exerciseId, sets: b.sets, repMin: b.repMin, repMax: b.repMax, rir: b.rir, restSec: b.restSec, weightKg: b.weightKg } : slot;
+        return b ? { ...slot, exerciseId: b.exerciseId, sets: b.sets, repMin: b.repMin, repMax: b.repMax, rir: b.rir, restSec: b.restSec, weightKg: b.weightKg, bands: b.bands ?? null } : slot;
       }),
     })),
   };

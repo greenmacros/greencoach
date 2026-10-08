@@ -7,12 +7,12 @@ import type { CoachConfig } from "./config";
 import { clamp, type SessionPerf } from "./stats";
 import type { PlanMode, Reason, SlotState } from "./types";
 import type { Modifiers } from "./volume";
+import { isBandsOnly, nextBand } from "../bands/bands";
 
 const P = (key: string, params?: Reason["params"]): Reason => ({ key, params });
 const LOWER = ["quadriceps", "hamstrings", "glutes", "lower-back", "calves"];
 
 export const isAssisted = (ex: Exercise) => /assisted/i.test(ex.name.en);
-const isBandsOnly = (ex: Exercise) => ex.equipment.includes("bands") && ex.equipment.every(e => ["bands", "bodyweight", "other"].includes(e));
 const isBodyweightOnly = (ex: Exercise) => ex.equipment.every(e => ["bodyweight", "pullup-bar", "dip-bars", "trx", "bench"].includes(e));
 
 /** Smallest sensible jump in kg for this exercise at this weight; null when weight is not the progression axis (bands). */
@@ -46,6 +46,8 @@ export interface LoadCtx {
   restAddSec: number;
   today: string;
   rejectedLoad: boolean;
+  /** The user's bands, lightest first. */
+  bands?: readonly { id: string; name: string }[];
 }
 
 export interface SlotPlan { next: SlotState & { targetReps: number }; reason: Reason; extra: Reason[]; swapReason?: Reason }
@@ -80,8 +82,9 @@ export function planSlot(slot: ExerciseSlot, ex: Exercise, newSets: number, sess
   if (restSec > slot.restSec) extra.push(P("why.rest.longer", { t: `${Math.floor(restSec / 60)}:${String(restSec % 60).padStart(2, "0")}` }));
 
   const base = { sets: newSets, repMin: range.min, repMax: range.max, restSec };
-  const mk = (weightKg: number | null, rir: number, targetReps: number, reason: Reason, swapReason?: Reason): SlotPlan =>
-    ({ next: { ...base, rir, weightKg, targetReps: clamp(Math.round(targetReps), range.min, range.max) }, reason, extra, swapReason });
+  const lastBands = last?.bands ?? slot.bands ?? null;
+  const mk = (weightKg: number | null, rir: number, targetReps: number, reason: Reason, swapReason?: Reason, bands: string[] | null = lastBands): SlotPlan =>
+    ({ next: { ...base, rir, weightKg, targetReps: clamp(Math.round(targetReps), range.min, range.max), bands }, reason, extra, swapReason });
 
   // --- No usable history -------------------------------------------------
   if (!last) return mk(slot.weightKg ?? null, ctx.targetRir, range.min, P("why.load.first", { lo: range.min, hi: range.max, rir: ctx.targetRir }));
@@ -168,7 +171,14 @@ export function planSlot(slot: ExerciseSlot, ex: Exercise, newSets: number, sess
 
   if (steps > 0) {
     if (ctx.rejectedLoad) return withPlateau(mk(keep, ctx.targetRir, last.avgReps + 1, P("why.load.hold.rejected")));
-    if (inc === null) return withPlateau(mk(null, ctx.targetRir, range.min, P("why.load.bands")));
+    if (inc === null) {
+      // Bands: one band up in the user's own order; on the heaviest band, slow down or add a second band.
+      const order = ctx.bands ?? [];
+      const up = nextBand(lastBands, order);
+      if (up) return withPlateau(mk(null, ctx.targetRir, range.min, P("why.load.bandNext", { band: order.find(b => b.id === up)!.name }), undefined, [up]));
+      if (lastBands?.length === 1 && order.some(b => b.id === lastBands[0])) return withPlateau(mk(null, ctx.targetRir, range.max, P("why.load.bandTop")));
+      return withPlateau(mk(null, ctx.targetRir, range.min, P("why.load.bands")));
+    }
     if (keep === null) return withPlateau(mk(inc, ctx.targetRir, range.min, P("why.load.bw", { inc: fmt(inc), u: ctx.unit })));
     const w = wRound(keep + dir * inc * steps);
     const key = bigSurplus ? "why.load.up2" : "why.load.up";

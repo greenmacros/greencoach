@@ -7,6 +7,8 @@ import type { SlotSuggestion, SwapSuggestion, Trend } from "../coach/types";
 import { formatRest, fmtWeight, fromDisplayWeight } from "../lib/format";
 import type { LibraryApi } from "../library/useLibrary";
 import Stepper from "./Stepper";
+import { bandLabel, bandsOf } from "../bands/bands";
+import { sameBands } from "../coach/apply";
 
 const COLOR: Record<Trend, string> = { up: "var(--accent)", down: "var(--danger)", same: "var(--muted)" };
 const ARROW: Record<Trend, string> = { up: "▲", down: "▼", same: "=" };
@@ -43,6 +45,7 @@ export default function CoachSlotCard({ s, swap, decided, lib, onAccept, onRejec
   const [draft, setDraft] = useState<SlotValues>(p);
   const ex = lib.byId(s.exerciseId);
   const name = ex?.name[settings.lang] ?? t("prog.missing");
+  const bands = bandsOf(settings);
   const w = (kg: number | null) => (kg === null ? "–" : `${fmtWeight(kg, unit)}`);
   const same = isNoChange(s);
   const shown = decided?.status === "edited" ? decided.final : p;
@@ -56,7 +59,12 @@ export default function CoachSlotCard({ s, swap, decided, lib, onAccept, onRejec
       <div className="grid grid-cols-4 gap-1">
         <Delta label={t("coach.sets")} last={String(s.last.sets)} next={String(shown.sets)} trend={s.trend.sets} />
         <Delta label={t("coach.reps")} last={`${s.last.repMin}-${s.last.repMax}`} next={`${shown.repMin}-${shown.repMax}`} trend={s.trend.reps} />
-        <Delta label={`${t("coach.weight")} (${unit})`} last={w(s.last.weightKg)} next={shown.weightKg === null ? t("coach.free") : w(shown.weightKg)} trend={s.trend.weight} />
+        {(shown.bands?.length || s.last.bands?.length) ? (
+          <Delta label={t("wk.col.band")} last={bandLabel(s.last.bands, bands) || "–"} next={bandLabel(shown.bands, bands) || "–"}
+            trend={sameBands(s.last.bands, shown.bands) ? "same" : "up"} />
+        ) : (
+          <Delta label={`${t("coach.weight")} (${unit})`} last={w(s.last.weightKg)} next={shown.weightKg === null ? t("coach.free") : w(shown.weightKg)} trend={s.trend.weight} />
+        )}
         <Delta label={t("coach.rir")} last={String(s.last.rir)} next={String(shown.rir)} trend={s.trend.rir} />
       </div>
       <p className="text-sm"><span className="font-semibold">{t("coach.why")}:</span> {explain(s.reason, t)}</p>

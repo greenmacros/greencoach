@@ -14,6 +14,8 @@ export interface ExerciseSlot {
   supersetGroup: number | null;
   /** Target working weight in kg, set when a coach suggestion is accepted (null/undefined = decide on the day). */
   weightKg?: number | null;
+  /** Target band(s) for band exercises, set when a coach suggestion is accepted. */
+  bands?: string[] | null;
 }
 
 export interface SessionTemplate {

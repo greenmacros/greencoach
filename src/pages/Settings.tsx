@@ -12,6 +12,7 @@ import type { ProgramApi } from "../program/useProgram";
 import type { WorkoutLog } from "../workout/types";
 import { formatBytes, formatDateTime } from "../lib/format";
 import type { BackupFile } from "../db/types";
+import BandsEditor from "../components/BandsEditor";
 
 type Estimate = Awaited<ReturnType<typeof repo.storageEstimate>>;
 
@@ -112,6 +113,8 @@ export default function Settings({ lib, prog, workouts }: { lib: LibraryApi; pro
         }} />{t("settings.notify")}</label>
         <p className="muted text-sm">{t("settings.notifyHint")}</p>
       </div>
+
+      <BandsEditor />
 
       <div className="card grid gap-2">
         <h2 className="font-bold">{t("settings.coach")}</h2>

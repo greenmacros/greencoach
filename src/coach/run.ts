@@ -6,6 +6,7 @@ import type { LibraryApi } from "../library/useLibrary";
 import type { Program } from "../program/types";
 import type { WorkoutLog } from "../workout/types";
 import { planNextWeek } from "./engine";
+import { bandsOf } from "../bands/bands";
 import type { CoachSuggestionRecord } from "./records";
 import type { BodyWeightPoint, CoachPlan, Rejection } from "./types";
 
@@ -51,7 +52,7 @@ export function makePlan(a: PlanArgs): CoachPlan | null {
   const avail = equipmentFor(a.profile.equipment);
   return planNextWeek({
     today: a.today, targetWeekStart: a.targetWeekStart, program: a.program, workouts: a.finished, soreness: a.soreness,
-    bodyWeights: a.bodyWeights, rejections: a.rejections,
+    bodyWeights: a.bodyWeights, rejections: a.rejections, bands: bandsOf(a.settings),
     profile: { experience: a.profile.experience, goal: a.profile.goal, phase: a.profile.phase, equipment: a.profile.equipment, region: a.settings.region, weightUnit: a.settings.weightUnit },
     lookup: a.lib.byId, substitutes: ex => substitutes(a.lib.all, ex, avail),
   });

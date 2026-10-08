@@ -43,6 +43,8 @@ export interface CoachInput {
   soreness: readonly SorenessRecord[];
   bodyWeights: readonly BodyWeightPoint[];
   rejections: readonly Rejection[];
+  /** The user's bands, lightest first (for band exercises). */
+  bands?: readonly { id: string; name: string }[];
   lookup: (id: string) => Exercise | undefined;
   /** Same-muscle, same-pattern alternatives available to the user (used for joint-pain swaps). */
   substitutes: (ex: Exercise) => Exercise[];
@@ -70,6 +72,8 @@ export interface MuscleSuggestion {
 
 export interface SlotState {
   sets: number; repMin: number; repMax: number; rir: number; restSec: number; weightKg: number | null;
+  /** Band(s) for band exercises. */
+  bands?: string[] | null;
 }
 
 export interface SlotSuggestion {

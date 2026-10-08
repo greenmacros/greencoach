@@ -239,6 +239,30 @@ describe("load progression", () => {
     expect(slotFor(p, BANDROW).reason.key).toBe("why.load.bands");
   });
 
+  it("bands: at the top of the range the coach moves to the user's next band, by name", () => {
+    const prog = program([session("Home", [{ ex: BANDROW, sets: 3, lo: 10, hi: 15 }])], [0, null, null, null, null, null, null]);
+    const w = workout(week(2), [{ ex: BANDROW, sets: x3(null, 15, 2), target: { repMin: 10, repMax: 15, rir: 2 } }]);
+    w.exercises[0].sets = w.exercises[0].sets.map(s => ({ ...s, bands: ["red"] }));
+    const bands = [{ id: "yellow", name: "Yellow" }, { id: "red", name: "Red" }, { id: "blue", name: "Blue" }];
+    const s = slotFor(run(all, { program: prog, workouts: [w], bands }), BANDROW);
+    expect(s.last.bands).toEqual(["red"]);
+    expect(s.next.bands).toEqual(["blue"]);
+    expect(s.next.targetReps).toBe(10);
+    expect(s.reason).toEqual({ key: "why.load.bandNext", params: { band: "Blue" } });
+
+    // on the heaviest band: no band to move to, so slow down or combine
+    w.exercises[0].sets = w.exercises[0].sets.map(x => ({ ...x, bands: ["blue"] }));
+    const top = slotFor(run(all, { program: prog, workouts: [w], bands }), BANDROW);
+    expect(top.next.bands).toEqual(["blue"]);
+    expect(top.reason.key).toBe("why.load.bandTop");
+
+    // mid-range: keep the band, add a rep
+    w.exercises[0].sets = w.exercises[0].sets.map(x => ({ ...x, reps: 12, bands: ["red"] }));
+    const mid = slotFor(run(all, { program: prog, workouts: [w], bands }), BANDROW);
+    expect(mid.next.bands).toEqual(["red"]);
+    expect(mid.reason.key).toBe("why.load.hold.reps");
+  });
+
   it("bodyweight lifts at the top of the range suggest adding load", () => {
     const prog = program([session("Pull", [{ ex: PULLUP, sets: 3, lo: 6, hi: 10 }])], [0, null, null, null, null, null, null]);
     const p = run(all, { program: prog, workouts: [workout(week(2), [{ ex: PULLUP, sets: x3(null, 12, 2), target: { repMin: 6, repMax: 10, rir: 2 } }])] });

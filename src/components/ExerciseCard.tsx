@@ -9,6 +9,7 @@ import ExerciseMedia from "./ExerciseMedia";
 import ExercisePreview from "./ExercisePreview";
 import type { AutoChange } from "../coach/auto";
 import { changeParts, isMajor } from "../coach/changeText";
+import { bandsOf, isBandsOnly } from "../bands/bands";
 import { explain } from "../coach/explain";
 import SetRow from "./SetRow";
 import Stepper from "./Stepper";
@@ -33,12 +34,13 @@ interface Props {
   coach?: AutoChange;
 }
 
-type Kind = "weight" | "addWeight" | "assist";
+type Kind = "weight" | "addWeight" | "assist" | "band";
 
 /** Which label the weight column carries: loaded bodyweight moves add weight, assisted machines subtract it. */
 function weightKind(ex: Exercise | undefined): Kind {
   if (!ex) return "weight";
   if (/assisted/i.test(ex.name.en)) return "assist";
+  if (isBandsOnly(ex)) return "band";
   const bw = ex.equipment.every(e => ["bodyweight", "pullup-bar", "dip-bars", "bench", "trx"].includes(e));
   return bw ? "addWeight" : "weight";
 }
@@ -48,7 +50,7 @@ export default function ExerciseCard({ log, ex, unit, prev, prSets, index, count
   const [more, setMore] = useState(false);
   const [zoom, setZoom] = useState(false);
   const [coachWhy, setCoachWhy] = useState(false);
-  const coachBits = coach && isMajor(coach) ? changeParts(coach, unit, t, true) : [];
+  const coachBits = coach && isMajor(coach) ? changeParts(coach, unit, t, true, bandsOf(settings)) : [];
   const name = ex ? ex.name[settings.lang] : t("prog.missing");
   const step = weightStep(ex?.equipment ?? [], unit);
   const doneCount = log.sets.filter(s => s.done).length;
@@ -69,7 +71,7 @@ export default function ExerciseCard({ log, ex, unit, prev, prSets, index, count
           {ex && <span className="chip" style={{ cursor: "default", minHeight: 24, fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase", padding: "0 8px" }}>{t(`muscle.${ex.primary[0]}`)}</span>}
           <h2 className="font-bold leading-tight mt-1">{log.supersetGroup !== null && "⇄ "}{name}</h2>
           <p className="muted text-xs uppercase">
-            {kind === "addWeight" ? t("wk.bwLoadable") : kind === "assist" ? t("wk.assisted") : ex?.equipment.map(e => t(`equip.${e}`)).join(" · ")} · {t("wk.rest", { t: formatRest(log.restSec) })}
+            {kind === "addWeight" ? t("wk.bwLoadable") : kind === "assist" ? t("wk.assisted") : kind === "band" ? t("wk.bandLogged") : ex?.equipment.map(e => t(`equip.${e}`)).join(" · ")} · {t("wk.rest", { t: formatRest(log.restSec) })}
           </p>
           {coach && coachBits.length > 0 && (
             <button type="button" className="text-xs font-semibold text-left mt-0.5" aria-expanded={coachWhy} aria-label={`${t("auto.mark")}: ${coachBits.map(b => b.text).join(", ")}`}
@@ -103,12 +105,16 @@ export default function ExerciseCard({ log, ex, unit, prev, prSets, index, count
       {log.notes && !more && <p className="muted text-sm">📝 {log.notes}</p>}
 
       <div className="grid text-xs font-bold uppercase muted" aria-hidden="true" style={{ gridTemplateColumns: "40px minmax(0,1.3fr) minmax(0,1fr) 54px 48px", gap: 4, textAlign: "center" }}>
-        <span /><span>{t(`wk.col.${kind}`)} ({unit})</span><span>{t("wk.col.reps")}</span><span>{t("wk.rir")}</span><span>{t("wk.col.log")}</span>
+        <span /><span>{kind === "band" ? t("wk.col.band") : `${t(`wk.col.${kind}`)} (${unit})`}</span><span>{t("wk.col.reps")}</span><span>{t("wk.rir")}</span><span>{t("wk.col.log")}</span>
       </div>
       <ol className="grid">
         {log.sets.map((s, i) => (
-          <SetRow key={s.id} exLog={log} set={s} index={i} unit={unit} step={step} prev={prev[Math.min(i, prev.length - 1)]} isPR={prSets.has(s.id)}
-            onChange={patch => onChange(e => ({ ...e, sets: e.sets.map(x => (x.id === s.id ? { ...x, ...patch } : x)) }))}
+          <SetRow key={s.id} exLog={log} set={s} index={i} unit={unit} step={step} bandMode={kind === "band"} prev={prev[Math.min(i, prev.length - 1)]} isPR={prSets.has(s.id)}
+            onChange={patch => onChange(e => ({
+              ...e,
+              // A band picked for one set also fills the later, unfinished sets that have none yet.
+              sets: e.sets.map((x, j) => (x.id === s.id ? { ...x, ...patch } : patch.bands && j > i && !x.done && !x.bands?.length ? { ...x, bands: [...patch.bands] } : x)),
+            }))}
             onToggleDone={() => onSetToggle(s.id)}
             onCopy={() => onChange(e => copyLastSet(e, s.id, prev))}
             onAddBelow={() => onChange(e => addSetAfter(e, s.id))}
