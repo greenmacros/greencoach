@@ -250,11 +250,24 @@ describe("load progression", () => {
     expect(s.next.targetReps).toBe(10);
     expect(s.reason).toEqual({ key: "why.load.bandNext", params: { band: "Blue" } });
 
-    // on the heaviest band: no band to move to, so slow down or combine
+    // on the heaviest band with nothing stronger: the rep range moves up, sets go closer to failure
     w.exercises[0].sets = w.exercises[0].sets.map(x => ({ ...x, bands: ["blue"] }));
-    const top = slotFor(run(all, { program: prog, workouts: [w], bands }), BANDROW);
-    expect(top.next.bands).toEqual(["blue"]);
-    expect(top.reason.key).toBe("why.load.bandTop");
+    const top = run(all, { program: prog, workouts: [w], bands });
+    const ts = slotFor(top, BANDROW);
+    expect(ts.next.bands).toEqual(["blue"]);
+    expect([ts.next.repMin, ts.next.repMax, ts.next.rir]).toEqual([15, 20, 1]);
+    expect(ts.reason).toEqual({ key: "why.load.bandReps", params: { lo: 15, hi: 20 } });
+    expect(ts.extra.some(r => r.key === "why.load.bandKgHint")).toBe(true); // no kg entered: point to combinations
+
+    // at 30 reps: outgrown, with the evidence-ranked advice and a swap suggestion
+    const prog30 = program([session("Home", [{ ex: BANDROW, sets: 3, lo: 20, hi: 30 }])], [0, null, null, null, null, null, null]);
+    const w30 = workout(week(2), [{ ex: BANDROW, sets: x3(null, 30, 1), target: { repMin: 20, repMax: 30, rir: 1 } }]);
+    w30.exercises[0].sets = w30.exercises[0].sets.map(x => ({ ...x, bands: ["blue"] }));
+    const out = run(all, { program: prog30, workouts: [w30], bands });
+    expect(slotFor(out, BANDROW).reason.key).toBe("why.load.bandOutgrown");
+    expect(slotFor(out, BANDROW).next.repMax).toBe(30);
+    expect(slotFor(out, BANDROW).next.rir).toBeLessThanOrEqual(1);
+    expect(out.swaps.some(s => s.exerciseId === BANDROW && s.reason.key === "why.swap.bandOutgrown")).toBe(true);
 
     // with the kg from the package, the coach goes past the heaviest band with the lightest stronger combination
     const withKg = [{ id: "yellow", name: "Yellow", kg: 5 }, { id: "red", name: "Red", kg: 10 }, { id: "blue", name: "Blue", kg: 20 }];

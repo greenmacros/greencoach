@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bandKey, bandLabel, bandStrength, bandsOf, defaultBands, nextBand, nextCombo, orderConflicts, sortByKg, stepUp, type Band } from "./bands";
+import { bandKey, bandLabel, bandStrength, bandsOf, defaultBands, nextBand, nextBandRange, nextCombo, orderConflicts, sortByKg, stepUp, type Band } from "./bands";
 import { buildExerciseLog, addSet } from "../workout/model";
 import type { SetLog } from "../workout/types";
 
@@ -33,6 +33,13 @@ describe("resistance bands", () => {
     expect(addSet(log).sets.at(-1)!.bands).toEqual(["band-2"]);
   });
 
+  it("then raises the rep range in steps, to 30 at most", () => {
+    expect(nextBandRange(15)).toEqual({ min: 15, max: 20 });
+    expect(nextBandRange(20)).toEqual({ min: 20, max: 30 });
+    expect(nextBandRange(12)).toEqual({ min: 10, max: 15 });
+    expect(nextBandRange(30)).toBeNull();
+  });
+
   describe("with the kg from the package", () => {
     const mine: Band[] = [
       { id: "l", name: "Light", color: "", kg: 5 }, { id: "m", name: "Medium", color: "", kg: 10 }, { id: "h", name: "Heavy", color: "", kg: 20 },
@@ -43,10 +50,11 @@ describe("resistance bands", () => {
       expect(bandStrength(["l", "x"], mine)).toBeNull();
     });
 
-    it("past the heaviest band, picks the lightest stronger single or pair (fewer bands on a tie)", () => {
+    it("past the heaviest band, picks the lightest stronger single, pair or trio (fewer bands on a tie)", () => {
       expect(nextCombo(["h"], mine)).toEqual(["l", "h"]);           // 25
       expect(nextCombo(["l", "h"], mine)).toEqual(["m", "h"]);      // 30
-      expect(nextCombo(["m", "h"], mine)).toBeNull();               // nothing stronger
+      expect(nextCombo(["m", "h"], mine)).toEqual(["l", "m", "h"]); // 35: all three stacked
+      expect(nextCombo(["l", "m", "h"], mine)).toBeNull();          // nothing stronger
       expect(stepUp(["m"], mine)).toEqual(["h"]);                   // the order comes first
       expect(stepUp(["h"], mine.map(b => ({ ...b, kg: null })))).toBeNull(); // no kg: no combination advice
     });

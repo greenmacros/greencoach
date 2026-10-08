@@ -7,7 +7,7 @@ import type { CoachConfig } from "./config";
 import { clamp, type SessionPerf } from "./stats";
 import type { PlanMode, Reason, SlotState } from "./types";
 import type { Modifiers } from "./volume";
-import { isBandsOnly, stepUp } from "../bands/bands";
+import { isBandsOnly, nextBandRange, stepUp } from "../bands/bands";
 
 const P = (key: string, params?: Reason["params"]): Reason => ({ key, params });
 const LOWER = ["quadriceps", "hamstrings", "glutes", "lower-back", "calves"];
@@ -83,8 +83,10 @@ export function planSlot(slot: ExerciseSlot, ex: Exercise, newSets: number, sess
 
   const base = { sets: newSets, repMin: range.min, repMax: range.max, restSec };
   const lastBands = last?.bands ?? slot.bands ?? null;
+  // Long band sets (top of range 20+) only count when close to failure, and people under-guess reps left on them.
+  const rirCap = isBandsOnly(ex) && range.max >= 20 ? 1 : Infinity;
   const mk = (weightKg: number | null, rir: number, targetReps: number, reason: Reason, swapReason?: Reason, bands: string[] | null = lastBands): SlotPlan =>
-    ({ next: { ...base, rir, weightKg, targetReps: clamp(Math.round(targetReps), range.min, range.max), bands }, reason, extra, swapReason });
+    ({ next: { ...base, rir: Math.min(rir, rirCap), weightKg, targetReps: clamp(Math.round(targetReps), range.min, range.max), bands }, reason, extra, swapReason });
 
   // --- No usable history -------------------------------------------------
   if (!last) return mk(slot.weightKg ?? null, ctx.targetRir, range.min, P("why.load.first", { lo: range.min, hi: range.max, rir: ctx.targetRir }));
@@ -177,8 +179,17 @@ export function planSlot(slot: ExerciseSlot, ex: Exercise, newSets: number, sess
       const up = stepUp(lastBands, order);
       const names = (ids: string[]) => order.filter(b => ids.includes(b.id)).map(b => b.name).join(" + ");
       if (up) return withPlateau(mk(null, ctx.targetRir, range.min, P(up.length > 1 || (lastBands?.length ?? 0) > 1 ? "why.load.bandCombo" : "why.load.bandNext", { band: names(up) }), undefined, up));
-      if (lastBands?.length && lastBands.every(id => order.some(b => b.id === id))) return withPlateau(mk(null, ctx.targetRir, range.max, P("why.load.bandTop")));
-      return withPlateau(mk(null, ctx.targetRir, range.min, P("why.load.bands")));
+      if (!lastBands?.length || !lastBands.every(id => order.some(b => b.id === id))) return withPlateau(mk(null, ctx.targetRir, range.min, P("why.load.bands")));
+      // Nothing stronger to move to: raise the rep range (to 30 at most), with sets close to failure.
+      const kgHint = order.length > 1 && order.some(b => b.kg == null) ? [P("why.load.bandKgHint")] : [];
+      const wider = nextBandRange(range.max);
+      if (wider) {
+        return {
+          next: { ...base, repMin: wider.min, repMax: wider.max, rir: Math.min(ctx.targetRir, 1), weightKg: null, targetReps: wider.min, bands: lastBands },
+          reason: P("why.load.bandReps", { lo: wider.min, hi: wider.max }), extra: [...extra, ...kgHint],
+        };
+      }
+      return { ...mk(null, Math.min(ctx.targetRir, 1), range.max, P("why.load.bandOutgrown", { n: range.max }), P("why.swap.bandOutgrown")), extra: [...extra, ...kgHint] };
     }
     if (keep === null) return withPlateau(mk(inc, ctx.targetRir, range.min, P("why.load.bw", { inc: fmt(inc), u: ctx.unit })));
     const w = wRound(keep + dir * inc * steps);

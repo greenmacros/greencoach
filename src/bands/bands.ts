@@ -58,7 +58,7 @@ export function bandStrength(ids: readonly string[] | null | undefined, all: rea
 }
 
 /**
- * The lightest single band or pair of bands that is stronger than `ids` (by package kg), for going past the heaviest
+ * The lightest single band, pair or trio that is stronger than `ids` (by package kg), for going past the heaviest
  * band or stepping up from a combination. Fewer bands win a tie. Null when kg values are missing or nothing is stronger.
  */
 export function nextCombo(ids: readonly string[] | null | undefined, all: readonly { id: string; kg?: number | null }[]): string[] | null {
@@ -66,9 +66,24 @@ export function nextCombo(ids: readonly string[] | null | undefined, all: readon
   if (cur === null) return null;
   const known = all.filter(b => b.kg != null);
   const options: { ids: string[]; kg: number }[] = known.map(b => ({ ids: [b.id], kg: b.kg! }));
-  for (let i = 0; i < known.length; i++) for (let j = i + 1; j < known.length; j++) options.push({ ids: [known[i].id, known[j].id], kg: known[i].kg! + known[j].kg! });
+  for (let i = 0; i < known.length; i++) for (let j = i + 1; j < known.length; j++) {
+    options.push({ ids: [known[i].id, known[j].id], kg: known[i].kg! + known[j].kg! });
+    for (let k = j + 1; k < known.length; k++) options.push({ ids: [known[i].id, known[j].id, known[k].id], kg: known[i].kg! + known[j].kg! + known[k].kg! });
+  }
   const better = options.filter(o => o.kg > cur + 1e-9).sort((a, b) => a.kg - b.kg || a.ids.length - b.ids.length);
   return better[0]?.ids ?? null;
+}
+
+/**
+ * Rep ranges used once no stronger band is left: 10-15 → 15-20 → 20-30. Sets taken close to failure keep building
+ * muscle up to roughly 30 reps (lighter loads grow muscle about as well as heavy ones when sets end near failure),
+ * so 30 is the ceiling. Returns null at the ceiling.
+ */
+export const BAND_REP_CEILING = 30;
+export function nextBandRange(hi: number): { min: number; max: number } | null {
+  if (hi >= BAND_REP_CEILING) return null;
+  const max = [15, 20, BAND_REP_CEILING].find(x => x > hi) ?? BAND_REP_CEILING;
+  return { min: Math.min(hi, max - 5), max };
 }
 
 /** One band up: the next band in the user's order, or, past the heaviest band (or from a combination), the next combination by kg. */
