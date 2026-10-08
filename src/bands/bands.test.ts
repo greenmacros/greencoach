@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bandKey, bandLabel, bandsOf, defaultBands, nextBand } from "./bands";
+import { bandKey, bandLabel, bandStrength, bandsOf, defaultBands, nextBand, nextCombo, orderConflicts, sortByKg, stepUp, type Band } from "./bands";
 import { buildExerciseLog, addSet } from "../workout/model";
 import type { SetLog } from "../workout/types";
 
@@ -31,5 +31,31 @@ describe("resistance bands", () => {
     const fromCoach = buildExerciseLog({ id: "slot", exerciseId: "x-band-row", sets: 2, repMin: 10, repMax: 15, rir: 2, restSec: 90, notes: "", supersetGroup: null, bands: ["band-3"] }, "x-band-row", prev);
     expect(fromCoach.sets.map(s => s.bands)).toEqual([["band-3"], ["band-3"]]);
     expect(addSet(log).sets.at(-1)!.bands).toEqual(["band-2"]);
+  });
+
+  describe("with the kg from the package", () => {
+    const mine: Band[] = [
+      { id: "l", name: "Light", color: "", kg: 5 }, { id: "m", name: "Medium", color: "", kg: 10 }, { id: "h", name: "Heavy", color: "", kg: 20 },
+    ];
+
+    it("adds up combinations, and only when every band has a kg", () => {
+      expect(bandStrength(["l", "h"], mine)).toBe(25);
+      expect(bandStrength(["l", "x"], mine)).toBeNull();
+    });
+
+    it("past the heaviest band, picks the lightest stronger single or pair (fewer bands on a tie)", () => {
+      expect(nextCombo(["h"], mine)).toEqual(["l", "h"]);           // 25
+      expect(nextCombo(["l", "h"], mine)).toEqual(["m", "h"]);      // 30
+      expect(nextCombo(["m", "h"], mine)).toBeNull();               // nothing stronger
+      expect(stepUp(["m"], mine)).toEqual(["h"]);                   // the order comes first
+      expect(stepUp(["h"], mine.map(b => ({ ...b, kg: null })))).toBeNull(); // no kg: no combination advice
+    });
+
+    it("flags an order that contradicts the kg and sorts it", () => {
+      const wrong = [mine[0], mine[2], mine[1]];
+      expect(orderConflicts(wrong).map(([a, b]) => [a.id, b.id])).toEqual([["h", "m"]]);
+      expect(sortByKg(wrong).map(b => b.id)).toEqual(["l", "m", "h"]);
+      expect(orderConflicts(mine)).toEqual([]);
+    });
   });
 });

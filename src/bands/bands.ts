@@ -44,3 +44,54 @@ export function nextBand(ids: readonly string[] | null | undefined, order: reado
   const i = order.findIndex(b => b.id === ids[0]);
   return i >= 0 && i < order.length - 1 ? order[i + 1].id : null;
 }
+
+/** Rough strength of a band combination: the sum of the package kg. Null unless every band in it has a kg. */
+export function bandStrength(ids: readonly string[] | null | undefined, all: readonly { id: string; kg?: number | null }[]): number | null {
+  if (!ids?.length) return null;
+  let sum = 0;
+  for (const id of ids) {
+    const kg = all.find(b => b.id === id)?.kg;
+    if (kg == null) return null;
+    sum += kg;
+  }
+  return sum;
+}
+
+/**
+ * The lightest single band or pair of bands that is stronger than `ids` (by package kg), for going past the heaviest
+ * band or stepping up from a combination. Fewer bands win a tie. Null when kg values are missing or nothing is stronger.
+ */
+export function nextCombo(ids: readonly string[] | null | undefined, all: readonly { id: string; kg?: number | null }[]): string[] | null {
+  const cur = bandStrength(ids, all);
+  if (cur === null) return null;
+  const known = all.filter(b => b.kg != null);
+  const options: { ids: string[]; kg: number }[] = known.map(b => ({ ids: [b.id], kg: b.kg! }));
+  for (let i = 0; i < known.length; i++) for (let j = i + 1; j < known.length; j++) options.push({ ids: [known[i].id, known[j].id], kg: known[i].kg! + known[j].kg! });
+  const better = options.filter(o => o.kg > cur + 1e-9).sort((a, b) => a.kg - b.kg || a.ids.length - b.ids.length);
+  return better[0]?.ids ?? null;
+}
+
+/** One band up: the next band in the user's order, or, past the heaviest band (or from a combination), the next combination by kg. */
+export const stepUp = (ids: readonly string[] | null | undefined, all: readonly { id: string; kg?: number | null }[]): string[] | null => {
+  const next = nextBand(ids, all);
+  return next ? [next] : nextCombo(ids, all);
+};
+
+/** Pairs of neighbouring bands whose kg contradicts the order (a later band is lighter), for a gentle warning. */
+export function orderConflicts(all: readonly Band[]): [Band, Band][] {
+  const out: [Band, Band][] = [];
+  let prev: Band | null = null;
+  for (const b of all) {
+    if (b.kg == null) continue;
+    if (prev && b.kg < prev.kg!) out.push([prev, b]);
+    prev = b;
+  }
+  return out;
+}
+
+/** The same bands sorted lightest first by kg; bands without a kg keep their place relative to each other. */
+export function sortByKg(all: readonly Band[]): Band[] {
+  const withKg = all.filter(b => b.kg != null).sort((a, b) => a.kg! - b.kg!);
+  let k = 0;
+  return all.map(b => (b.kg == null ? b : withKg[k++]));
+}

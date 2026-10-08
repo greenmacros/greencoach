@@ -256,6 +256,12 @@ describe("load progression", () => {
     expect(top.next.bands).toEqual(["blue"]);
     expect(top.reason.key).toBe("why.load.bandTop");
 
+    // with the kg from the package, the coach goes past the heaviest band with the lightest stronger combination
+    const withKg = [{ id: "yellow", name: "Yellow", kg: 5 }, { id: "red", name: "Red", kg: 10 }, { id: "blue", name: "Blue", kg: 20 }];
+    const combo = slotFor(run(all, { program: prog, workouts: [w], bands: withKg }), BANDROW);
+    expect(combo.next.bands).toEqual(["yellow", "blue"]);
+    expect(combo.reason).toEqual({ key: "why.load.bandCombo", params: { band: "Yellow + Blue" } });
+
     // mid-range: keep the band, add a rep
     w.exercises[0].sets = w.exercises[0].sets.map(x => ({ ...x, reps: 12, bands: ["red"] }));
     const mid = slotFor(run(all, { program: prog, workouts: [w], bands }), BANDROW);

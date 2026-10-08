@@ -132,7 +132,7 @@ Increments (`load.inc`, kg; `load.incLb` for lb users): barbell 2.5 (5 for lower
 EZ bar / Smith 2.5, dumbbells 1 below 12 kg and 2 above, kettlebell 2, cable 2.5, machine 2.5 (5 above 100 kg),
 added load on bodyweight moves 2.5. Results are rounded to half an increment. Band-only exercises are logged by
 the user's own bands (Settings → My bands, lightest first): at the top of the range the coach moves to the next band in
-that order (`why.load.bandNext`), and on the heaviest band suggests tempo, pauses or a second band (`why.load.bandTop`); assisted machines progress by reducing assistance. Plateau (no e1RM gain over 4 sessions)
+that order (`why.load.bandNext`), past the heaviest band (or from a combination) it suggests the lightest stronger single band or pair by the optional package kg (`why.load.bandCombo`), and without kg values it suggests tempo, pauses or a second band (`why.load.bandTop`); assisted machines progress by reducing assistance. Plateau (no e1RM gain over 4 sessions)
 adds a note and suggests a variation.
 
 Goal and phase:

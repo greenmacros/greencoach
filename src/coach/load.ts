@@ -7,7 +7,7 @@ import type { CoachConfig } from "./config";
 import { clamp, type SessionPerf } from "./stats";
 import type { PlanMode, Reason, SlotState } from "./types";
 import type { Modifiers } from "./volume";
-import { isBandsOnly, nextBand } from "../bands/bands";
+import { isBandsOnly, stepUp } from "../bands/bands";
 
 const P = (key: string, params?: Reason["params"]): Reason => ({ key, params });
 const LOWER = ["quadriceps", "hamstrings", "glutes", "lower-back", "calves"];
@@ -47,7 +47,7 @@ export interface LoadCtx {
   today: string;
   rejectedLoad: boolean;
   /** The user's bands, lightest first. */
-  bands?: readonly { id: string; name: string }[];
+  bands?: readonly { id: string; name: string; kg?: number | null }[];
 }
 
 export interface SlotPlan { next: SlotState & { targetReps: number }; reason: Reason; extra: Reason[]; swapReason?: Reason }
@@ -174,9 +174,10 @@ export function planSlot(slot: ExerciseSlot, ex: Exercise, newSets: number, sess
     if (inc === null) {
       // Bands: one band up in the user's own order; on the heaviest band, slow down or add a second band.
       const order = ctx.bands ?? [];
-      const up = nextBand(lastBands, order);
-      if (up) return withPlateau(mk(null, ctx.targetRir, range.min, P("why.load.bandNext", { band: order.find(b => b.id === up)!.name }), undefined, [up]));
-      if (lastBands?.length === 1 && order.some(b => b.id === lastBands[0])) return withPlateau(mk(null, ctx.targetRir, range.max, P("why.load.bandTop")));
+      const up = stepUp(lastBands, order);
+      const names = (ids: string[]) => order.filter(b => ids.includes(b.id)).map(b => b.name).join(" + ");
+      if (up) return withPlateau(mk(null, ctx.targetRir, range.min, P(up.length > 1 || (lastBands?.length ?? 0) > 1 ? "why.load.bandCombo" : "why.load.bandNext", { band: names(up) }), undefined, up));
+      if (lastBands?.length && lastBands.every(id => order.some(b => b.id === id))) return withPlateau(mk(null, ctx.targetRir, range.max, P("why.load.bandTop")));
       return withPlateau(mk(null, ctx.targetRir, range.min, P("why.load.bands")));
     }
     if (keep === null) return withPlateau(mk(inc, ctx.targetRir, range.min, P("why.load.bw", { inc: fmt(inc), u: ctx.unit })));

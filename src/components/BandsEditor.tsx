@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useApp } from "../app-context";
-import { BAND_COLORS, bandsOf, type Band } from "../bands/bands";
+import { BAND_COLORS, bandsOf, orderConflicts, sortByKg, type Band } from "../bands/bands";
 import { newId } from "../lib/id";
 import { BandDot } from "./BandPicker";
 import NumInput from "./NumInput";
@@ -12,6 +12,7 @@ export default function BandsEditor() {
   const bands = bandsOf(settings);
   const [open, setOpen] = useState<string | null>(null);
   const save = (next: Band[]) => void update({ bands: next });
+  const conflicts = orderConflicts(bands);
   const patch = (id: string, p: Partial<Band>) => save(bands.map(b => (b.id === id ? { ...b, ...p } : b)));
   const move = (i: number, dir: -1 | 1) => {
     const j = i + dir;
@@ -60,6 +61,12 @@ export default function BandsEditor() {
           </li>
         ))}
       </ol>
+      {conflicts.length > 0 && (
+        <div role="status" className="card grid gap-2" style={{ padding: 10, borderColor: "var(--danger)" }}>
+          <p className="text-sm">{t("band.conflict", { a: conflicts[0][0].name, b: conflicts[0][1].name })}</p>
+          <button className="btn justify-self-start" onClick={() => save(sortByKg(bands))}>{t("band.sortKg")}</button>
+        </div>
+      )}
       <button className="btn justify-self-start" onClick={() => {
         const id = "band-" + newId();
         save([...bands, { id, name: t("band.new", { n: bands.length + 1 }), color: BAND_COLORS[bands.length % BAND_COLORS.length], kg: null }]);

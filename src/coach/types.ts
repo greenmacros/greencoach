@@ -44,7 +44,7 @@ export interface CoachInput {
   bodyWeights: readonly BodyWeightPoint[];
   rejections: readonly Rejection[];
   /** The user's bands, lightest first (for band exercises). */
-  bands?: readonly { id: string; name: string }[];
+  bands?: readonly { id: string; name: string; kg?: number | null }[];
   lookup: (id: string) => Exercise | undefined;
   /** Same-muscle, same-pattern alternatives available to the user (used for joint-pain swaps). */
   substitutes: (ex: Exercise) => Exercise[];
