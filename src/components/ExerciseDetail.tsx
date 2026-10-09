@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useApp } from "../app-context";
 import { loadInstructions, type Steps } from "../library/data";
-import { equipmentFor, substitutes } from "../library/search";
+import { substitutes } from "../library/search";
+import { myEquipment } from "../library/equipment";
 import type { LibraryApi } from "../library/useLibrary";
 import type { Exercise } from "../library/types";
 import ExerciseMedia from "./ExerciseMedia";
@@ -17,11 +18,10 @@ interface Props {
   /** Present when the library is used as a picker. */
   onPick?: (ex: Exercise) => void;
   onDelete?: (ex: Exercise) => void;
-  equipmentLevel?: "home" | "bands" | "dumbbells" | "gym";
 }
 
-export default function ExerciseDetail({ ex, lib, onClose, onOpen, onPick, onDelete, equipmentLevel = "gym" }: Props) {
-  const { t, settings } = useApp();
+export default function ExerciseDetail({ ex, lib, onClose, onOpen, onPick, onDelete }: Props) {
+  const { t, settings, profile } = useApp();
   const lang = settings.lang;
   const [steps, setSteps] = useState<Steps | null>(null);
   const [showSwap, setShowSwap] = useState(false);
@@ -41,7 +41,7 @@ export default function ExerciseDetail({ ex, lib, onClose, onOpen, onPick, onDel
 
   const fav = lib.favorites.has(ex.id);
   const list = steps ? (lang === "ja" && steps.ja ? steps.ja : steps.en) : [];
-  const swaps = showSwap ? substitutes(lib.all, ex, equipmentFor(equipmentLevel)) : [];
+  const swaps = showSwap ? substitutes(lib.all, ex, myEquipment(profile)) : [];
   const other = lang === "ja" ? ex.name.en : ex.name.ja;
   const chips = (ids: string[], prefix: string) => ids.map(i => t(`${prefix}.${i}`)).join(" · ");
 

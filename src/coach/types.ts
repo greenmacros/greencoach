@@ -18,6 +18,8 @@ export interface CoachProfile {
   equipment: Equipment;
   region: Region;
   weightUnit: WeightUnit;
+  /** Heaviest dumbbell the user owns (kg); suggestions never go above it. */
+  dumbbellMaxKg?: number | null;
 }
 
 export interface BodyWeightPoint { dayKey: string; kg: number }

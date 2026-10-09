@@ -282,6 +282,27 @@ describe("load progression", () => {
     expect(mid.reason.key).toBe("why.load.hold.reps");
   });
 
+  it("dumbbells never go above the heaviest pair the user owns; then reps go up", () => {
+    const DB = "Dumbbell_Bench_Press";
+    const prog = program([session("A", [{ ex: DB, sets: 3, lo: 8, hi: 12 }])], [0, null, null, null, null, null, null]);
+    const at = (w: number, reps: number, lo = 8, hi = 12) => [workout(week(2), [{ ex: DB, sets: x3(w, reps, 2), target: { repMin: lo, repMax: hi, rir: 2 } }])];
+    const prof = (max: number | null) => profile({ dumbbellMaxKg: max });
+    // free to progress without a cap
+    expect(slotFor(run(all, { program: prog, workouts: at(20, 12) , profile: prof(null) }), DB).next.weightKg).toBeGreaterThan(20);
+    // capped: 21 kg is the heaviest, so the jump stops there
+    const cap = slotFor(run(all, { program: prog, workouts: at(20, 12), profile: prof(21) }), DB);
+    expect(cap.next.weightKg).toBe(21);
+    expect(cap.reason.key).toBe("why.load.dbCap");
+    // at the heaviest: same weight, higher rep range, close to failure
+    const reps = slotFor(run(all, { program: prog, workouts: at(21, 12), profile: prof(21) }), DB);
+    expect([reps.next.weightKg, reps.next.repMin, reps.next.repMax, reps.next.rir]).toEqual([21, 10, 15, 1]);
+    expect(reps.reason.key).toBe("why.load.dbReps");
+    // at 30 reps: outgrown, with swaps
+    const out = run(all, { program: program([session("A", [{ ex: DB, sets: 3, lo: 20, hi: 30 }])], [0, null, null, null, null, null, null]), workouts: at(21, 30, 20, 30), profile: prof(21) });
+    expect(slotFor(out, DB).reason.key).toBe("why.load.dbOutgrown");
+    expect(slotFor(out, DB).next.weightKg).toBe(21);
+  });
+
   it("bodyweight lifts at the top of the range suggest adding load", () => {
     const prog = program([session("Pull", [{ ex: PULLUP, sets: 3, lo: 6, hi: 10 }])], [0, null, null, null, null, null, null]);
     const p = run(all, { program: prog, workouts: [workout(week(2), [{ ex: PULLUP, sets: x3(null, 12, 2), target: { repMin: 6, repMax: 10, rir: 2 } }])] });

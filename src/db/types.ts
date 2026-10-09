@@ -51,6 +51,10 @@ export interface Profile extends BaseRecord {
   phase: Phase;
   daysPerWeek: number;
   equipment: Equipment;
+  /** Exactly what the user has (set in "My equipment"); falls back to the preset of `equipment`. */
+  myEquipment?: import("../library/types").EquipmentId[];
+  /** Heaviest dumbbell the user has, in kg (per dumbbell). The coach never suggests more. */
+  dumbbellMaxKg?: number | null;
 }
 
 /** Tables that hold user data. Later milestones give these concrete record types. */

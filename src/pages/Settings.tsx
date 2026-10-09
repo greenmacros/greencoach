@@ -14,6 +14,7 @@ import { formatBytes, formatDateTime } from "../lib/format";
 import type { BackupFile } from "../db/types";
 import BandsEditor from "../components/BandsEditor";
 import { SafetyCard } from "../components/Safety";
+import EquipmentEditor from "../components/EquipmentEditor";
 
 type Estimate = Awaited<ReturnType<typeof repo.storageEstimate>>;
 
@@ -79,7 +80,6 @@ export default function Settings({ lib, prog, workouts }: { lib: LibraryApi; pro
           ["experience", "profile.experience", ["beginner", "intermediate", "advanced"], "profile.exp."],
           ["goal", "profile.goal", ["muscle", "strength", "cut", "maintain", "recomp"], "profile.goal."],
           ["phase", "profile.phase", ["bulk", "maintain", "cut"], "profile.phase."],
-          ["equipment", "profile.equipment", ["gym", "dumbbells", "bands", "home"], "profile.eq."],
         ] as const).map(([field, label, options, prefix]) => (
           <label key={field} className="grid gap-1"><span>{t(label)}</span>
             <select className="field" value={profile[field]} onChange={e => void updateProfile({ [field]: e.target.value } as never)}>
@@ -97,6 +97,12 @@ export default function Settings({ lib, prog, workouts }: { lib: LibraryApi; pro
             {(["JP", "north", "south"] as const).map(o => <option key={o} value={o}>{t(`profile.region.${o}`)}</option>)}
           </select>
         </label>
+      </div>
+
+      <div className="card grid gap-2" aria-labelledby="equip-h">
+        <h2 id="equip-h" className="font-bold">{t("equip.mine")}</h2>
+        <p className="muted text-sm">{t("equip.mineHint")}</p>
+        <EquipmentEditor value={profile} onChange={v => void updateProfile(v)} />
       </div>
 
       <GoalsEditor lib={lib} prog={prog} workouts={workouts} />

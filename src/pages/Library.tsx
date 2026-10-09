@@ -4,7 +4,8 @@ import CustomExerciseForm from "../components/CustomExerciseForm";
 import ExerciseDetail from "../components/ExerciseDetail";
 import ExerciseMedia from "../components/ExerciseMedia";
 import VirtualList from "../components/VirtualList";
-import { emptyFilters, equipmentFor, searchExercises, type Filters } from "../library/search";
+import { emptyFilters, searchExercises, type Filters } from "../library/search";
+import { myEquipment } from "../library/equipment";
 import { EQUIPMENT, MUSCLES, PATTERNS, type CustomExerciseRecord, type Exercise } from "../library/types";
 import type { LibraryApi } from "../library/useLibrary";
 import TextInput from "../components/TextInput";
@@ -18,27 +19,28 @@ interface Props {
   onPick?: (ex: Exercise) => void;
   /** Height of the scrolling list. */
   listHeight?: string;
-  equipmentLevel?: "home" | "bands" | "dumbbells" | "gym";
 }
 
 const toggle = <T,>(arr: T[], v: T) => (arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v]);
 
-export default function Library({ lib, onPick, listHeight = "calc(100dvh - 22rem)", equipmentLevel = "gym" }: Props) {
-  const { t, settings } = useApp();
+export default function Library({ lib, onPick, listHeight = "calc(100dvh - 22rem)" }: Props) {
+  const { t, settings, profile } = useApp();
+  const have = useMemo(() => myEquipment(profile), [profile]);
   const lang = settings.lang;
   const [f, setF] = useState<Filters>(emptyFilters);
   const [open, setOpen] = useState<Exercise | null>(null);
   const [creating, setCreating] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [onlyMine, setOnlyMine] = useState(false);
+  // On by default: show what the user can actually do; one tap shows everything.
+  const [onlyMine, setOnlyMine] = useState(true);
   const [undo, setUndo] = useState<CustomExerciseRecord | null>(null);
 
   const results = useMemo(
-    () => searchExercises(lib.all, f, { lang, favorites: lib.favorites, recent: lib.recent, available: onlyMine ? equipmentFor(equipmentLevel) : undefined }),
-    [lib.all, lib.favorites, lib.recent, f, lang, onlyMine, equipmentLevel],
+    () => searchExercises(lib.all, f, { lang, favorites: lib.favorites, recent: lib.recent, available: onlyMine ? have : undefined }),
+    [lib.all, lib.favorites, lib.recent, f, lang, onlyMine, have],
   );
 
-  const activeCount = f.muscles.length + f.equipment.length + f.patterns.length + (f.favoritesOnly ? 1 : 0) + (onlyMine ? 1 : 0);
+  const activeCount = f.muscles.length + f.equipment.length + f.patterns.length + (f.favoritesOnly ? 1 : 0);
 
   const remove = async (ex: Exercise) => {
     const rec = await lib.removeCustom(ex.id);
@@ -63,8 +65,9 @@ export default function Library({ lib, onPick, listHeight = "calc(100dvh - 22rem
         <button className="chip" aria-expanded={showFilters} onClick={() => setShowFilters(s => !s)}>
           {t("lib.filters")}{activeCount ? ` (${activeCount})` : ""}
         </button>
+        <button className="chip" aria-pressed={onlyMine} onClick={() => setOnlyMine(m => !m)}>{t("lib.myEquipment")}</button>
         <button className="chip" aria-pressed={f.favoritesOnly} onClick={() => setF({ ...f, favoritesOnly: !f.favoritesOnly })}><Icon name="starFill" /> {t("lib.favorites")}</button>
-        {activeCount > 0 && <button className="chip" onClick={() => { setF({ ...emptyFilters, query: f.query }); setOnlyMine(false); }}>{t("lib.clear")}</button>}
+        {activeCount > 0 && <button className="chip" onClick={() => setF({ ...emptyFilters, query: f.query })}>{t("lib.clear")}</button>}
         <span className="muted text-sm ml-auto" role="status">{t("lib.count", { n: results.length })}</span>
       </div>
 
@@ -81,7 +84,6 @@ export default function Library({ lib, onPick, listHeight = "calc(100dvh - 22rem
               {PATTERNS.map(p => <option key={p} value={p}>{t(`pattern.${p}`)}</option>)}
             </select>
           </label>
-          <label className="flex items-center gap-2"><input type="checkbox" checked={onlyMine} onChange={e => setOnlyMine(e.target.checked)} />{t("lib.myEquipment")}</label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={f.includeNonStrength} onChange={e => setF({ ...f, includeNonStrength: e.target.checked })} />{t("lib.stretches")}</label>
         </div>
       )}
@@ -106,7 +108,7 @@ export default function Library({ lib, onPick, listHeight = "calc(100dvh - 22rem
       <p className="muted text-xs">{t("lib.credit")}</p>
 
       {open && (
-        <ExerciseDetail ex={open} lib={lib} equipmentLevel={equipmentLevel} onClose={() => setOpen(null)} onOpen={setOpen}
+        <ExerciseDetail ex={open} lib={lib} onClose={() => setOpen(null)} onOpen={setOpen}
           onPick={onPick ? ex => { void lib.markUsed(ex.id); onPick(ex); setOpen(null); } : undefined}
           onDelete={remove} />
       )}

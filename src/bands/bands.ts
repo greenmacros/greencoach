@@ -80,6 +80,7 @@ export function nextCombo(ids: readonly string[] | null | undefined, all: readon
  * so 30 is the ceiling. Returns null at the ceiling.
  */
 export const BAND_REP_CEILING = 30;
+/** Same ladder for any load that cannot go up (heaviest band, heaviest dumbbell). */
 export function nextBandRange(hi: number): { min: number; max: number } | null {
   if (hi >= BAND_REP_CEILING) return null;
   const max = [15, 20, BAND_REP_CEILING].find(x => x > hi) ?? BAND_REP_CEILING;

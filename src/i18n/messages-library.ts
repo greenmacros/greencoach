@@ -19,6 +19,12 @@ export const LIBRARY_MESSAGES = {
   "muscle.abductors": { en: "Abductors", ja: "外転筋" },
   "muscle.neck": { en: "Neck", ja: "首" },
 
+  "equip.quick": { en: "Quick start", ja: "かんたん設定" },
+  "equip.mine": { en: "My equipment", ja: "マイ器具" },
+  "equip.mineHint": { en: "Tick what you can use. Exercise suggestions, swaps and the library filter use this list.", ja: "使える器具を選んでください。種目の提案・入れ替え・ライブラリの絞り込みに使います。" },
+  "equip.dbMax": { en: "Heaviest dumbbell ({u}, optional)", ja: "最も重いダンベル（{u}・任意）" },
+  "equip.dbMaxHint": { en: "Per dumbbell. The coach never suggests more; when you outgrow it, it adds reps instead.", ja: "1個あたりの重さ。コーチはこれを超える重量を提案せず、超えたら回数を増やします。" },
+  "equip.always": { en: "Bodyweight exercises are always included.", ja: "自重種目は常に含まれます。" },
   "equip.barbell": { en: "Barbell", ja: "バーベル" },
   "equip.dumbbell": { en: "Dumbbell", ja: "ダンベル" },
   "equip.cable": { en: "Cable", ja: "ケーブル" },

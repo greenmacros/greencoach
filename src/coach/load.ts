@@ -48,7 +48,12 @@ export interface LoadCtx {
   rejectedLoad: boolean;
   /** The user's bands, lightest first. */
   bands?: readonly { id: string; name: string; kg?: number | null }[];
+  /** Heaviest dumbbell the user owns (kg). */
+  dumbbellMaxKg?: number | null;
 }
+
+/** A dumbbell exercise whose load is the dumbbells (not a barbell or machine that also lists them). */
+const isDumbbellLoad = (ex: Exercise) => ex.equipment.includes("dumbbell") && !ex.equipment.some(e => ["barbell", "smith", "machine", "cable", "ez-bar"].includes(e));
 
 export interface SlotPlan { next: SlotState & { targetReps: number }; reason: Reason; extra: Reason[]; swapReason?: Reason }
 
@@ -84,7 +89,9 @@ export function planSlot(slot: ExerciseSlot, ex: Exercise, newSets: number, sess
   const base = { sets: newSets, repMin: range.min, repMax: range.max, restSec };
   const lastBands = last?.bands ?? slot.bands ?? null;
   // Long band sets (top of range 20+) only count when close to failure, and people under-guess reps left on them.
-  const rirCap = isBandsOnly(ex) && range.max >= 20 ? 1 : Infinity;
+  const dbMax = isDumbbellLoad(ex) ? ctx.dumbbellMaxKg ?? null : null;
+  const atDbMax = dbMax !== null && last?.weightKg != null && last.weightKg >= dbMax - 1e-6;
+  const rirCap = (isBandsOnly(ex) || atDbMax) && range.max >= 20 ? 1 : Infinity;
   const mk = (weightKg: number | null, rir: number, targetReps: number, reason: Reason, swapReason?: Reason, bands: string[] | null = lastBands): SlotPlan =>
     ({ next: { ...base, rir: Math.min(rir, rirCap), weightKg, targetReps: clamp(Math.round(targetReps), range.min, range.max), bands }, reason, extra, swapReason });
 
@@ -192,6 +199,13 @@ export function planSlot(slot: ExerciseSlot, ex: Exercise, newSets: number, sess
       return { ...mk(null, Math.min(ctx.targetRir, 1), range.max, P("why.load.bandOutgrown", { n: range.max }), P("why.swap.bandOutgrown")), extra: [...extra, ...kgHint] };
     }
     if (keep === null) return withPlateau(mk(inc, ctx.targetRir, range.min, P("why.load.bw", { inc: fmt(inc), u: ctx.unit })));
+    if (dbMax !== null && keep + inc * steps > dbMax + 1e-6) {
+      // Never above the heaviest dumbbell the user has: go up to it, then add reps (to 30 at most, near failure).
+      if (keep < dbMax - 1e-6) return withPlateau(mk(dbMax, ctx.targetRir, range.min, P("why.load.dbCap", { w: fmt(dbMax), u: ctx.unit })));
+      const wider = nextBandRange(range.max);
+      if (wider) return { next: { ...base, repMin: wider.min, repMax: wider.max, rir: Math.min(ctx.targetRir, 1), weightKg: keep, targetReps: wider.min, bands: lastBands }, reason: P("why.load.dbReps", { w: fmt(dbMax), u: ctx.unit, lo: wider.min, hi: wider.max }), extra };
+      return { ...mk(keep, Math.min(ctx.targetRir, 1), range.max, P("why.load.dbOutgrown", { w: fmt(dbMax), u: ctx.unit }), P("why.swap.dbOutgrown")), extra };
+    }
     const w = wRound(keep + dir * inc * steps);
     const key = bigSurplus ? "why.load.up2" : "why.load.up";
     return withPlateau(mk(w, ctx.targetRir, range.min, P(key, { reps: Math.round(last.avgReps), rir: avgRir === null ? "–" : Math.round(avgRir * 10) / 10, inc: fmt(Math.abs(w - keep)), u: ctx.unit })));

@@ -150,7 +150,7 @@ export function planNextWeek(input: CoachInput): CoachPlan {
     const sessions = exerciseSessions(perfWorkouts, a.exercise.id);
     const sets = a.mult === 0 && mode !== "deload" ? a.slot.sets : a.sets;
     const plan = planSlot(a.slot, a.exercise, sets, sessions, {
-      m: mods, mode, targetRir, unit: profile.weightUnit, restAddSec: season?.restAddSec ?? 0, today, rejectedLoad: rejectedRecently("slot", a.slot.id, "load"), bands: input.bands,
+      m: mods, mode, targetRir, unit: profile.weightUnit, restAddSec: season?.restAddSec ?? 0, today, rejectedLoad: rejectedRecently("slot", a.slot.id, "load"), bands: input.bands, dumbbellMaxKg: profile.dumbbellMaxKg ?? null,
     });
     const lastSession = sessions[sessions.length - 1];
     const lastW = lastSession?.weightKg ?? a.slot.weightKg ?? null;

@@ -1,7 +1,8 @@
 import { repo } from "../db";
 import type { Profile, Settings } from "../db/types";
 import type { SorenessRecord } from "../feedback/soreness";
-import { equipmentFor, substitutes } from "../library/search";
+import { substitutes } from "../library/search";
+import { myEquipment } from "../library/equipment";
 import type { LibraryApi } from "../library/useLibrary";
 import type { Program } from "../program/types";
 import type { WorkoutLog } from "../workout/types";
@@ -54,11 +55,11 @@ export interface PlanArgs {
 /** The single place the engine is called from the app, so automatic and reviewed plans are identical. */
 export function makePlan(a: PlanArgs): CoachPlan | null {
   if (!a.lib.ready) return null;
-  const avail = equipmentFor(a.profile.equipment);
+  const avail = myEquipment(a.profile);
   return planNextWeek({
     today: a.today, targetWeekStart: a.targetWeekStart, program: a.program, workouts: a.finished, soreness: a.soreness,
     bodyWeights: a.bodyWeights, rejections: a.rejections, bands: bandsOf(a.settings), keptSlots: a.keptSlots,
-    profile: { experience: a.profile.experience, goal: a.profile.goal, phase: a.profile.phase, equipment: a.profile.equipment, region: a.settings.region, weightUnit: a.settings.weightUnit },
+    profile: { experience: a.profile.experience, goal: a.profile.goal, phase: a.profile.phase, equipment: a.profile.equipment, region: a.settings.region, weightUnit: a.settings.weightUnit, dumbbellMaxKg: a.profile.dumbbellMaxKg ?? null },
     lookup: a.lib.byId, substitutes: ex => substitutes(a.lib.all, ex, avail),
   });
 }

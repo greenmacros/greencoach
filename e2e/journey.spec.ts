@@ -23,6 +23,7 @@ async function journey(page: Page, lang: "en" | "ja", theme: "light" | "dark") {
   await page.getByRole("textbox").nth(1).fill("80"); // body weight
   await page.getByRole("button", { name: s.next }).click();
   await page.getByRole("button", { name: s.next }).click();
+  await page.getByRole("button", { name: s.next }).click(); // my equipment
   await page.getByRole("button", { name: s.start }).first().click();
 
   // 2. today's workout with the docked rest timer
@@ -75,6 +76,8 @@ for (const theme of ["light", "dark"] as const) {
     await acceptSafety(page);
     await scan("onboarding");
     await page.getByRole("button", { name: "Next" }).click(); await page.getByRole("button", { name: "Next" }).click(); await page.getByRole("button", { name: "Next" }).click();
+    await scan("my equipment");
+    await page.getByRole("button", { name: "Next" }).click();
     await page.getByRole("button", { name: "Start with this" }).first().click();
     await scan("today");
     await page.getByRole("button", { name: "Start workout" }).click();
@@ -105,4 +108,32 @@ test("the safety notice must be confirmed once, and stays readable in Settings",
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await expect(page.getByRole("heading", { name: "About & safety" })).toBeVisible();
   await expect(page.getByText(/^Agreed on /)).toBeVisible();
+});
+
+test("pick my equipment during setup; the library and the starting plan follow it", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await acceptSafety(page);
+  for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "Next" }).click();
+  await expect(page.getByRole("heading", { name: "My equipment" })).toBeVisible();
+  await page.getByRole("button", { name: "Bands only" }).click();
+  await page.getByRole("group", { name: "My equipment" }).getByRole("button", { name: "Dumbbell" }).click();
+  await page.getByRole("textbox", { name: "Heaviest dumbbell (kg, optional)" }).fill("12");
+  await page.screenshot({ path: "test-results/my-equipment.png" });
+  await page.getByRole("button", { name: "Next" }).click();
+  // dumbbells + bands: the home template is recommended
+  await expect(page.getByRole("article", { name: "Home dumbbells + bands" }).getByRole("button", { name: "Start with this" })).toBeVisible();
+  await page.getByRole("article", { name: "Home dumbbells + bands" }).getByRole("button", { name: "Start with this" }).click();
+
+  await page.getByRole("button", { name: "Program", exact: true }).click();
+  await page.getByRole("button", { name: "Library", exact: true }).click();
+  await page.getByRole("searchbox", { name: "Search exercises" }).fill("barbell bench press");
+  await expect(page.getByRole("button", { name: "My equipment" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText("Barbell Bench Press - Medium Grip")).toHaveCount(0);
+  await page.getByRole("button", { name: "My equipment" }).click();
+  await expect(page.getByText("Barbell Bench Press - Medium Grip").first()).toBeVisible();
+
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "My equipment" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "My equipment" }).getByRole("button", { name: "Bands" })).toHaveAttribute("aria-pressed", "true");
 });

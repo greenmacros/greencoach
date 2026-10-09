@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { useApp } from "../app-context";
 import { repo } from "../db";
-import type { Equipment, Experience, Goal, Phase, Profile, WeightUnit } from "../db/types";
+import type { Experience, Goal, Phase, Profile, WeightUnit } from "../db/types";
 import { fromDisplayWeight } from "../lib/format";
 import { newId } from "../lib/id";
 import Seg from "../components/Seg";
+import EquipmentEditor from "../components/EquipmentEditor";
 import { TEMPLATES, recommendTemplate, type TemplateSpec } from "../program/templates";
 import type { ProgramApi } from "../program/useProgram";
 
-const STEPS = 4;
+const STEPS = 5;
 const phaseFor = (g: Goal): Phase => (g === "cut" ? "cut" : g === "muscle" ? "bulk" : "maintain");
 
 /** First-run setup: preferences, optional body data, training profile, starting program. Everything is editable later. */
@@ -94,11 +95,6 @@ export default function Onboarding({ prog, onDone }: { prog: ProgramApi; onDone:
           <label className="grid gap-1"><span>{t("profile.days")}</span>
             <Seg label={t("profile.days")} value={p.daysPerWeek} onChange={v => field("daysPerWeek", v)} options={[2, 3, 4, 5, 6].map(n => ({ value: n, label: String(n) }))} />
           </label>
-          <label className="grid gap-1"><span>{t("profile.equipment")}</span>
-            <select className="field" value={p.equipment} onChange={e => field("equipment", e.target.value as Equipment)}>
-              {(["gym", "dumbbells", "bands", "home"] as const).map(o => <option key={o} value={o}>{t(`profile.eq.${o}`)}</option>)}
-            </select>
-          </label>
           <label className="grid gap-1"><span>{t("profile.region")}</span>
             <select className="field" value={settings.region} onChange={e => void update({ region: e.target.value as never })}>
               {(["JP", "north", "south"] as const).map(o => <option key={o} value={o}>{t(`profile.region.${o}`)}</option>)}
@@ -108,6 +104,14 @@ export default function Onboarding({ prog, onDone }: { prog: ProgramApi; onDone:
       )}
 
       {step === 4 && (
+        <div className="card grid gap-3">
+          <h1 className="text-xl font-bold">{t("equip.mine")}</h1>
+          <p className="muted text-sm">{t("equip.mineHint")}</p>
+          <EquipmentEditor value={p} onChange={v => setP(prev => ({ ...prev, ...v }))} />
+        </div>
+      )}
+
+      {step === 5 && (
         <div className="grid gap-3">
           <h1 className="text-xl font-bold">{t("ob.program")}</h1>
           <p className="font-semibold">{t("ob.recommended")}</p>
