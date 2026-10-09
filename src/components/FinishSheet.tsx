@@ -7,6 +7,7 @@ import { prText, prValueText } from "../workout/prText";
 import ChipRow from "./ChipRow";
 import type { WorkoutLog } from "../workout/types";
 import TextInput from "./TextInput";
+import Icon from "./Icon";
 
 interface Props {
   workout: WorkoutLog;
@@ -54,7 +55,7 @@ export default function FinishSheet({ workout, history, onFeel, lookup, onSave, 
             )}
             {prs.length > 0 && (
               <div>
-                <p className="font-semibold mb-1">🏆 {t("pr.title")}</p>
+                <p className="font-semibold mb-1"><Icon name="trophy" /> {t("pr.title")}</p>
                 <ul className="grid gap-1 text-sm">
                   {prs.map((p, i) => (
                     <li key={i}>{lookup(p.exerciseId)?.name[settings.lang] ?? p.exerciseId}: {prText(p, settings.weightUnit, t)} <span className="muted">({t("pr.was", { v: `${prValueText(p.kind, p.previous, settings.weightUnit)}${p.kind === "reps" ? "" : " " + settings.weightUnit}` })})</span></li>

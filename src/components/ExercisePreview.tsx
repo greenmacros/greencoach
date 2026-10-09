@@ -3,6 +3,7 @@ import { useApp } from "../app-context";
 import { loadInstructions, type Steps } from "../library/data";
 import type { Exercise } from "../library/types";
 import ExerciseMedia from "./ExerciseMedia";
+import Icon from "./Icon";
 
 /** Large demo plus target muscles, opened by tapping an exercise's picture during a workout. */
 export default function ExercisePreview({ ex, onClose }: { ex: Exercise; onClose: () => void }) {
@@ -27,7 +28,7 @@ export default function ExercisePreview({ ex, onClose }: { ex: Exercise; onClose
       <div className="sheet-body grid gap-3" role="dialog" aria-modal="true" aria-label={ex.name[lang]} onClick={e => e.stopPropagation()}>
         <div className="flex items-start gap-2">
           <h2 className="text-xl font-bold leading-tight flex-1">{ex.name[lang]}</h2>
-          <button className="btn" aria-label={t("lib.close")} onClick={onClose}>✕</button>
+          <button className="btn" aria-label={t("lib.close")} onClick={onClose}><Icon name="close" /></button>
         </div>
         <div className="mx-auto w-full" style={{ maxWidth: 420 }}>
           <ExerciseMedia ex={ex} size="100%" lazy={false} />

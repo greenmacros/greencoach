@@ -83,7 +83,7 @@ export default function LineChart({ series, height = 200, fmtY, fmtX, label }: P
       {hx && (
         <div className="chart-tip" role="status" style={{ left: Math.min(Math.max(0, sx(hx) - 60), w - 140), top: 0 }}>
           <div className="font-semibold">{fmtX(hx)}</div>
-          {series.map(s => { const p = s.points.find(q => q.x === hx); return p ? <div key={s.id}><span style={{ color: s.color }} aria-hidden="true">● </span>{s.label}: {fmtY(p.y)}</div> : null; })}
+          {series.map(s => { const p = s.points.find(q => q.x === hx); return p ? <div key={s.id}><span aria-hidden="true" style={{ display: "inline-block", width: 8, height: 8, borderRadius: 999, background: s.color, marginRight: 6 }} />{s.label}: {fmtY(p.y)}</div> : null; })}
         </div>
       )}
     </div>

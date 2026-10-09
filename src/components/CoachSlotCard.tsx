@@ -9,9 +9,10 @@ import type { LibraryApi } from "../library/useLibrary";
 import Stepper from "./Stepper";
 import { bandLabel, bandsOf } from "../bands/bands";
 import { sameBands } from "../coach/apply";
+import Icon from "./Icon";
 
 const COLOR: Record<Trend, string> = { up: "var(--accent)", down: "var(--danger)", same: "var(--muted)" };
-const ARROW: Record<Trend, string> = { up: "▲", down: "▼", same: "=" };
+const ARROW: Record<Trend, React.ReactNode> = { up: <Icon name="triUp" size="0.8em" />, down: <Icon name="triDown" size="0.8em" />, same: "=" };
 
 function Delta({ label, last, next, trend }: { label: string; last: string; next: string; trend: Trend }) {
   const { t } = useApp();
@@ -54,7 +55,7 @@ export default function CoachSlotCard({ s, swap, decided, lib, onAccept, onRejec
     <article className="card grid gap-2" aria-label={name} style={decided ? { borderColor: decided.status === "rejected" ? "var(--border)" : "var(--accent)" } : undefined}>
       <div className="flex items-start gap-2">
         <h3 className="font-bold flex-1 min-w-0">{name}</h3>
-        {decided && <span className="chip" style={{ cursor: "default" }}>{decided.status === "rejected" ? t("coach.rejected") : `✓ ${t("coach.accepted")}`}</span>}
+        {decided && <span className="chip" style={{ cursor: "default" }}>{decided.status === "rejected" ? t("coach.rejected") : <><Icon name="check" /> {t("coach.accepted")}</>}</span>}
       </div>
       <div className="grid grid-cols-4 gap-1">
         <Delta label={t("coach.sets")} last={String(s.last.sets)} next={String(shown.sets)} trend={s.trend.sets} />

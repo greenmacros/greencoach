@@ -31,7 +31,7 @@ test("log a session, see next week's plan with reasons, accept it, and the next 
   await expect(card.getByText(/adding 5 kg/)).toBeVisible(); // heavy lower-body barbell lift: +5 kg
   await expect(card.getByLabel(/Weight \(kg\): 105/)).toBeVisible();
   await card.getByRole("button", { name: "Accept" }).click();
-  await expect(card.getByText("✓ Accepted")).toBeVisible();
+  await expect(card.getByText("Accepted")).toBeVisible();
 
   // another exercise: keep as is
   const bench = page.getByRole("article", { name: "Barbell Bench Press - Medium Grip" });
@@ -83,7 +83,7 @@ async function logSquatWeek(page: import("@playwright/test").Page) {
   await page.getByRole("dialog", { name: "Feedback" }).getByRole("button", { name: "Save", exact: true }).click();
   await page.getByRole("button", { name: "Finish", exact: true }).click();
   await page.getByRole("button", { name: "Save workout" }).click();
-  await expect(page.getByText("✓ Done")).toBeVisible();
+  await expect(page.getByText("Done", { exact: true })).toBeVisible();
   // A new week starts: the coach updates the program on its own.
   await page.clock.setFixedTime(new Date(2026, 9, 12, 10, 0, 0));
   await page.reload();
@@ -116,7 +116,7 @@ test("automatic changes can be undone, and 'ask me each week' turns them off", a
   await page.getByRole("button", { name: "OK", exact: true }).click();
   await page.getByRole("button", { name: "Start workout" }).click();
   await expect(page.getByRole("article", { name: "Barbell Squat" }).getByRole("textbox", { name: /^Set 1 Weight/ })).toHaveValue("100");
-  await page.getByRole("button", { name: "← Back" }).click();
+  await page.getByRole("button", { name: "Back", exact: true }).click();
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Ask me each week" }).click();
   await expect(page.getByRole("button", { name: "Ask me each week" })).toHaveAttribute("aria-pressed", "true");

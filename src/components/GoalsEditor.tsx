@@ -8,6 +8,7 @@ import type { GoalKind } from "../progress/types";
 import { useBody } from "../progress/useBody";
 import { goalTitle } from "../pages/progress/GoalsView";
 import type { WorkoutLog } from "../workout/types";
+import Icon from "./Icon";
 
 /** Settings -> Goals: add and remove goals. Progress is shown on the Progress tab. */
 export default function GoalsEditor({ lib, prog, workouts }: { lib: LibraryApi; prog: ProgramApi; workouts: WorkoutLog[] }) {
@@ -50,11 +51,11 @@ export default function GoalsEditor({ lib, prog, workouts }: { lib: LibraryApi; 
         {body.goals.map(g => (
           <li key={g.id} className="flex items-center gap-2 text-sm">
             <span className="flex-1">{goalTitle(g, t, lib, lang, unit)}{g.targetDate ? ` · ${g.targetDate}` : ""}</span>
-            <button className="btn" style={{ minWidth: 44, padding: 0 }} aria-label={`${t("goal.delete")}: ${goalTitle(g, t, lib, lang, unit)}`} onClick={() => void body.removeGoal(g.id)}>✕</button>
+            <button className="btn" style={{ minWidth: 44, padding: 0 }} aria-label={`${t("goal.delete")}: ${goalTitle(g, t, lib, lang, unit)}`} onClick={() => void body.removeGoal(g.id)}><Icon name="close" /></button>
           </li>
         ))}
       </ul>
-      {!open ? <button className="btn" onClick={() => setOpen(true)}>＋ {t("goal.add")}</button> : (
+      {!open ? <button className="btn" onClick={() => setOpen(true)}><Icon name="plus" /> {t("goal.add")}</button> : (
         <form className="grid gap-2" onSubmit={e => { e.preventDefault(); void save(); }}>
           <label className="grid gap-1 text-sm"><span>{t("goal.kind")}</span>
             <select className="field" value={kind} onChange={e => setKind(e.target.value as GoalKind)}>

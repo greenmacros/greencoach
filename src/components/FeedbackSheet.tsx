@@ -4,6 +4,7 @@ import type { SorenessLevel, SorenessQuestion } from "../feedback/soreness";
 import type { Muscle } from "../library/types";
 import type { ExerciseLog } from "../workout/types";
 import ChipRow from "./ChipRow";
+import Icon from "./Icon";
 
 interface Props {
   log: ExerciseLog;
@@ -28,7 +29,7 @@ export default function FeedbackSheet({ log, name, muscle, soreness, onSave, onC
       <div className="sheet-body grid gap-4" role="dialog" aria-modal="true" aria-label={t("fb.title")} onClick={e => e.stopPropagation()}>
         <div className="flex items-start gap-2">
           <div className="flex-1"><h2 className="text-2xl font-bold">{t("fb.title")}</h2><p className="muted text-sm">{name} · {t("fb.optional")}</p></div>
-          <button className="btn" aria-label={t("lib.close")} onClick={onCancel}>✕</button>
+          <button className="btn" aria-label={t("lib.close")} onClick={onCancel}><Icon name="close" /></button>
         </div>
 
         <ChipRow<0 | 1 | 2 | 3> label={t("fb.jointQ", { name })} value={d.jointPain} onChange={v => setD({ ...d, jointPain: v })}

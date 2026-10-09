@@ -10,6 +10,7 @@ import { summarize } from "../workout/model";
 import { computeAllPRs } from "../workout/pr";
 import type { WorkoutLog } from "../workout/types";
 import type { useHistory } from "../workout/useHistory";
+import Icon from "../components/Icon";
 
 export default function History({ lib, hist }: { lib: LibraryApi; hist: ReturnType<typeof useHistory> }) {
   const { t, settings } = useApp();
@@ -44,7 +45,7 @@ export default function History({ lib, hist }: { lib: LibraryApi; hist: ReturnTy
             return (
               <button key={w.id} className="card text-left grid gap-1 cursor-pointer" style={{ font: "inherit", color: "var(--text)" }} onClick={() => setOpen(w)}>
                 <span className="flex justify-between gap-2"><span className="font-bold">{w.sessionName || t("wk.quick")}</span><span className="muted text-sm">{formatDayLong(w.dayKey, lang)}</span></span>
-                <span className="muted text-sm">{formatClock(s.durationSec)} · {fmtWeight(s.volumeKg, unit)} {unit} · {t("hist.sets", { n: s.workingSets })}{n > 0 ? ` · 🏆 ${t("hist.prs", { n })}` : ""}</span>
+                <span className="muted text-sm">{formatClock(s.durationSec)} · {fmtWeight(s.volumeKg, unit)} {unit} · {t("hist.sets", { n: s.workingSets })}{n > 0 && <> · <Icon name="trophy" /> {t("hist.prs", { n })}</>}</span>
               </button>
             );
           })}
@@ -58,7 +59,7 @@ export default function History({ lib, hist }: { lib: LibraryApi; hist: ReturnTy
         <div role="status" className="card flex items-center gap-3 fixed left-4 right-4 mx-auto max-w-xl" style={{ bottom: "calc(6.5rem + env(safe-area-inset-bottom))", zIndex: 40 }}>
           <span className="flex-1">{t("hist.deleted")}</span>
           <button className="btn" onClick={async () => { await repo.put("workouts", undo as never); setUndo(null); await hist.reload(); }}>{t("hist.undo")}</button>
-          <button className="btn" aria-label={t("lib.close")} onClick={() => setUndo(null)}>✕</button>
+          <button className="btn" aria-label={t("lib.close")} onClick={() => setUndo(null)}><Icon name="close" /></button>
         </div>
       )}
     </section>

@@ -146,6 +146,13 @@ The rule is idempotent: accepting a longer rest never gets the same addition aga
 
 Exercises not done for more than 21 days (while other training continued) come back with the welcome-back reduction.
 
+## 4b. Exercises the user keeps skipping
+
+A non-optional exercise that was skipped (as a whole or every set, with a reason) or removed from the workout in
+`dropAfterSkips.skipped` (3) of the last `of` (4) sessions of its day gets a question in Coach: keep it, make it
+optional, or remove it, with the most common skip reason. Nothing is changed automatically. "Keep" is remembered for
+`askAgainDays` (28). Optional exercises are never asked about. A skip for "pain" also records joint pain 2 (hold + swap).
+
 ## 5. Season and calendar
 
 `SEASONS` rows add rest time, scale MRV and loosen the performance thresholds (`perfTolerance`), plus notes:

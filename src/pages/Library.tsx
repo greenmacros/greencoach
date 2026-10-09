@@ -8,6 +8,7 @@ import { emptyFilters, equipmentFor, searchExercises, type Filters } from "../li
 import { EQUIPMENT, MUSCLES, PATTERNS, type CustomExerciseRecord, type Exercise } from "../library/types";
 import type { LibraryApi } from "../library/useLibrary";
 import TextInput from "../components/TextInput";
+import Icon from "../components/Icon";
 
 const ROW = 76;
 
@@ -62,7 +63,7 @@ export default function Library({ lib, onPick, listHeight = "calc(100dvh - 22rem
         <button className="chip" aria-expanded={showFilters} onClick={() => setShowFilters(s => !s)}>
           {t("lib.filters")}{activeCount ? ` (${activeCount})` : ""}
         </button>
-        <button className="chip" aria-pressed={f.favoritesOnly} onClick={() => setF({ ...f, favoritesOnly: !f.favoritesOnly })}>★ {t("lib.favorites")}</button>
+        <button className="chip" aria-pressed={f.favoritesOnly} onClick={() => setF({ ...f, favoritesOnly: !f.favoritesOnly })}><Icon name="starFill" /> {t("lib.favorites")}</button>
         {activeCount > 0 && <button className="chip" onClick={() => { setF({ ...emptyFilters, query: f.query }); setOnlyMine(false); }}>{t("lib.clear")}</button>}
         <span className="muted text-sm ml-auto" role="status">{t("lib.count", { n: results.length })}</span>
       </div>
@@ -94,14 +95,14 @@ export default function Library({ lib, onPick, listHeight = "calc(100dvh - 22rem
               style={{ borderBottom: "1px solid var(--border)", color: "var(--text)", font: "inherit" }} onClick={() => setOpen(ex)}>
               <ExerciseMedia ex={ex} size={60} />
               <span className="flex-1 min-w-0">
-                <span className="block font-semibold truncate">{lib.favorites.has(ex.id) ? "★ " : ""}{ex.name[lang]}{ex.custom ? ` · ${t("lib.custom")}` : ""}</span>
+                <span className="block font-semibold truncate">{lib.favorites.has(ex.id) && <><Icon name="starFill" size="0.9em" style={{ color: "var(--accent)" }} /> </>}{ex.name[lang]}{ex.custom ? ` · ${t("lib.custom")}` : ""}</span>
                 <span className="block muted text-sm truncate">{ex.primary.map(m => t(`muscle.${m}`)).join(", ")} · {ex.equipment.map(e => t(`equip.${e}`)).join(", ")}</span>
               </span>
             </button>
           )} />
       )}
 
-      <button className="btn" onClick={() => setCreating(true)}>＋ {t("lib.addCustom")}</button>
+      <button className="btn" onClick={() => setCreating(true)}><Icon name="plus" /> {t("lib.addCustom")}</button>
       <p className="muted text-xs">{t("lib.credit")}</p>
 
       {open && (
@@ -120,7 +121,7 @@ export default function Library({ lib, onPick, listHeight = "calc(100dvh - 22rem
         <div role="status" className="card flex items-center gap-3 fixed left-4 right-4 mx-auto max-w-xl" style={{ bottom: "calc(6.5rem + env(safe-area-inset-bottom))", zIndex: 40 }}>
           <span className="flex-1">{t("lib.deleted")}</span>
           <button className="btn" onClick={async () => { await lib.restoreCustom(undo); setUndo(null); }}>{t("lib.undo")}</button>
-          <button className="btn" aria-label={t("lib.close")} onClick={() => setUndo(null)}>✕</button>
+          <button className="btn" aria-label={t("lib.close")} onClick={() => setUndo(null)}><Icon name="close" /></button>
         </div>
       )}
     </section>

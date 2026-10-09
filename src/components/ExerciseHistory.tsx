@@ -6,6 +6,7 @@ import { estimate1RM, isWorkingSet } from "../workout/model";
 import { computeAllPRs } from "../workout/pr";
 import { prText } from "../workout/prText";
 import type { SetLog, WorkoutLog } from "../workout/types";
+import Icon from "./Icon";
 
 const setText = (s: SetLog, unit: "kg" | "lb") => `${s.weightKg != null ? fmtWeight(s.weightKg, unit) + "×" : ""}${s.reps}`;
 
@@ -31,7 +32,7 @@ export default function ExerciseHistory({ ex, workouts, onClose }: { ex: Exercis
             <h2 className="text-xl font-bold">{ex.name[lang]}</h2>
             <p className="muted text-sm">{t("hist.exHistory")} · {t("hist.sessions", { n: sessions.length })}</p>
           </div>
-          <button className="btn" aria-label={t("lib.close")} onClick={onClose}>✕</button>
+          <button className="btn" aria-label={t("lib.close")} onClick={onClose}><Icon name="close" /></button>
         </div>
         {sessions.length === 0 ? <p className="muted">{t("hist.noHistory")}</p> : (
           <>
@@ -53,8 +54,8 @@ export default function ExerciseHistory({ ex, workouts, onClose }: { ex: Exercis
                     <p className="font-semibold">{formatDayLong(w.dayKey, lang)}</p>
                     <p className="text-sm">{sets.map(s => setText(s, unit)).join(", ")}</p>
                     {top && <p className="muted text-sm">{t("hist.topSet")}: {setText(top, unit)}{top.weightKg ? ` · e1RM ${fmtWeight(estimate1RM(top.weightKg, top.reps!), unit)} ${unit}` : ""}</p>}
-                    {myPrs.length > 0 && <p className="text-sm">🏆 {[...new Set(myPrs.map(p => prText(p, unit, t)))].join(" · ")}</p>}
-                    {notes && <p className="muted text-sm">📝 {notes}</p>}
+                    {myPrs.length > 0 && <p className="text-sm"><Icon name="trophy" /> {[...new Set(myPrs.map(p => prText(p, unit, t)))].join(" · ")}</p>}
+                    {notes && <p className="muted text-sm"><Icon name="note" /> {notes}</p>}
                   </li>
                 );
               })}

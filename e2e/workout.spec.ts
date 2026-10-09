@@ -152,3 +152,50 @@ test("Add set works right after typing reps or finishing a set (the stepper stri
   await sq.getByRole("button", { name: /Add set/ }).click();
   await expect(sq.getByRole("textbox", { name: "Set 5 Reps" })).toBeVisible();
 });
+
+test("optional exercises, skipping with a reason, and no rest timer after an exercise's last set", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.clock.install({ time: new Date(2026, 9, 7, 10, 0, 0) }); // Wednesday: Chest & Arms
+  await page.goto("/");
+  await skipOnboarding(page);
+  await page.getByRole("button", { name: "Program", exact: true }).click();
+  await page.getByRole("article").filter({ hasText: "Example" }).getByRole("button", { name: "Use this template" }).click();
+  await page.getByRole("button", { name: "Workout", exact: true }).click();
+  await expect(page.getByText(/Dips - Triceps Version · Optional/)).toBeVisible();
+  await page.getByRole("button", { name: "Start workout" }).click();
+
+  // the last set of an exercise does not start the rest timer
+  const bench = page.getByRole("article", { name: "Smith Machine Bench Press" });
+  for (const n of [1, 2, 3]) {
+    await bench.getByRole("textbox", { name: `Set ${n} Reps` }).fill("8");
+    await bench.getByRole("button", { name: `Mark set done: Set ${n}` }).click();
+    if (n < 3) await expect(page.getByRole("timer")).toBeVisible();
+    else {
+      await page.getByRole("dialog", { name: "Feedback" }).getByRole("button", { name: "Cancel" }).click();
+      await page.getByRole("button", { name: "Skip", exact: true }).click(); // stop the timer from set 2
+      await expect(page.getByRole("timer")).toHaveCount(0);
+    }
+  }
+
+  // optional badge and skipping a whole exercise with a reason
+  const dips = page.getByRole("article", { name: "Dips - Triceps Version" });
+  await expect(dips.getByText("Optional", { exact: true })).toBeVisible();
+  await dips.getByRole("button", { name: /^Edit: / }).click();
+  await dips.getByRole("button", { name: "Skip exercise" }).click();
+  const sheet = page.getByRole("dialog", { name: "Skip Dips - Triceps Version" });
+  await sheet.getByRole("button", { name: "Short on time" }).click();
+  await page.screenshot({ path: "test-results/skip-sheet.png" });
+  await sheet.getByRole("button", { name: "Skip", exact: true }).click();
+  await expect(dips.getByText("Skipped: Short on time")).toBeVisible();
+  await page.screenshot({ path: "test-results/skipped.png" });
+  await dips.getByRole("button", { name: "Do it after all" }).click();
+  await expect(dips.getByRole("textbox", { name: "Set 1 Reps" })).toBeVisible();
+
+  // skipping a single set asks why as well
+  const curl = page.getByRole("article", { name: "Machine Bicep Curl" });
+  await curl.getByRole("button", { name: /^Set 2: Working/ }).click();
+  await page.getByRole("dialog", { name: "Set 2", exact: true }).getByRole("button", { name: "Skip set" }).click();
+  await page.getByRole("dialog", { name: "Skip set 2" }).getByRole("button", { name: "Too tired" }).click();
+  await page.getByRole("dialog", { name: "Skip set 2" }).getByRole("button", { name: "Skip", exact: true }).click();
+  await expect(curl.getByText("Skipped · Too tired")).toBeVisible();
+});

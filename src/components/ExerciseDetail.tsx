@@ -7,6 +7,7 @@ import type { Exercise } from "../library/types";
 import ExerciseMedia from "./ExerciseMedia";
 import ExerciseHistory from "./ExerciseHistory";
 import { useHistory } from "../workout/useHistory";
+import Icon from "./Icon";
 
 interface Props {
   ex: Exercise;
@@ -56,7 +57,7 @@ export default function ExerciseDetail({ ex, lib, onClose, onOpen, onPick, onDel
             <p className="text-sm mt-1">{chips(ex.primary, "muscle")}</p>
             {ex.secondary.length > 0 && <p className="muted text-sm">{chips(ex.secondary, "muscle")}</p>}
           </div>
-          <button className="btn" aria-label={t("lib.close")} onClick={onClose}>✕</button>
+          <button className="btn" aria-label={t("lib.close")} onClick={onClose}><Icon name="close" /></button>
         </div>
 
         <dl className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4 text-sm">
@@ -66,7 +67,7 @@ export default function ExerciseDetail({ ex, lib, onClose, onOpen, onPick, onDel
           <div><dt className="muted">{t("lib.difficulty")}</dt><dd>{t(`lib.diff.${ex.difficulty}`)}</dd></div>
           <div className="col-span-2">
             <dt className="muted">{t("lib.fatigue")} <span className="text-xs">({t("lib.fatigueHint")})</span></dt>
-            <dd aria-label={`${ex.fatigue}/5`}>{"●".repeat(ex.fatigue)}<span className="muted">{"●".repeat(5 - ex.fatigue)}</span></dd>
+            <dd aria-label={`${ex.fatigue}/5`}>{Array.from({ length: 5 }, (_, i) => <Icon key={i} name="circle" size="0.9em" style={{ opacity: i < ex.fatigue ? 1 : 0.25 }} />)}</dd>
           </div>
         </dl>
 
@@ -93,7 +94,7 @@ export default function ExerciseDetail({ ex, lib, onClose, onOpen, onPick, onDel
 
         <div className="flex flex-wrap gap-2 mt-5">
           {onPick && <button className="btn btn-primary" onClick={() => onPick(ex)}>{t("lib.pick")}</button>}
-          <button className="btn" aria-pressed={fav} onClick={() => void lib.toggleFavorite(ex.id)}>{fav ? "★ " + t("lib.unfav") : "☆ " + t("lib.fav")}</button>
+          <button className="btn" aria-pressed={fav} onClick={() => void lib.toggleFavorite(ex.id)}><Icon name={fav ? "starFill" : "star"} /> {fav ? t("lib.unfav") : t("lib.fav")}</button>
           <button className="btn" onClick={() => setShowSwap(s => !s)}>{t("lib.swap")}</button>
           <button className="btn" onClick={() => setShowHist(true)}>{t("hist.viewHistory")}</button>
           {ex.custom && onDelete && <button className="btn btn-danger" onClick={() => onDelete(ex)}>{t("lib.delete")}</button>}

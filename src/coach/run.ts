@@ -11,6 +11,8 @@ import type { CoachSuggestionRecord } from "./records";
 import type { BodyWeightPoint, CoachPlan, Rejection } from "./types";
 
 export const BASE = "base:";
+/** "Keep this exercise" answers to a drop suggestion: `keep:<slotId>` with the day decided. */
+export const KEEP = "keep:";
 
 export interface CoachData {
   soreness: SorenessRecord[];
@@ -19,6 +21,7 @@ export interface CoachData {
   records: CoachSuggestionRecord[];
   /** Program snapshots the plan of each week was made from (`base:<week>`). */
   baselines: Map<string, Program>;
+  keptSlots: Record<string, string>;
 }
 
 export async function loadCoachData(): Promise<CoachData> {
@@ -30,6 +33,7 @@ export async function loadCoachData(): Promise<CoachData> {
     bodyWeights: bm.filter(r => typeof r.weightKg === "number").map(r => ({ dayKey: r.dayKey as string, kg: r.weightKg as number })),
     records: sg.filter(r => r.id.startsWith("sug:")) as unknown as CoachSuggestionRecord[],
     baselines: new Map(sg.filter(r => r.id.startsWith(BASE)).map(r => [r.weekKey as string, r.program as Program])),
+    keptSlots: Object.fromEntries(sg.filter(r => r.id.startsWith(KEEP)).map(r => [r.id.slice(KEEP.length), r.dayKey as string])),
   };
 }
 
@@ -40,6 +44,7 @@ export interface PlanArgs {
   soreness: readonly SorenessRecord[];
   bodyWeights: readonly BodyWeightPoint[];
   rejections: readonly Rejection[];
+  keptSlots?: Readonly<Record<string, string>>;
   profile: Profile;
   settings: Settings;
   today: string;
@@ -52,7 +57,7 @@ export function makePlan(a: PlanArgs): CoachPlan | null {
   const avail = equipmentFor(a.profile.equipment);
   return planNextWeek({
     today: a.today, targetWeekStart: a.targetWeekStart, program: a.program, workouts: a.finished, soreness: a.soreness,
-    bodyWeights: a.bodyWeights, rejections: a.rejections, bands: bandsOf(a.settings),
+    bodyWeights: a.bodyWeights, rejections: a.rejections, bands: bandsOf(a.settings), keptSlots: a.keptSlots,
     profile: { experience: a.profile.experience, goal: a.profile.goal, phase: a.profile.phase, equipment: a.profile.equipment, region: a.settings.region, weightUnit: a.settings.weightUnit },
     lookup: a.lib.byId, substitutes: ex => substitutes(a.lib.all, ex, avail),
   });

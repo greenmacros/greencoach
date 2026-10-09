@@ -22,6 +22,9 @@ describe("sharing a plan by link", () => {
     expect(back.week.map(id => back.sessions.findIndex(s => s.id === id))).toEqual(p.week.map(id => p.sessions.findIndex(s => s.id === id)));
     expect(back.mesoStartDayKey).toBe("2026-10-12");
     expect(back.sessions[0].exercises.every(e => e.weightKg === null)).toBe(true);
+    const optional = (x: Pick<Program, "sessions">) => x.sessions.flatMap(s => s.exercises.map(e => !!e.optional));
+    expect(optional(back)).toEqual(optional(p));
+    expect(optional(p).filter(Boolean)).toHaveLength(3); // the example plan marks three extras optional
   });
 
   it("keeps links short enough to paste anywhere", async () => {

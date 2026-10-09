@@ -25,7 +25,7 @@ test("log a band exercise by band, and manage my bands", async ({ page }) => {
   await row.getByRole("button", { name: /Add set/ }).click();
   await expect(row.getByRole("button", { name: "Set 4 Band: Medium" })).toBeVisible();
   await page.screenshot({ path: "test-results/band-workout.png" });
-  await page.getByRole("button", { name: "← Back" }).click();
+  await page.getByRole("button", { name: "Back", exact: true }).click();
 
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   const mine = page.getByRole("heading", { name: "My bands" }).locator("..");

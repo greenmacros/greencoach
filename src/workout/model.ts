@@ -1,7 +1,7 @@
 import { newId } from "../lib/id";
 import type { Exercise, Muscle } from "../library/types";
 import type { ExerciseSlot, SessionTemplate } from "../program/types";
-import type { ExerciseLog, ExerciseTarget, SetLog, SetType, WorkoutLog } from "./types";
+import type { ExerciseLog, ExerciseTarget, SetLog, SetType, SkipReason, WorkoutLog } from "./types";
 
 export const emptySet = (type: SetType = "normal"): SetLog => ({ id: newId(), type, weightKg: null, reps: null, rir: null, done: false, doneAt: null });
 
@@ -35,8 +35,26 @@ export function buildExerciseLog(slot: ExerciseSlot | null, exerciseId: string, 
     const bands = slot?.bands ?? p?.bands;
     return { ...emptySet(), weightKg: slot?.weightKg ?? p?.weightKg ?? null, reps: p?.reps ?? null, ...(bands?.length ? { bands: [...bands] } : {}) };
   });
-  return { id: newId(), exerciseId, slotId: slot?.id ?? null, restSec: slot?.restSec ?? fallbackRest, notes: slot?.notes ?? "", supersetGroup: slot?.supersetGroup ?? null, target, sets };
+  return { id: newId(), exerciseId, slotId: slot?.id ?? null, restSec: slot?.restSec ?? fallbackRest, notes: slot?.notes ?? "", supersetGroup: slot?.supersetGroup ?? null, target, sets, ...(slot?.optional ? { optional: true } : {}) };
 }
+
+/** Skip the whole exercise: unfinished sets are marked skipped with the reason. "pain" also records joint pain. */
+export function skipExercise(e: ExerciseLog, reason: SkipReason): ExerciseLog {
+  return {
+    ...e, skip: { reason },
+    sets: e.sets.map(s => (s.done ? s : { ...s, skipped: true, skipReason: reason })),
+    ...(reason === "pain" ? { jointPain: Math.max(e.jointPain ?? 0, 2) as 2 | 3 } : {}),
+  };
+}
+
+export function unskipExercise(e: ExerciseLog): ExerciseLog {
+  const { skip: _skip, ...rest } = e;
+  void _skip;
+  return { ...rest, sets: e.sets.map(s => (s.skipReason ? { ...s, skipped: false, skipReason: undefined } : s)) };
+}
+
+/** True when an exercise was left out: skipped as a whole, or no working set at all with every set skipped. */
+export const wasSkipped = (e: ExerciseLog) => !!e.skip || (e.sets.length > 0 && e.sets.every(s => s.skipped));
 
 export function createWorkout(opts: {
   dayKey: string; programId: string | null; session: SessionTemplate | null; unit: WorkoutLog["unit"]; history: readonly WorkoutLog[]; mesoWeek?: number; mesoDay?: number; now?: Date;

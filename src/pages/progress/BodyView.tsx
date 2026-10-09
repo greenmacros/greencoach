@@ -7,6 +7,7 @@ import { formatDayKey, fmtWeight, fromDisplayWeight } from "../../lib/format";
 import { inRange, rangeStart, smoothWeights, weightPoints } from "../../progress/stats";
 import { MEASURES, type Range } from "../../progress/types";
 import type { BodyApi } from "../../progress/useBody";
+import Icon from "../../components/Icon";
 
 export default function BodyView({ range, body, today }: { range: Range; body: BodyApi; today: string }) {
   const { t, settings } = useApp();
@@ -70,7 +71,7 @@ export default function BodyView({ range, body, today }: { range: Range; body: B
               <li key={m.id} className="flex items-center gap-2">
                 <span className="w-24 shrink-0">{formatDayKey(m.dayKey, lang, { month: "short", day: "numeric" })}</span>
                 <span className="flex-1">{[m.weightKg !== undefined && `${fmtWeight(m.weightKg, unit)} ${unit}`, ...MEASURES.filter(x => m[x] !== undefined).map(x => `${t(`body.${x}`).replace(/\s*\(cm\)|（cm）/, "")} ${m[x]}`)].filter(Boolean).join(" · ")}</span>
-                <button className="btn" style={{ minWidth: 44, padding: 0 }} aria-label={`${t("body.delete")}: ${m.dayKey}`} onClick={() => void body.removeMetric(m.id)}>✕</button>
+                <button className="btn" style={{ minWidth: 44, padding: 0 }} aria-label={`${t("body.delete")}: ${m.dayKey}`} onClick={() => void body.removeMetric(m.id)}><Icon name="close" /></button>
               </li>
             ))}
           </ul>
@@ -81,7 +82,7 @@ export default function BodyView({ range, body, today }: { range: Range; body: B
         <h2 className="font-bold">{t("body.photos")}</h2>
         <p className="muted text-sm">{t("body.photosHint")}</p>
         <label className="btn justify-self-start" style={{ display: "inline-flex", alignItems: "center" }}>
-          ＋ {t("body.addPhoto")}
+          <Icon name="plus" /> {t("body.addPhoto")}
           <input type="file" accept="image/*" hidden onChange={async e => { const f = e.target.files?.[0]; if (f) await body.addPhoto(today, await compressImage(f, 720, 0.75)); e.target.value = ""; }} />
         </label>
         <ul className="grid grid-cols-3 gap-2">

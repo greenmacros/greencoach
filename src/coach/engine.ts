@@ -9,7 +9,11 @@ import {
   actualMuscleSets, adherence, bodyWeightRate, exerciseSessions, finished, gapDays, muscleFeedback, muscleTrend,
   plannedMuscleSets, plannedSessionCount, plannedSoFar, recentPeakSets, sessionsInWeek,
 } from "./stats";
-import type { CoachInput, CoachNote, CoachPlan, MuscleSuggestion, PlanMode, Reason, SlotSuggestion, SwapSuggestion, Trend } from "./types";
+import type { CoachInput, CoachNote, CoachPlan, DropSuggestion, MuscleSuggestion, PlanMode, Reason, SlotSuggestion, SwapSuggestion, Trend } from "./types";
+import type { CoachConfig } from "./config";
+import type { Program } from "../program/types";
+import type { SkipReason, WorkoutLog } from "../workout/types";
+import { wasSkipped } from "../workout/model";
 import { bandFor, nextMuscleTarget, startVolume, type Modifiers } from "./volume";
 
 const P = (key: string, params?: Reason["params"]): Reason => ({ key, params });
@@ -176,10 +180,46 @@ export function planNextWeek(input: CoachInput): CoachPlan {
   if (cutTooFast) notes.push({ kind: "warn", reason: P("why.note.cutFast", { pct: Math.round(Math.abs(rate!) * 1000) / 10 }) });
   if (bulkTooFast) notes.push({ kind: "info", reason: P("why.note.bulkFast", { pct: Math.round(rate! * 1000) / 10 }) });
 
+  const drops = dropSuggestions(program, input.workouts, input.keptSlots ?? {}, today, cfg);
+
   return {
     targetWeekStart, basisWeekStart: basisWeek,
     meso: { week: mesoWeekEff, total: meso.total, isDeload: mode === "deload", cycle: meso.cycle },
     newMeso, mode, deload: { type: deloadType, reasons: deloadReasons }, targetRir,
-    muscles: muscleRows, slots: slotRows, swaps, notes,
+    muscles: muscleRows, slots: slotRows, swaps, drops, notes,
   };
+}
+
+/**
+ * Exercises the user keeps leaving out. For each non-optional slot, look at the last few finished sessions of its
+ * day: an exercise that was skipped (with a reason), had every set skipped, or was removed from the workout counts
+ * as skipped. Optional exercises are expected to be skipped and never asked about.
+ */
+export function dropSuggestions(program: Program, workouts: readonly WorkoutLog[], kept: Readonly<Record<string, string>>, today: string, cfg: CoachConfig): DropSuggestion[] {
+  const { skipped: need, of, askAgainDays } = cfg.dropAfterSkips;
+  const out: DropSuggestion[] = [];
+  const done = finished(workouts);
+  for (const sess of program.sessions) {
+    const recent = done.filter(w => w.sessionId === sess.id).slice(-of);
+    if (recent.length < need) continue;
+    for (const slot of sess.exercises) {
+      if (slot.optional) continue;
+      if (kept[slot.id] && daysBetween(kept[slot.id], today) < askAgainDays) continue;
+      const reasons: SkipReason[] = [];
+      let n = 0;
+      for (const w of recent) {
+        const log = w.exercises.find(e => e.slotId === slot.id);
+        if (log && !wasSkipped(log)) continue;
+        n++;
+        const r = log?.skip?.reason ?? log?.sets.find(s => s.skipReason)?.skipReason;
+        if (r) reasons.push(r);
+      }
+      if (n < need) continue;
+      const counts = new Map<SkipReason, number>();
+      for (const r of reasons) counts.set(r, (counts.get(r) ?? 0) + 1);
+      const topReason = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+      out.push({ sessionId: sess.id, slotId: slot.id, exerciseId: slot.exerciseId, skipped: n, of: recent.length, topReason });
+    }
+  }
+  return out;
 }

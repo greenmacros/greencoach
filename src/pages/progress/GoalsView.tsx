@@ -5,6 +5,7 @@ import { goalProgress } from "../../progress/stats";
 import type { BodyApi } from "../../progress/useBody";
 import type { GoalRecord } from "../../progress/types";
 import type { WorkoutLog } from "../../workout/types";
+import Icon from "../../components/Icon";
 
 export function goalTitle(g: GoalRecord, t: ReturnType<typeof useApp>["t"], lib: LibraryApi, lang: "en" | "ja", unit: "kg" | "lb"): string {
   if (g.kind === "lift") return t("goal.lift", { name: lib.byId(g.exerciseId ?? "")?.name[lang] ?? "?", target: fmtWeight(g.targetKg ?? 0, unit), u: unit });
@@ -28,7 +29,7 @@ export default function GoalsView({ body, workouts, lib, today }: { body: BodyAp
           <div key={g.id} className="grid gap-1">
             <div className="flex justify-between gap-2 text-sm">
               <span className="font-semibold">{title}{g.targetDate ? ` · ${t("goal.byDate", { date: formatDayKey(g.targetDate, lang, { year: "numeric", month: "short", day: "numeric" }) })}` : ""}</span>
-              <span className="muted">{p.achieved ? `✓ ${t("goal.achieved")}` : `${pct}%`}</span>
+              <span className="muted">{p.achieved ? <><Icon name="check" /> {t("goal.achieved")}</> : `${pct}%`}</span>
             </div>
             <div role="progressbar" aria-label={title} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} style={{ height: 8, background: "var(--band)", borderRadius: 4, overflow: "hidden" }}>
               <div style={{ width: `${pct}%`, height: "100%", background: p.achieved ? "var(--accent)" : "var(--series-1)", borderRadius: 4 }} />

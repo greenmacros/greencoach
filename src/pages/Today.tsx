@@ -7,6 +7,7 @@ import type { LibraryApi } from "../library/useLibrary";
 import type { DayOverride } from "../program/types";
 import { repo } from "../db";
 import type { useHistory } from "../workout/useHistory";
+import Icon from "../components/Icon";
 
 interface Props {
   prog: ProgramApi;
@@ -86,7 +87,7 @@ export default function Today({ prog, lib, hist, selected, setSelected, onStart,
               <span className="text-xs">{weekdayShort(k, lang)}</span>
               <span className="font-bold">{formatDayKey(k, lang, { day: "numeric" })}</span>
               <span aria-hidden="true" className="text-xs" style={{ minHeight: 16 }}>
-                {r.status === "done" ? "✓" : r.status === "skipped" ? "⤼" : r.sessionId ? "●" : "·"}
+                {r.status === "done" ? <Icon name="check" /> : r.status === "skipped" ? <Icon name="skip" /> : r.sessionId ? <Icon name="dot" /> : <Icon name="dot" size="0.5em" style={{ opacity: 0.5 }} />}
               </span>
             </button>
           );
@@ -110,7 +111,7 @@ export default function Today({ prog, lib, hist, selected, setSelected, onStart,
               <h2 className="text-xl font-bold">{session.name}</h2>
               <p className="muted text-sm">{t("today.exercises", { n: session.exercises.length, sets: totalSets(session), min: estimateMinutes(session) })}</p>
             </div>
-            {day.status === "done" && <span className="chip" aria-pressed="true">✓ {t("today.done")}</span>}
+            {day.status === "done" && <span className="chip" aria-pressed="true"><Icon name="check" /> {t("today.done")}</span>}
             {day.status === "skipped" && <span className="chip">{t("today.skipped")}</span>}
           </div>
           <ol className="grid gap-1 text-sm">
@@ -118,7 +119,7 @@ export default function Today({ prog, lib, hist, selected, setSelected, onStart,
               const ex = lib.byId(sl.exerciseId);
               return (
                 <li key={sl.id} className="flex justify-between gap-2">
-                  <span className="min-w-0">{sl.supersetGroup !== null ? "⇄ " : ""}{ex ? ex.name[lang] : t("prog.missing")}</span>
+                  <span className="min-w-0">{sl.supersetGroup !== null && <><Icon name="swap" /> </>}{ex ? ex.name[lang] : t("prog.missing")}{sl.optional && <span className="muted"> · {t("wk.optional")}</span>}</span>
                   <span className="muted whitespace-nowrap">{t("today.sets", { n: sl.sets, lo: sl.repMin, hi: sl.repMax })}</span>
                 </li>
               );
@@ -165,7 +166,7 @@ export default function Today({ prog, lib, hist, selected, setSelected, onStart,
         <div role="status" className="card flex items-center gap-3 fixed left-4 right-4 mx-auto max-w-xl" style={{ bottom: "calc(6.5rem + env(safe-area-inset-bottom))", zIndex: 40 }}>
           <span className="flex-1">{undo.text}</span>
           <button className="btn" onClick={async () => { await prog.restoreOverrides(undo.before, undo.touched); setUndo(null); }}>{t("today.undo")}</button>
-          <button className="btn" aria-label={t("lib.close")} onClick={() => setUndo(null)}>✕</button>
+          <button className="btn" aria-label={t("lib.close")} onClick={() => setUndo(null)}><Icon name="close" /></button>
         </div>
       )}
     </section>

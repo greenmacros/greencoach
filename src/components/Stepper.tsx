@@ -1,4 +1,5 @@
 import { useApp } from "../app-context";
+import Icon from "./Icon";
 
 interface Props {
   value: number;
@@ -16,11 +17,11 @@ export default function Stepper({ value, onChange, min = 0, max = 999, step = 1,
   const clamp = (v: number) => Math.min(max, Math.max(min, Math.round(v * 100) / 100));
   return (
     <div className="flex items-center gap-1" role="group" aria-label={label}>
-      <button type="button" className="btn" style={{ minWidth: 44, padding: 0 }} aria-label={`${t("stepper.dec")}: ${label}`} onClick={() => onChange(clamp(value - step))}>−</button>
+      <button type="button" className="btn" style={{ minWidth: 44, padding: 0 }} aria-label={`${t("stepper.dec")}: ${label}`} onClick={() => onChange(clamp(value - step))}><Icon name="minus" /></button>
       <input className="field text-center" style={{ width: 64, padding: 0 }} inputMode="decimal" aria-label={label} value={value}
         onChange={e => { const n = parseFloat(e.target.value); if (!Number.isNaN(n)) onChange(clamp(n)); }} />
       {suffix && <span className="muted text-sm">{suffix}</span>}
-      <button type="button" className="btn" style={{ minWidth: 44, padding: 0 }} aria-label={`${t("stepper.inc")}: ${label}`} onClick={() => onChange(clamp(value + step))}>＋</button>
+      <button type="button" className="btn" style={{ minWidth: 44, padding: 0 }} aria-label={`${t("stepper.inc")}: ${label}`} onClick={() => onChange(clamp(value + step))}><Icon name="plus" /></button>
     </div>
   );
 }

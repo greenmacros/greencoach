@@ -3,6 +3,7 @@ import { useApp } from "../app-context";
 import { formatRest } from "../lib/format";
 import type { RestTimer } from "../workout/useRestTimer";
 import { PRESETS, parseDuration } from "../workout/timer";
+import Icon from "./Icon";
 
 interface Props {
   timer: RestTimer;
@@ -49,7 +50,7 @@ export default function RestTimerBar({ timer, onChoose }: Props) {
             </div>
             <div className="flex items-center justify-center gap-2">
               <button className="btn" style={{ minWidth: 56, padding: 0 }} aria-label={t("timer.minus")} onClick={() => timer.adjust(-15)}>−15</button>
-              <button className="btn btn-primary" style={{ minWidth: 56, padding: 0 }} aria-label={timer.paused ? t("timer.resume") : t("timer.pause")} onClick={timer.paused ? timer.resume : timer.pause}>{timer.paused ? "▶" : "⏸"}</button>
+              <button className="btn btn-primary" style={{ minWidth: 56, padding: 0 }} aria-label={timer.paused ? t("timer.resume") : t("timer.pause")} onClick={timer.paused ? timer.resume : timer.pause}><Icon name={timer.paused ? "play" : "pause"} size={22} /></button>
               <button className="btn" style={{ minWidth: 56, padding: 0 }} aria-label={t("timer.plus")} onClick={() => timer.adjust(15)}>+15</button>
               <button className="btn" onClick={timer.skip}>{t("timer.skip")}</button>
             </div>
@@ -66,7 +67,7 @@ export default function RestTimerBar({ timer, onChoose }: Props) {
               onContextMenu={e => e.preventDefault()}
               onKeyDown={e => { if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); timer.dropRecent(sec); } }}
               onClick={() => { if (held.current) { held.current = false; return; } choose(sec); }}>
-              ★ {formatRest(sec)}
+              <Icon name="starFill" size="0.9em" /> {formatRest(sec)}
             </button>
           ))}
           <button className="chip" aria-expanded={custom} onClick={() => setCustom(c => !c)}>{t("timer.custom")}</button>

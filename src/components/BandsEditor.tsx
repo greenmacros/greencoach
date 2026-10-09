@@ -5,6 +5,7 @@ import { newId } from "../lib/id";
 import { BandDot } from "./BandPicker";
 import NumInput from "./NumInput";
 import TextInput from "./TextInput";
+import Icon from "./Icon";
 
 /** Settings → My bands: name, colour, optional kg from the package, and order (lightest first). */
 export default function BandsEditor() {
@@ -36,8 +37,8 @@ export default function BandsEditor() {
                 aria-expanded={open === b.id} onClick={() => setOpen(o => (o === b.id ? null : b.id))}>
                 {b.name}{b.kg != null && <span className="muted font-normal text-sm"> · ~{b.kg} kg</span>}
               </button>
-              <button className="btn" style={{ minWidth: 44, padding: 0 }} disabled={i === 0} aria-label={`${t("band.lighter")}: ${b.name}`} onClick={() => move(i, -1)}>↑</button>
-              <button className="btn" style={{ minWidth: 44, padding: 0 }} disabled={i === bands.length - 1} aria-label={`${t("band.heavier")}: ${b.name}`} onClick={() => move(i, 1)}>↓</button>
+              <button className="btn" style={{ minWidth: 44, padding: 0 }} disabled={i === 0} aria-label={`${t("band.lighter")}: ${b.name}`} onClick={() => move(i, -1)}><Icon name="up" /></button>
+              <button className="btn" style={{ minWidth: 44, padding: 0 }} disabled={i === bands.length - 1} aria-label={`${t("band.heavier")}: ${b.name}`} onClick={() => move(i, 1)}><Icon name="down" /></button>
             </div>
             {open === b.id && (
               <div className="grid gap-2" style={{ paddingLeft: 24 }}>
@@ -71,7 +72,7 @@ export default function BandsEditor() {
         const id = "band-" + newId();
         save([...bands, { id, name: t("band.new", { n: bands.length + 1 }), color: BAND_COLORS[bands.length % BAND_COLORS.length], kg: null }]);
         setOpen(id);
-      }}>＋ {t("band.add")}</button>
+      }}><Icon name="plus" /> {t("band.add")}</button>
     </div>
   );
 }

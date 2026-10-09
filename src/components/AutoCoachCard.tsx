@@ -5,6 +5,7 @@ import { changeParts, isMajor } from "../coach/changeText";
 import { explain } from "../coach/explain";
 import { bandsOf } from "../bands/bands";
 import type { LibraryApi } from "../library/useLibrary";
+import Icon from "./Icon";
 
 interface Props {
   rec: AutoRecord;
@@ -60,7 +61,7 @@ export default function AutoCoachCard({ rec, lib, onUndo, onDismiss, onReview }:
               <span className="font-semibold">{name(c.exerciseId)}</span>{" "}
               {changeParts(c, settings.weightUnit, t, false, bandsOf(settings)).map((p, i) => (
                 <span key={i} className="whitespace-nowrap" style={{ color: p.dir === "up" ? "var(--accent)" : "var(--danger)" }}>
-                  {i > 0 && <span className="muted"> · </span>}{p.dir === "up" ? "▲" : "▼"} {p.text}
+                  {i > 0 && <span className="muted"> · </span>}<Icon name={p.dir === "up" ? "triUp" : "triDown"} size="0.8em" /> {p.text}
                 </span>
               ))}
               {why && <span className="block muted">{explain(c.reason, t)}</span>}
@@ -72,6 +73,7 @@ export default function AutoCoachCard({ rec, lib, onUndo, onDismiss, onReview }:
       {weekRir !== undefined && <p className="text-sm">{t("auto.rirAll", { n: weekRir })}</p>}
       {restChanged > 0 && <p className="text-sm muted">{t("auto.restN", { n: restChanged })}</p>}
       {rec.swaps > 0 && <p className="text-sm">{t("auto.swaps")} <button className="chip" onClick={onReview}>{t("auto.reviewBtn")}</button></p>}
+      {(rec.drops ?? 0) > 0 && <p className="text-sm">{t("auto.drops", { n: rec.drops! })} <button className="chip" onClick={onReview}>{t("auto.reviewBtn")}</button></p>}
       <div className="flex flex-wrap gap-2">
         <button className="btn btn-primary" onClick={onDismiss}>{t("auto.ok")}</button>
         {major.length > 0 && <button className="btn" aria-expanded={why} onClick={() => { setWhy(w => !w); setAll(true); }}>{why ? t("auto.hideWhy") : t("auto.why")}</button>}

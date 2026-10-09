@@ -22,6 +22,8 @@ export interface AutoRecord extends BaseRecord {
   earlyDeload: boolean;
   changes: AutoChange[];
   swaps: number;
+  /** Exercises the user keeps skipping (never changed automatically; asked in Coach). */
+  drops?: number;
   /** The user closed the summary card. */
   seen: boolean;
 }
@@ -89,7 +91,7 @@ async function run(ctx: AutoContext, weekKey: string): Promise<AutoRecord | null
 
   const plan = makePlan({
     program: ctx.program, lib: ctx.lib, finished: ctx.finished, soreness: data.soreness, bodyWeights: data.bodyWeights,
-    rejections: rejectionsFrom(data.records.filter(r => r.weekKey < weekKey)), profile: ctx.profile, settings: ctx.settings,
+    rejections: rejectionsFrom(data.records.filter(r => r.weekKey < weekKey)), keptSlots: data.keptSlots, profile: ctx.profile, settings: ctx.settings,
     today: ctx.today, targetWeekStart: weekKey,
   });
   if (!plan) return null;
@@ -98,7 +100,7 @@ async function run(ctx: AutoContext, weekKey: string): Promise<AutoRecord | null
 
   const rec: Omit<AutoRecord, "createdAt" | "updatedAt"> = {
     id: AUTO + weekKey, schemaVersion: SCHEMA_VERSION, weekKey, status: action === "apply" ? "applied" : "review",
-    mode: plan.mode, earlyDeload: plan.deload.type === "early", changes: changesOf(plan), swaps: plan.swaps.length, seen: false,
+    mode: plan.mode, earlyDeload: plan.deload.type === "early", changes: changesOf(plan), swaps: plan.swaps.length, drops: plan.drops.length, seen: false,
   };
   if (action === "apply") {
     await repo.put("suggestions", { id: BASE + weekKey, weekKey, program: ctx.program, schemaVersion: SCHEMA_VERSION } as never);

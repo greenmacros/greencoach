@@ -7,9 +7,10 @@ import { formatDayKey } from "../lib/format";
 import type { LibraryApi } from "../library/useLibrary";
 import type { ProgramApi } from "../program/useProgram";
 import type { Trend } from "../coach/types";
+import Icon from "../components/Icon";
 
 const COLOR: Record<Trend, string> = { up: "var(--accent)", down: "var(--danger)", same: "var(--muted)" };
-const NOTE_ICON = { info: "ℹ️", warn: "⚠️", good: "✅" } as const;
+const NOTE_ICON = { info: "info", warn: "warn", good: "ok" } as const;
 
 export default function Coach({ prog, lib, finished, initialTarget }: { prog: ProgramApi; lib: LibraryApi; finished: WorkoutLog[]; initialTarget?: "this" | "next" }) {
   const coach = useCoach(prog, lib, finished, initialTarget);
@@ -55,16 +56,37 @@ export default function Coach({ prog, lib, finished, initialTarget }: { prog: Pr
         <ul className="grid gap-2" aria-label={t("coach.notes")}>
           {plan.notes.map((n, i) => (
             <li key={i} className="card text-sm flex gap-2" style={{ borderColor: n.kind === "warn" ? "var(--danger)" : undefined }}>
-              <span aria-hidden="true">{NOTE_ICON[n.kind]}</span><span>{explain(n.reason, t)}</span>
+              <span style={{ color: n.kind === "warn" ? "var(--danger)" : n.kind === "good" ? "var(--accent)" : "var(--muted)" }}><Icon name={NOTE_ICON[n.kind]} /></span><span>{explain(n.reason, t)}</span>
             </li>
           ))}
         </ul>
       )}
       {plan.deload.type === "early" && <p className="muted text-sm">{t("coach.applyDeload")}</p>}
 
+      {plan.drops.length > 0 && (
+        <div className="grid gap-2">
+          <h2 className="font-bold text-lg">{t("drop.title")}</h2>
+          {plan.drops.map(d => {
+            const name = lib.byId(d.exerciseId)?.name[lang] ?? t("prog.missing");
+            return (
+              <div key={d.slotId} className="card grid gap-2" style={{ borderColor: "var(--accent)" }} aria-label={name}>
+                <p className="font-semibold">{name} <span className="muted font-normal text-sm">· {sessionName(d.sessionId)}</span></p>
+                <p className="text-sm">{t("drop.text", { n: d.skipped, of: d.of })}{d.topReason && <> {t("drop.reason", { r: t(`skip.r.${d.topReason}`) })}</>}</p>
+                <p className="muted text-xs">{t("drop.hint")}</p>
+                <div className="flex flex-wrap gap-2">
+                  <button className="btn btn-primary" onClick={() => void coach.dropAnswer(d.slotId, "optional")}>{t("drop.optional")}</button>
+                  <button className="btn btn-danger" onClick={() => void coach.dropAnswer(d.slotId, "remove")}>{t("drop.remove")}</button>
+                  <button className="btn" onClick={() => void coach.dropAnswer(d.slotId, "keep")}>{t("drop.keep")}</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <div className="flex gap-2">
         <button className="btn btn-primary flex-1" disabled={pending === 0} onClick={() => void coach.acceptAll()}>{t("coach.acceptAll")}</button>
-        {coach.decided.size > 0 && <button className="btn" onClick={() => void coach.reset()}>↺</button>}
+        {coach.decided.size > 0 && <button className="btn" aria-label={t("coach.reset")} title={t("coach.reset")} onClick={() => void coach.reset()}><Icon name="undo" /></button>}
       </div>
 
       <div className="grid gap-2">
@@ -76,7 +98,7 @@ export default function Coach({ prog, lib, finished, initialTarget }: { prog: Pr
               <div className="flex items-baseline gap-2">
                 <span className="font-semibold flex-1">{t(`muscle.${m.muscle}`)}</span>
                 <span className="muted text-sm">{m.lastSets} →</span>
-                <span className="font-bold" style={{ color: COLOR[trend] }}>{trend === "up" ? "▲" : trend === "down" ? "▼" : "="} {m.newSets}</span>
+                <span className="font-bold" style={{ color: COLOR[trend] }}>{trend === "up" ? <Icon name="triUp" size="0.8em" /> : trend === "down" ? <Icon name="triDown" size="0.8em" /> : "="} {m.newSets}</span>
               </div>
               <p className="text-sm">{explain(m.reason, t)}</p>
               {m.extra.map((r, i) => <p key={i} className="muted text-xs">{explain(r, t)}</p>)}

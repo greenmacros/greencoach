@@ -1,5 +1,6 @@
 import { useApp } from "../app-context";
 import { bandsOf, type Band } from "../bands/bands";
+import Icon from "./Icon";
 
 export const BandDot = ({ band, size = 14 }: { band: Band; size?: number }) => (
   <span aria-hidden="true" style={{ display: "inline-block", width: size, height: size, borderRadius: 999, background: band.color, border: "1px solid var(--border)", flex: "none" }} />
@@ -24,7 +25,7 @@ export default function BandPicker({ value, label, onChange, onClose }: { value:
               <BandDot band={b} size={18} />
               <span className="flex-1">{b.name}{b.kg != null && <span className="muted text-sm"> · ~{b.kg} kg</span>}</span>
               <span className="muted text-xs">{i === 0 ? t("band.lightest") : i === bands.length - 1 ? t("band.heaviest") : ""}</span>
-              {value.includes(b.id) && <span aria-hidden="true">✓</span>}
+              {value.includes(b.id) && <Icon name="check" />}
             </button>
           ))}
         </div>

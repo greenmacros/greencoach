@@ -5,7 +5,7 @@ import { weekStart } from "./schedule";
 
 type Names = { en: string; ja: string };
 
-interface SlotSpec { id: string; sets: number; reps: [number, number]; rir?: number; rest?: number; note?: Names }
+interface SlotSpec { id: string; sets: number; reps: [number, number]; rir?: number; rest?: number; note?: Names; optional?: boolean }
 interface SessionSpec { name: Names; slots: SlotSpec[] }
 export interface TemplateSpec {
   id: string;
@@ -19,6 +19,8 @@ export interface TemplateSpec {
 }
 
 const s = (id: string, sets: number, lo: number, hi: number, rest?: number, rir?: number): SlotSpec => ({ id, sets, reps: [lo, hi], rest, rir });
+/** Mark a slot optional. */
+const opt = (x: SlotSpec): SlotSpec => ({ ...x, optional: true });
 /** Slot with a coaching note (EN / JA). */
 const n = (id: string, sets: number, lo: number, hi: number, en: string, ja: string, rest?: number): SlotSpec => ({ ...s(id, sets, lo, hi, rest), note: { en, ja } });
 
@@ -71,7 +73,7 @@ const EXAMPLE_4: SessionSpec[] = [
     n("Machine_Bicep_Curl", 2, 12, 15, "Slow tempo.", "ゆっくりしたテンポ。"),
     n("Triceps_Pushdown_-_Rope_Attachment", 2, 12, 15, "Elbows tucked.", "肘を体に寄せる。"),
     n("Incline_Dumbbell_Curl", 2, 10, 15, "Focus on the long head.", "長頭を意識する。"),
-    n("Dips_-_Triceps_Version", 1, 6, 15, "Optional, only if energy is good: as many reps as possible.", "任意。余力があるときだけ：できるだけ多く。"),
+    opt(n("Dips_-_Triceps_Version", 1, 6, 15, "Optional, only if energy is good: as many reps as possible.", "任意。余力があるときだけ：できるだけ多く。")),
   ] },
   { name: { en: "Quads", ja: "大腿四頭筋" }, slots: [
     n("Leg_Extensions", 3, 15, 15, "Warm up ~10 min first: light cycling, bodyweight squats, light leg extensions. Activation first.", "最初に約10分ウォームアップ：軽いバイク、自重スクワット、軽いレッグエクステンション。まず筋肉を目覚めさせる。"),
@@ -83,10 +85,10 @@ const EXAMPLE_4: SessionSpec[] = [
   { name: { en: "Back & Shoulders", ja: "背中・肩" }, slots: [
     n("Wide-Grip_Lat_Pulldown", 3, 10, 12, "Warm up ~10 min first: band pull-aparts, light pulldowns. Full stretch and squeeze.", "最初に約10分ウォームアップ：バンドプルアパート、軽いプルダウン。しっかり伸ばして絞る。"),
     n("Seated_Cable_Rows", 3, 10, 12, "Neutral grip.", "ニュートラルグリップ。"),
-    n("Smith_Machine_Stiff-Legged_Deadlift", 2, 8, 10, "Optional: only if energy is OK.", "任意：余力があるときだけ。", 150),
+    opt(n("Smith_Machine_Stiff-Legged_Deadlift", 2, 8, 10, "Optional: only if energy is OK.", "任意：余力があるときだけ。", 150)),
     n("x-machine-lateral-raise", 3, 12, 15, "Pause at the top.", "トップで一瞬止める。"),
     n("x-pec-dec-rear-delt", 2, 12, 15, "Machine or cable. Keep the shoulders down.", "マシンかケーブル。肩を下げたまま。"),
-    n("Dumbbell_Shoulder_Press", 2, 8, 10, "Optional: if recovered.", "任意：回復していれば。"),
+    opt(n("Dumbbell_Shoulder_Press", 2, 8, 10, "Optional: if recovered.", "任意：回復していれば。")),
   ] },
 ];
 
@@ -119,6 +121,7 @@ export function instantiateTemplate(spec: TemplateSpec, lang: Lang, todayKey: st
     exercises: sess.slots.map(sl => ({
       id: newId(), exerciseId: sl.id, sets: sl.sets, repMin: sl.reps[0], repMax: sl.reps[1],
       rir: sl.rir ?? 2, restSec: sl.rest ?? (sl.sets >= 3 && sl.reps[1] <= 10 ? 150 : 90), notes: sl.note?.[lang] ?? "", supersetGroup: null,
+      ...(sl.optional ? { optional: true } : {}),
     })),
   }));
   return {

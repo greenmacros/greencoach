@@ -74,7 +74,7 @@ for (const theme of ["light", "dark"] as const) {
     await scan("today");
     await page.getByRole("button", { name: "Start workout" }).click();
     await scan("workout");
-    await page.getByRole("button", { name: "← Back" }).click();
+    await page.getByRole("button", { name: "Back", exact: true }).click();
     for (const tab of ["Program", "Progress", "Coach", "Settings"]) {
       await page.getByRole("button", { name: tab, exact: true }).click();
       await page.waitForTimeout(150);

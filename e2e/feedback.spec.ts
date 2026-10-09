@@ -50,7 +50,7 @@ test("PR toast, soreness + exercise + session feedback, history and exercise his
   await fb.getByRole("button", { name: "Low pain" }).click();
   await fb.getByRole("button", { name: "Save", exact: true }).click();
   await expect(fb).toHaveCount(0);
-  await expect(page.getByRole("button", { name: /✓ Feedback/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Given: Feedback" })).toBeVisible();
 
   // finish: records list + session feel
   await page.getByRole("button", { name: "Finish", exact: true }).click();
@@ -73,7 +73,7 @@ test("PR toast, soreness + exercise + session feedback, history and exercise his
   await detail.getByRole("button", { name: "Barbell Squat" }).click();
   const exh = page.getByRole("dialog", { name: /Exercise history: Barbell Squat/ });
   await expect(exh.getByText(/2 sessions/)).toBeVisible();
-  await expect(exh.getByText(/🏆/)).toBeVisible();
+  await expect(exh.getByText(/Heaviest weight/)).toBeVisible();
 
   // delete with undo
   await exh.getByRole("button", { name: "Close" }).click();

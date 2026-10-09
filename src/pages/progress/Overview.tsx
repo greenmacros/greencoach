@@ -17,6 +17,7 @@ import { prText } from "../../workout/prText";
 import { summarize } from "../../workout/model";
 import GoalsView from "./GoalsView";
 import type { BodyApi } from "../../progress/useBody";
+import Icon from "../../components/Icon";
 
 interface Props { range: Range; workouts: WorkoutLog[]; lib: LibraryApi; prog: ProgramApi; body: BodyApi }
 
@@ -115,7 +116,7 @@ export default function Overview({ range, workouts, lib, prog, body }: Props) {
       </ChartFrame>
 
       <section className="card grid gap-2" aria-label={t("pc.prs")}>
-        <h2 className="font-bold">🏆 {t("pc.prs")}</h2>
+        <h2 className="font-bold"><Icon name="trophy" /> {t("pc.prs")}</h2>
         {prs.length === 0 ? <p className="muted text-sm">{t("pc.noPrs")}</p> : (
           <ol className="grid gap-1 text-sm">
             {prs.slice(0, 15).map((p, i) => (

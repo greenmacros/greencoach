@@ -2,7 +2,7 @@ import type { Equipment, Experience, Goal, Phase, WeightUnit } from "../db/types
 import type { SorenessRecord } from "../feedback/soreness";
 import type { Exercise, Muscle } from "../library/types";
 import type { Program } from "../program/types";
-import type { WorkoutLog } from "../workout/types";
+import type { SkipReason, WorkoutLog } from "../workout/types";
 import type { Region } from "./seasons";
 import type { CoachConfig } from "./config";
 
@@ -43,6 +43,8 @@ export interface CoachInput {
   soreness: readonly SorenessRecord[];
   bodyWeights: readonly BodyWeightPoint[];
   rejections: readonly Rejection[];
+  /** Slots the user chose to keep after a drop suggestion, with the day they decided (asked again after a while). */
+  keptSlots?: Readonly<Record<string, string>>;
   /** The user's bands, lightest first (for band exercises). */
   bands?: readonly { id: string; name: string; kg?: number | null }[];
   lookup: (id: string) => Exercise | undefined;
@@ -95,6 +97,17 @@ export interface SwapSuggestion {
   reason: Reason;
 }
 
+/** An exercise the user keeps skipping: the coach asks whether to make it optional or drop it. */
+export interface DropSuggestion {
+  sessionId: string;
+  slotId: string;
+  exerciseId: string;
+  skipped: number;
+  of: number;
+  /** Most common skip reason, when one was given. */
+  topReason: SkipReason | null;
+}
+
 export interface CoachNote { kind: "info" | "warn" | "good"; reason: Reason }
 
 export type PlanMode = "first" | "normal" | "deload" | "welcome-back" | "ramp";
@@ -111,5 +124,6 @@ export interface CoachPlan {
   muscles: MuscleSuggestion[];
   slots: SlotSuggestion[];
   swaps: SwapSuggestion[];
+  drops: DropSuggestion[];
   notes: CoachNote[];
 }

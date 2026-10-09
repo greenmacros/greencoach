@@ -3,6 +3,10 @@ import type { BaseRecord, WeightUnit } from "../db/types";
 export type SetType = "normal" | "warmup" | "drop" | "myo" | "failure";
 export const SET_TYPES: SetType[] = ["normal", "warmup", "drop", "myo", "failure"];
 
+/** Why a set or exercise was skipped (asked when skipping; "pain" also counts as joint-pain feedback). */
+export type SkipReason = "time" | "tired" | "dizzy" | "pain" | "equipment" | "other";
+export const SKIP_REASONS: SkipReason[] = ["time", "tired", "dizzy", "pain", "equipment", "other"];
+
 export interface SetLog {
   id: string;
   type: SetType;
@@ -15,6 +19,7 @@ export interface SetLog {
   doneAt: string | null;
   /** Skipped on purpose: kept visible but never counted. */
   skipped?: boolean;
+  skipReason?: SkipReason;
   /** Resistance bands used (ids from settings.bands), for band exercises. */
   bands?: string[];
 }
@@ -30,6 +35,10 @@ export interface ExerciseLog {
   supersetGroup: number | null;
   target: ExerciseTarget | null;
   sets: SetLog[];
+  /** Marked optional in the program: fine to leave out. */
+  optional?: boolean;
+  /** The whole exercise was skipped in this session. */
+  skip?: { reason: SkipReason };
   /** Quick feedback (milestone 5). */
   difficulty?: 1 | 2 | 3 | 4 | 5;
   pump?: 0 | 1 | 2 | 3;

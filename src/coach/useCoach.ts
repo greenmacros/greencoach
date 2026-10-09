@@ -9,7 +9,7 @@ import type { ProgramApi } from "../program/useProgram";
 import type { SorenessRecord } from "../feedback/soreness";
 import type { WorkoutLog } from "../workout/types";
 import { applyDecisions, beforeValues, toRecords, type Decision } from "./apply";
-import { BASE, loadCoachData, makePlan } from "./run";
+import { BASE, KEEP, loadCoachData, makePlan } from "./run";
 import { rejectionsFrom, type CoachSuggestionRecord, type SlotValues } from "./records";
 import type { BodyWeightPoint, CoachPlan } from "./types";
 
@@ -26,6 +26,8 @@ export interface CoachApi {
   reject: (slotId: string) => Promise<void>;
   acceptAll: () => Promise<void>;
   reset: () => Promise<void>;
+  /** Answer a "you keep skipping this" question. */
+  dropAnswer: (slotId: string, answer: "optional" | "remove" | "keep") => Promise<void>;
 }
 
 /** Runs the coach on real data and persists accept / edit / reject decisions. */
@@ -35,6 +37,7 @@ export function useCoach(prog: ProgramApi, lib: LibraryApi, finished: readonly W
   const [bodyWeights, setBodyWeights] = useState<BodyWeightPoint[]>([]);
   const [records, setRecords] = useState<CoachSuggestionRecord[]>([]);
   const [baselines, setBaselines] = useState<Map<string, Program>>(new Map());
+  const [keptSlots, setKeptSlots] = useState<Record<string, string>>({});
   const [ready, setReady] = useState(false);
   const today = prog.todayKey;
   // A brand-new user plans the week they are in; everyone else plans the coming week unless they ask for this one.
@@ -48,6 +51,7 @@ export function useCoach(prog: ProgramApi, lib: LibraryApi, finished: readonly W
     setBodyWeights(d.bodyWeights);
     setRecords(d.records);
     setBaselines(d.baselines);
+    setKeptSlots(d.keptSlots);
     setReady(true);
   }, []);
   useEffect(() => { void reload(); }, [reload, dataVersion]);
@@ -61,9 +65,9 @@ export function useCoach(prog: ProgramApi, lib: LibraryApi, finished: readonly W
   const plan = useMemo<CoachPlan | null>(() => {
     const base = baseline ?? program;
     if (!base) return null;
-    return makePlan({ program: base, lib, finished, soreness, bodyWeights, rejections, profile, settings, today, targetWeekStart });
+    return makePlan({ program: base, lib, finished, soreness, bodyWeights, rejections, keptSlots, profile, settings, today, targetWeekStart });
   // eslint-disable-next-line react-hooks/exhaustive-deps -- lib is a fresh object each render; its data is what matters
-  }, [baseline, program, lib.ready, lib.all, lib.byId, finished, soreness, bodyWeights, rejections, profile, settings.region, settings.weightUnit, today, targetWeekStart]);
+  }, [baseline, program, lib.ready, lib.all, lib.byId, finished, soreness, bodyWeights, rejections, keptSlots, profile, settings.region, settings.weightUnit, today, targetWeekStart]);
 
   const decide = useCallback(async (decisions: Map<string, Decision>) => {
     if (!plan || !program || decisions.size === 0) return;
@@ -94,6 +98,18 @@ export function useCoach(prog: ProgramApi, lib: LibraryApi, finished: readonly W
       const m = new Map<string, Decision>();
       for (const s of plan.slots) if (!decided.has(s.slotId)) m.set(s.slotId, { status: "accepted" });
       await decide(m);
+    },
+    dropAnswer: async (slotId, answer) => {
+      if (!program) return;
+      if (answer === "keep") await repo.put("suggestions", { id: KEEP + slotId, dayKey: today, schemaVersion: SCHEMA_VERSION } as never);
+      else await prog.save({
+        ...program,
+        sessions: program.sessions.map(s => ({
+          ...s,
+          exercises: answer === "remove" ? s.exercises.filter(e => e.id !== slotId) : s.exercises.map(e => (e.id === slotId ? { ...e, optional: true } : e)),
+        })),
+      });
+      await reload();
     },
     reset: async () => {
       for (const r of records.filter(x => x.weekKey === targetWeekStart)) await repo.remove("suggestions", r.id);

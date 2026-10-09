@@ -41,6 +41,8 @@ export interface ExperienceMods {
 }
 
 export const COACH_CONFIG = {
+  /** An exercise skipped in this many of the last `of` sessions of its day gets a "make optional or drop" question. */
+  dropAfterSkips: { skipped: 3, of: 4, askAgainDays: 28 },
   /** How much a secondary muscle counts toward its weekly hard sets. */
   secondaryWeight: 0.5,
   landmarks: LANDMARKS,

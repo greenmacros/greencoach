@@ -15,8 +15,8 @@ export interface SharedPlan {
   a: number;
   /** Monday..Sunday: session index or null. */
   w: (number | null)[];
-  /** Sessions: name + exercises [exerciseId, sets, repMin, repMax, rir, restSec, notes, supersetGroup]. */
-  s: { n: string; e: [string, number, number, number, number, number, string, number | null][] }[];
+  /** Sessions: name + exercises [exerciseId, sets, repMin, repMax, rir, restSec, notes, supersetGroup, optional?]. */
+  s: { n: string; e: [string, number, number, number, number, number, string, number | null, (1 | 0)?][] }[];
   /** Custom exercises used by the plan. */
   c?: SharedCustom[];
 }
@@ -35,7 +35,9 @@ export function toShared(program: Program, lookup: (id: string) => Exercise | un
       const ex = lookup(x.exerciseId);
       if (ex?.custom && !custom.has(ex.id))
         custom.set(ex.id, { id: ex.id, en: ex.name.en, ja: ex.name.ja, p: ex.primary, s: ex.secondary, eq: ex.equipment, pat: ex.pattern, m: ex.mechanic ?? "compound", f: ex.fatigue, notes: ex.notes ?? "" });
-      return [x.exerciseId, x.sets, x.repMin, x.repMax, x.rir, x.restSec, x.notes, x.supersetGroup] as SharedPlan["s"][number]["e"][number];
+      return (x.optional
+        ? [x.exerciseId, x.sets, x.repMin, x.repMax, x.rir, x.restSec, x.notes, x.supersetGroup, 1]
+        : [x.exerciseId, x.sets, x.repMin, x.repMax, x.rir, x.restSec, x.notes, x.supersetGroup]) as SharedPlan["s"][number]["e"][number];
     }),
   }));
   const w = program.week.map(id => { const i = program.sessions.findIndex(x => x.id === id); return i < 0 ? null : i; });
@@ -95,7 +97,8 @@ function validate(d: unknown): SharedPlan {
       e: sess.e.map(x => {
         if (!Array.isArray(x) || typeof x[0] !== "string" || !x[0]) throw new Error("bad-plan");
         const lo = int(x[2], 1, 100, 8);
-        return [str(x[0], 120), int(x[1], 1, 20, 3), lo, Math.max(lo, int(x[3], 1, 100, 12)), int(x[4], 0, 10, 2), int(x[5], 0, 900, 120), str(x[6]), x[7] === null || x[7] === undefined ? null : int(x[7], 0, 50, 0)] as SharedPlan["s"][number]["e"][number];
+        const base = [str(x[0], 120), int(x[1], 1, 20, 3), lo, Math.max(lo, int(x[3], 1, 100, 12)), int(x[4], 0, 10, 2), int(x[5], 0, 900, 120), str(x[6]), x[7] === null || x[7] === undefined ? null : int(x[7], 0, 50, 0)];
+        return (x[8] === 1 ? [...base, 1] : base) as SharedPlan["s"][number]["e"][number];
       }),
     };
   });
@@ -112,8 +115,9 @@ export function fromShared(plan: SharedPlan, todayKey: string, customIds: Readon
   const sessions = plan.s.map(sess => ({
     id: newId(),
     name: sess.n,
-    exercises: sess.e.map(([exerciseId, sets, repMin, repMax, rir, restSec, notes, supersetGroup]) => ({
+    exercises: sess.e.map(([exerciseId, sets, repMin, repMax, rir, restSec, notes, supersetGroup, optional]) => ({
       id: newId(), exerciseId: customIds.get(exerciseId) ?? exerciseId, sets, repMin, repMax, rir, restSec, notes, supersetGroup, weightKg: null,
+      ...(optional === 1 ? { optional: true } : {}),
     })),
   }));
   return {

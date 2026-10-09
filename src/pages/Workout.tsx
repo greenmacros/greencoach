@@ -19,6 +19,7 @@ import { livePRs, prSetKinds, topPR } from "../workout/pr";
 import { prText } from "../workout/prText";
 import { vibrate } from "../workout/alerts";
 import type { AutoChange } from "../coach/auto";
+import Icon from "../components/Icon";
 
 interface Props {
   initial: WorkoutLog;
@@ -72,8 +73,9 @@ export default function Workout({ initial, lib, history, onExit, onClose, coachC
     mutate(w => updateExercise(w, ex.id, e => ({
       ...e, sets: e.sets.map(s => (s.id === setId ? { ...s, done: !s.done, doneAt: s.done ? null : new Date().toISOString() } : s)),
     })));
+    const finishesExercise = ex.sets.every(s => s.id === setId || s.done || s.skipped);
     // Finishing the last set of an exercise opens the feedback sheet once.
-    if (!wasDone && !asked.has(ex.id) && ex.sets.every(s => s.id === setId || s.done || s.skipped)) {
+    if (!wasDone && !asked.has(ex.id) && finishesExercise) {
       asked.add(ex.id);
       setFbFor(ex.id);
     }
@@ -86,7 +88,8 @@ export default function Workout({ initial, lib, history, onExit, onClose, coachC
       }
       primeAudio(); // allowed here: inside a tap
       const inSuperset = ex.supersetGroup !== null && nextEx?.supersetGroup === ex.supersetGroup;
-      if (!inSuperset) timer.start(ex.restSec);
+      // No rest timer after an exercise's last set: the user is moving on to the next exercise.
+      if (!inSuperset && !finishesExercise) timer.start(ex.restSec);
     }
   };
 
@@ -127,7 +130,7 @@ export default function Workout({ initial, lib, history, onExit, onClose, coachC
   return (
     <section className="grid gap-3" style={{ paddingBottom: "calc(14rem + env(safe-area-inset-bottom))" }}>
       <header className="flex items-center gap-2">
-        <button className="btn" onClick={() => { void flush(); onExit(); }}>← {t("wk.back")}</button>
+        <button className="btn" onClick={() => { void flush(); onExit(); }}><Icon name="back" /> {t("wk.back")}</button>
         <div className="flex-1 min-w-0 text-center">
           {workout.mesoWeek && workout.mesoDay && <p className="text-xs font-bold uppercase muted" style={{ letterSpacing: 0.5 }}>{t("wk.dayLabel", { w: workout.mesoWeek, d: workout.mesoDay })}</p>}
           <h1 className="font-bold truncate">{title}</h1>
@@ -153,7 +156,7 @@ export default function Workout({ initial, lib, history, onExit, onClose, coachC
           onSwap={() => setPicker({ swap: log.id })} onFeedback={() => setFbFor(log.id)} />
       ))}
 
-      <button className="btn" onClick={() => setPicker({ swap: null })}>＋ {t("wk.addExercise")}</button>
+      <button className="btn" onClick={() => setPicker({ swap: null })}><Icon name="plus" /> {t("wk.addExercise")}</button>
 
       {picker && (
         <PickerSheet lib={lib} title={picker.swap ? t("wk.swapExercise") : t("wk.addExercise")} onClose={() => setPicker(null)}
@@ -187,7 +190,7 @@ export default function Workout({ initial, lib, history, onExit, onClose, coachC
         if (lastDone) mutate(w => updateExercise(w, lastDone.id, e => ({ ...e, restSec: sec })));
       }} />
       {toast && (
-        <div role="status" className="card fixed left-4 right-4 mx-auto max-w-xl font-semibold" style={{ bottom: "calc(13rem + env(safe-area-inset-bottom))", zIndex: 25, borderColor: "var(--accent)" }}>🏆 {toast}</div>
+        <div role="status" className="card fixed left-4 right-4 mx-auto max-w-xl font-semibold" style={{ bottom: "calc(13rem + env(safe-area-inset-bottom))", zIndex: 25, borderColor: "var(--accent)" }}><Icon name="trophy" style={{ color: "var(--accent)" }} /> {toast}</div>
       )}
     </section>
   );

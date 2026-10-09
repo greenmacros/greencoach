@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Icon from "./Icon";
 
 interface Props {
   value: number | null;
@@ -32,7 +33,7 @@ export default function NumInput({ value, onChange, label, step = 1, min = 0, ma
 
   return (
     <div className="flex items-center gap-1" role="group" aria-label={label}>
-      {!bare && <button type="button" className="btn" style={{ minWidth: 44, padding: 0 }} aria-label={`− ${label}`} onClick={() => bump(-1)}>−</button>}
+      {!bare && <button type="button" className="btn" style={{ minWidth: 44, padding: 0 }} aria-label={`− ${label}`} onClick={() => bump(-1)}><Icon name="minus" /></button>}
       <input className="field text-center" style={{ minWidth: 0, flex: 1, padding: 0, fontWeight: 700, fontSize: 18, opacity: dim ? 0.6 : 1 }}
         inputMode={decimal ? "decimal" : "numeric"} aria-label={label} placeholder={placeholder} value={text}
         onFocus={e => { e.currentTarget.select(); onFocus?.(); }} onBlur={() => onBlur?.()}
@@ -43,7 +44,7 @@ export default function NumInput({ value, onChange, label, step = 1, min = 0, ma
           if (raw === "" || raw === ".") onChange(null);
           else onChange(clamp(parseFloat(raw)));
         }} />
-      {!bare && <button type="button" className="btn" style={{ minWidth: 44, padding: 0 }} aria-label={`+ ${label}`} onClick={() => bump(1)}>＋</button>}
+      {!bare && <button type="button" className="btn" style={{ minWidth: 44, padding: 0 }} aria-label={`+ ${label}`} onClick={() => bump(1)}><Icon name="plus" /></button>}
     </div>
   );
 }

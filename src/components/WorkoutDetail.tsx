@@ -6,6 +6,7 @@ import { summarize } from "../workout/model";
 import { computeAllPRs } from "../workout/pr";
 import { prText } from "../workout/prText";
 import type { WorkoutLog } from "../workout/types";
+import Icon from "./Icon";
 
 interface Props {
   workout: WorkoutLog;
@@ -32,7 +33,7 @@ export default function WorkoutDetail({ workout, workouts, lookup, onClose, onDe
             <h2 className="text-xl font-bold">{workout.sessionName || t("wk.quick")}</h2>
             <p className="muted text-sm">{formatDayLong(workout.dayKey, lang)}</p>
           </div>
-          <button className="btn" aria-label={t("lib.close")} onClick={onClose}>✕</button>
+          <button className="btn" aria-label={t("lib.close")} onClick={onClose}><Icon name="close" /></button>
         </div>
         <dl className="grid grid-cols-3 gap-2 text-center">
           <div className="card" style={{ padding: 10 }}><dt className="muted text-xs">{t("wk.sumDuration")}</dt><dd className="font-bold">{formatClock(s.durationSec)}</dd></div>
@@ -58,7 +59,7 @@ export default function WorkoutDetail({ workout, workouts, lookup, onClose, onDe
                     <span className="muted w-6">{i + 1}</span>
                     <span>{set.weightKg != null ? `${fmtWeight(set.weightKg, unit)} ${unit} × ` : ""}{set.reps}{set.rir != null ? ` @${set.rir}` : ""}</span>
                     {set.type !== "normal" && <span className="muted">· {t(`wk.type.${set.type}`)}</span>}
-                    {myPrs.has(set.id) && <span role="img" aria-label={t("pr.badge")}>🏆</span>}
+                    {myPrs.has(set.id) && <Icon name="trophy" label={t("pr.badge")} />}
                   </li>
                 ))}
               </ol>
@@ -67,13 +68,13 @@ export default function WorkoutDetail({ workout, workouts, lookup, onClose, onDe
                   {[e.difficulty !== undefined && `${t("fb.difficulty")}: ${t(`fb.diff.${e.difficulty}`)}`, e.pump !== undefined && `${t("fb.pump")}: ${t(`fb.pump.${e.pump}`)}`, e.jointPain !== undefined && `${t("fb.joint")}: ${t(`fb.joint.${e.jointPain}`)}`].filter(Boolean).join(" · ")}
                 </p>
               )}
-              {e.notes && <p className="muted text-sm">📝 {e.notes}</p>}
+              {e.notes && <p className="muted text-sm"><Icon name="note" /> {e.notes}</p>}
             </article>
           );
         })}
 
         {prs.length > 0 && (
-          <div><p className="font-semibold">🏆 {t("pr.title")}</p>
+          <div><p className="font-semibold"><Icon name="trophy" /> {t("pr.title")}</p>
             <ul className="text-sm grid gap-0.5">{prs.map((p, i) => <li key={i}>{lookup(p.exerciseId)?.name[lang]}: {prText(p, unit, t)}</li>)}</ul>
           </div>
         )}

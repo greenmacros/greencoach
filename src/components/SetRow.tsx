@@ -6,7 +6,9 @@ import type { ExerciseLog, SetLog, SetType } from "../workout/types";
 import NumInput from "./NumInput";
 import SetMenu from "./SetMenu";
 import BandPicker, { BandDot } from "./BandPicker";
+import SkipSheet from "./SkipSheet";
 import { bandLabel, bandsIn, bandsOf } from "../bands/bands";
+import Icon from "./Icon";
 
 interface Props {
   exLog: ExerciseLog;
@@ -32,6 +34,7 @@ type Field = "weight" | "reps" | null;
 export default function SetRow({ exLog, set, index, unit, step, prev, isPR, bandMode, onChange, onToggleDone, onCopy, onAddBelow, onRemove }: Props) {
   const { t, settings } = useApp();
   const [picking, setPicking] = useState(false);
+  const [skipping, setSkipping] = useState(false);
   const allBands = bandsOf(settings);
   const setBands = bandsIn(set.bands, allBands);
   const [field, setField] = useState<Field>(null);
@@ -92,26 +95,28 @@ export default function SetRow({ exLog, set, index, unit, step, prev, isPR, band
           aria-pressed={set.done} aria-disabled={!canDone && !set.done} title={!canDone && !set.done ? t("wk.needReps") : undefined}
           aria-label={set.done ? `${t("wk.undone")}: ${label}` : `${t("wk.done")}: ${label}`}
           onClick={() => { if (canDone || set.done) { setField(null); onToggleDone(); } }}>
-          {set.done ? "✓" : "○"}
+          <Icon name={set.done ? "check" : "ring"} size={22} />
         </button>
       </div>
       <div className="flex items-center gap-2 pb-1 text-xs muted" style={{ paddingLeft: 44 }}>
-        <span className="flex-1 min-w-0 truncate">{set.skipped ? t("wk.skippedLabel") : hint}{set.type !== "normal" && ` · ${t(`wk.type.${set.type}`)}`}</span>
-        {isPR && <span role="img" aria-label={t("pr.badge")} title={t("pr.badge")}>🏆</span>}
+        <span className="flex-1 min-w-0 truncate">{set.skipped ? (set.skipReason ? `${t("wk.skippedLabel")} · ${t(`skip.r.${set.skipReason}`)}` : t("wk.skippedLabel")) : hint}{set.type !== "normal" && ` · ${t(`wk.type.${set.type}`)}`}</span>
+        {isPR && <span title={t("pr.badge")} style={{ color: "var(--accent)" }}><Icon name="trophy" label={t("pr.badge")} /></span>}
       </div>
       {field && (
         <div className="flex gap-2 pb-2" role="group" aria-label={t("wk.stepper", { field: field === "weight" ? t("wk.col.weight") : t("wk.col.reps") })}>
           <button type="button" className="btn flex-1" onMouseDown={e => e.preventDefault()} aria-label={`− ${label} ${field}`} onClick={() => bump(-1)}>− {field === "weight" ? step : 1}</button>
           <span className="muted text-sm self-center text-center" style={{ minWidth: 64 }}>{field === "weight" ? t("wk.col.weight") : t("wk.col.reps")}</span>
-          <button type="button" className="btn flex-1" onMouseDown={e => e.preventDefault()} aria-label={`+ ${label} ${field}`} onClick={() => bump(1)}>＋ {field === "weight" ? step : 1}</button>
+          <button type="button" className="btn flex-1" onMouseDown={e => e.preventDefault()} aria-label={`+ ${label} ${field}`} onClick={() => bump(1)}><Icon name="plus" /> {field === "weight" ? step : 1}</button>
         </div>
       )}
       {menu && (
         <SetMenu set={set} index={index} onClose={() => setMenu(false)}
           onType={(ty: SetType) => onChange({ type: ty })} onAddBelow={onAddBelow} onCopy={onCopy}
-          onSkip={() => onChange({ skipped: !set.skipped, done: false, doneAt: null })} onDelete={onRemove} />
+          onSkip={() => (set.skipped ? onChange({ skipped: false, skipReason: undefined }) : setSkipping(true))} onDelete={onRemove} />
       )}
       {picking && <BandPicker value={set.bands ?? []} label={`${label} ${t("wk.col.band")}`} onChange={ids => onChange({ bands: ids })} onClose={() => setPicking(false)} />}
+      {skipping && <SkipSheet title={t("skip.setTitle", { n: index + 1 })} onCancel={() => setSkipping(false)}
+        onSkip={r => { setSkipping(false); onChange({ skipped: true, skipReason: r, done: false, doneAt: null }); }} />}
     </li>
   );
 }

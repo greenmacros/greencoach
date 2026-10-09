@@ -13,6 +13,7 @@ import Stepper from "./Stepper";
 import TextInput from "./TextInput";
 import SharePlanSheet from "./SharePlanSheet";
 import PasteLinkSheet from "./PasteLinkSheet";
+import Icon from "./Icon";
 
 interface Props { prog: ProgramApi; lib: LibraryApi; program: Program; onNew: () => void }
 
@@ -86,7 +87,7 @@ export default function ProgramBuilder({ prog, lib, program, onNew }: Props) {
           <TextInput className="field" value={program.name} onValue={v => void patch({ name: v })} />
         </label>
         <div className="flex flex-wrap gap-2">
-          <button className="btn" onClick={onNew}>＋ {t("prog.new")}</button>
+          <button className="btn" onClick={onNew}><Icon name="plus" /> {t("prog.new")}</button>
           <button className="btn" onClick={() => setSharing(true)}>{t("share.button")}</button>
           <button className="btn" onClick={() => setPasting(true)}>{t("share.importPaste")}</button>
           <button className="btn btn-danger" onClick={async () => {
@@ -146,7 +147,7 @@ export default function ProgramBuilder({ prog, lib, program, onNew }: Props) {
                     ))}
                   </ol>
                   <div className="flex flex-wrap gap-2">
-                    <button className="btn btn-primary" onClick={() => setPicker({ sessionId: s.id, replaceSlotId: null })}>＋ {t("prog.addExercise")}</button>
+                    <button className="btn btn-primary" onClick={() => setPicker({ sessionId: s.id, replaceSlotId: null })}><Icon name="plus" /> {t("prog.addExercise")}</button>
                     <button className="btn" onClick={() => void duplicate(s)}>{t("prog.duplicate")}</button>
                     <button className="btn btn-danger" onClick={() => void deleteSession(s)}>{t("prog.deleteSession")}</button>
                   </div>
@@ -155,7 +156,7 @@ export default function ProgramBuilder({ prog, lib, program, onNew }: Props) {
             </article>
           );
         })}
-        <button className="btn" onClick={() => void addSession()}>＋ {t("prog.addSession")}</button>
+        <button className="btn" onClick={() => void addSession()}><Icon name="plus" /> {t("prog.addSession")}</button>
       </div>
 
       {pasting && <PasteLinkSheet onClose={() => setPasting(false)} />}
@@ -166,7 +167,7 @@ export default function ProgramBuilder({ prog, lib, program, onNew }: Props) {
         <div role="status" className="card flex items-center gap-3 fixed left-4 right-4 mx-auto max-w-xl" style={{ bottom: "calc(6.5rem + env(safe-area-inset-bottom))", zIndex: 40 }}>
           <span className="flex-1">{undo.text}</span>
           <button className="btn" onClick={async () => { await undo.run(); setUndo(null); }}>{t("prog.undo")}</button>
-          <button className="btn" aria-label={t("lib.close")} onClick={() => setUndo(null)}>✕</button>
+          <button className="btn" aria-label={t("lib.close")} onClick={() => setUndo(null)}><Icon name="close" /></button>
         </div>
       )}
     </div>
