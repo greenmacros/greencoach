@@ -65,4 +65,6 @@ export interface WorkoutLog extends BaseRecord {
   /** Whole-session feedback (milestone 5). */
   feel?: 1 | 2 | 3 | 4 | 5;
   sessionFatigue?: 1 | 2 | 3 | 4 | 5;
+  /** Optional check-in at the start: how the night's sleep was (1 poor, 2 OK, 3 well). */
+  sleep?: 1 | 2 | 3;
 }

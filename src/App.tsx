@@ -10,6 +10,7 @@ import { mesoPosition, trainingDayNumber, weekStart } from "./program/schedule";
 import type { AutoRecord } from "./coach/auto";
 import AutoCoachCard from "./components/AutoCoachCard";
 import ImportPlanSheet from "./components/ImportPlanSheet";
+import { SafetyGate } from "./components/Safety";
 import type { SharedPlan } from "./program/share";
 import { useProgram } from "./program/useProgram";
 import { createWorkout } from "./workout/model";
@@ -144,6 +145,7 @@ export default function App() {
         </Suspense>
       </main>
       {!active && !firstRun && <TabBar tab={tab} onChange={setTab} />}
+      {!settings.safetyAcceptedAt && <SafetyGate />}
       {shared && lib.ready && <ImportPlanSheet plan={shared} lib={lib} busy={importing} onImport={() => void importShared()} onCancel={clearShared} />}
       {importMsg && (
         <div role="status" className="card flex items-center gap-3 fixed left-4 right-4 mx-auto max-w-xl" style={{ bottom: "calc(6.5rem + env(safe-area-inset-bottom))", zIndex: 40, borderColor: "var(--accent)" }}>

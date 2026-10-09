@@ -52,6 +52,8 @@ export interface VolumeSignals {
   doneSessions: number;
   plannedSessions: number;
   rejectedRecently: boolean;
+  /** Most of last week's sessions began after a poor night's sleep. */
+  poorSleep?: boolean;
 }
 
 export interface VolumeDecision { target: number; reason: Reason; extra: Reason[] }
@@ -93,6 +95,7 @@ export function nextMuscleTarget(muscle: Muscle, b: Band, s: VolumeSignals, m: M
     return hold(P("why.vol.hold.adherence", { muscle: name, done: s.doneSessions, planned: s.plannedSessions }));
   }
   if (s.rejectedRecently) return hold(P("why.vol.hold.rejected", { muscle: name, n: last }));
+  if (s.poorSleep) return hold(P("why.vol.hold.sleep", { muscle: name, n: last }));
   if (m.phaseMods.holdVolume && !belowMev) return hold(P("why.vol.hold.cut", { muscle: name, n: last }));
 
   // 5. Add sets.

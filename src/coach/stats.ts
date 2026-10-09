@@ -177,6 +177,12 @@ export const adherence = (workouts: readonly WorkoutLog[], program: Program, wee
   return planned === 0 ? null : Math.min(1, sessionsInWeek(workouts, weekStartKey).length / planned);
 };
 
+/** Sleep check-ins in a week: how many sessions answered and how many said "poor". */
+export function sleepInWeek(workouts: readonly WorkoutLog[], weekStartKey: string): { answered: number; poor: number } {
+  const ws = sessionsInWeek(workouts, weekStartKey).filter(w => w.sleep !== undefined);
+  return { answered: ws.length, poor: ws.filter(w => w.sleep === 1).length };
+}
+
 /** Days since the last finished workout, or null if there has never been one. */
 export function gapDays(workouts: readonly WorkoutLog[], today: string): number | null {
   const f = finished(workouts);

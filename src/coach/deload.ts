@@ -62,6 +62,10 @@ export function earlyDeloadReasons(args: {
     if (avg >= d.fatigueAvg) reasons.push(P("why.deload.early.fatigue", { avg: Math.round(avg * 10) / 10 }));
   }
 
+  const slept = finished(args.allWorkouts).filter(w => w.sleep !== undefined).slice(-d.sleepOf);
+  const poorNights = slept.filter(w => w.sleep === 1).length;
+  if (slept.length >= d.sleepPoor && poorNights >= d.sleepPoor) reasons.push(P("why.deload.early.sleep", { poor: poorNights, n: slept.length }));
+
   const since = addDays(args.today, -14);
   const recentW = finished(args.allWorkouts).filter(w => w.dayKey >= since);
   const ids = new Set(recentW.map(w => w.id));

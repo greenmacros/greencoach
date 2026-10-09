@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { acceptSafety } from "./helpers";
 
 const MONDAY = new Date(2026, 9, 5, 10, 0, 0);
 
@@ -14,6 +15,7 @@ async function journey(page: Page, lang: "en" | "ja", theme: "light" | "dark") {
   await page.clock.install({ time: MONDAY });
   await page.goto("/");
   await expect(page.locator("html")).toHaveAttribute("data-theme", theme); // no flash of the wrong theme
+  await acceptSafety(page);
 
   // 1. onboarding
   await page.getByRole("button", { name: s.lang, exact: true }).click();
@@ -49,6 +51,7 @@ test("works offline after the first load", async ({ page, context }) => {
   await page.evaluate(async () => { await navigator.serviceWorker.ready; });
   await context.setOffline(true);
   await page.reload();
+  await acceptSafety(page);
   await expect(page.getByRole("button", { name: /^(Skip setup|設定をスキップ)$/ })).toBeVisible();
   await page.getByRole("button", { name: /^(Skip setup|設定をスキップ)$/ }).click();
   await page.getByRole("button", { name: "Program", exact: true }).click(); // lazy chunk must come from the cache
@@ -68,6 +71,8 @@ for (const theme of ["light", "dark"] as const) {
       const bad = r.violations.filter(v => v.impact === "serious" || v.impact === "critical");
       expect(bad.map(v => `${where}: ${v.id} (${v.nodes.length}) ${v.nodes.slice(0, 2).map(n => n.target.join(" ")).join(" | ")}`)).toEqual([]);
     };
+    await scan("safety notice");
+    await acceptSafety(page);
     await scan("onboarding");
     await page.getByRole("button", { name: "Next" }).click(); await page.getByRole("button", { name: "Next" }).click(); await page.getByRole("button", { name: "Next" }).click();
     await page.getByRole("button", { name: "Start with this" }).first().click();
@@ -82,3 +87,22 @@ for (const theme of ["light", "dark"] as const) {
     }
   });
 }
+
+test("the safety notice must be confirmed once, and stays readable in Settings", async ({ page }) => {
+  await page.goto("/");
+  const gate = page.getByRole("dialog", { name: "Before you start" });
+  await expect(gate.getByText(/not medical advice/)).toBeVisible();
+  await page.screenshot({ path: "test-results/safety.png" });
+  await expect(gate.getByRole("button", { name: "Continue" })).toBeDisabled();
+  await gate.getByRole("checkbox").check();
+  await gate.getByRole("button", { name: "Continue" }).click();
+  await expect(gate).toBeHidden();
+  await page.waitForTimeout(500); // let the settings write land before reloading
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Skip setup" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Before you start" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Skip setup" }).click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "About & safety" })).toBeVisible();
+  await expect(page.getByText(/^Agreed on /)).toBeVisible();
+});

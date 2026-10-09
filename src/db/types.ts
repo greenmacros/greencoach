@@ -30,6 +30,8 @@ export interface Settings extends BaseRecord {
   onboarded: boolean;
   /** "auto" (default when missing): weekly coach changes are applied with a summary. "ask": every change is reviewed. */
   coachMode?: "auto" | "ask";
+  /** When the user confirmed the safety notice (shown once until then). */
+  safetyAcceptedAt?: string | null;
   /** The user's own resistance bands, lightest first (defaults when missing). */
   bands?: import("../bands/bands").Band[];
 }

@@ -39,6 +39,7 @@ export default function Workout({ initial, lib, history, onExit, onClose, coachC
   const timer = useRestTimer({ title: t("timer.done"), body: t("timer.doneBody") });
   const [picker, setPicker] = useState<{ swap: string | null } | null>(null);
   const [finishing, setFinishing] = useState(false);
+  const [editSleep, setEditSleep] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const soreness = useSoreness(workout, history, lib.byId);
   const [fbFor, setFbFor] = useState<string | null>(null);
@@ -142,6 +143,22 @@ export default function Workout({ initial, lib, history, onExit, onClose, coachC
       <label className="flex items-center gap-2 text-sm muted">
         <input type="checkbox" checked={settings.keepAwake} onChange={e => void update({ keepAwake: e.target.checked })} />{t("wk.keepAwake")}
       </label>
+
+      {/* Optional sleep check-in: one tap, feeds the coach's recovery decisions. */}
+      {(workout.sleep === undefined || editSleep) ? (
+        <div className="card grid gap-2" style={{ padding: 12 }} role="group" aria-label={t("sleep.q")}>
+          <p className="font-semibold text-sm">{t("sleep.q")}</p>
+          <div className="seg">
+            {([1, 2, 3] as const).map(v => (
+              <button key={v} aria-pressed={workout.sleep === v} onClick={() => { mutate(w => ({ ...w, sleep: v })); setEditSleep(false); }}>{t(`sleep.${v}`)}</button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <button className="text-sm muted text-left" style={{ background: "none", border: 0, padding: 0, minHeight: 32, cursor: "pointer", color: "var(--muted)" }} onClick={() => setEditSleep(true)}>
+          {t("sleep.answered", { v: t(`sleep.${workout.sleep}`) })}
+        </button>
+      )}
 
       {workout.exercises.length === 0 && <p className="card muted">{t("wk.empty")}</p>}
 

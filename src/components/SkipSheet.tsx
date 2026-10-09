@@ -19,6 +19,7 @@ export default function SkipSheet({ title, onSkip, onCancel }: { title: string; 
           ))}
         </div>
         {reason === "pain" && <p className="text-sm muted">{t("skip.painNote")}</p>}
+        {reason === "dizzy" && <p className="text-sm" style={{ color: "var(--danger)" }}>{t("skip.dizzyNote")}</p>}
         <div className="grid grid-cols-2 gap-2">
           <button className="btn" onClick={onCancel}>{t("share.cancel")}</button>
           <button className="btn btn-primary" disabled={!reason} onClick={() => reason && onSkip(reason)}>{t("skip.confirm")}</button>

@@ -13,6 +13,7 @@ import type { WorkoutLog } from "../workout/types";
 import { formatBytes, formatDateTime } from "../lib/format";
 import type { BackupFile } from "../db/types";
 import BandsEditor from "../components/BandsEditor";
+import { SafetyCard } from "../components/Safety";
 
 type Estimate = Awaited<ReturnType<typeof repo.storageEstimate>>;
 
@@ -170,6 +171,7 @@ export default function Settings({ lib, prog, workouts }: { lib: LibraryApi; pro
         )}
         {msg && <p role="status" className="font-semibold">{msg}</p>}
       </div>
+      <SafetyCard />
       <p className="muted text-sm text-center">{t("about.free")}</p>
       <AppVersion />
     </section>

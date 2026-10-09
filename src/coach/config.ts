@@ -102,6 +102,9 @@ export const COACH_CONFIG = {
     /** Or: average soreness level (0-3) of asked muscles this high AND average difficulty (1-5) this high. */
     soreAvg: 2.5,
     difficultyAvg: 4,
+    /** Or: poor sleep in at least `sleepPoor` of the last `sleepOf` sessions that asked. */
+    sleepPoor: 4,
+    sleepOf: 6,
     /** Do not call an early deload before this mesocycle week (needs data). */
     minMesoWeek: 3,
   },
@@ -117,6 +120,9 @@ export const COACH_CONFIG = {
     smallStep: 1,
     /** Below this adherence (done/planned sessions) volume is held. */
     minAdherence: 0.6,
+    /** Poor sleep on at least this share of last week's sessions (with at least `sleepMinAnswers` answers) blocks set increases. */
+    sleepPoorShare: 0.5,
+    sleepMinAnswers: 2,
     /** Soreness thresholds are on the 0-3 scale. */
     soreHigh: 2.5,
     soreOk: 1,

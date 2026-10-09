@@ -199,3 +199,13 @@ test("optional exercises, skipping with a reason, and no rest timer after an exe
   await page.getByRole("dialog", { name: "Skip set 2" }).getByRole("button", { name: "Skip", exact: true }).click();
   await expect(curl.getByText("Skipped · Too tired")).toBeVisible();
 });
+
+test("optional sleep check-in at the start of a workout", async ({ page }) => {
+  await startFullBody(page);
+  const q = page.getByRole("group", { name: "How did you sleep last night?" });
+  await q.getByRole("button", { name: "Poorly" }).click();
+  await expect(page.getByRole("button", { name: "Sleep: Poorly · change" })).toBeVisible();
+  await page.getByRole("button", { name: "Sleep: Poorly · change" }).click();
+  await page.getByRole("group", { name: "How did you sleep last night?" }).getByRole("button", { name: "OK", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Sleep: OK · change" })).toBeVisible();
+});

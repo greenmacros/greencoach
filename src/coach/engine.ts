@@ -7,7 +7,7 @@ import { planSlot } from "./load";
 import { disruptionsIn, seasonFor } from "./seasons";
 import {
   actualMuscleSets, adherence, bodyWeightRate, exerciseSessions, finished, gapDays, muscleFeedback, muscleTrend,
-  plannedMuscleSets, plannedSessionCount, plannedSoFar, recentPeakSets, sessionsInWeek,
+  plannedMuscleSets, plannedSessionCount, plannedSoFar, recentPeakSets, sessionsInWeek, sleepInWeek,
 } from "./stats";
 import type { CoachInput, CoachNote, CoachPlan, DropSuggestion, MuscleSuggestion, PlanMode, Reason, SlotSuggestion, SwapSuggestion, Trend } from "./types";
 import type { CoachConfig } from "./config";
@@ -75,6 +75,8 @@ export function planNextWeek(input: CoachInput): CoachPlan {
   const adh = adherence(allDone, program, basisWeek, today);
   const doneN = sessionsInWeek(allDone, basisWeek).length;
   const plannedN = plannedSoFar(program, basisWeek, today);
+  const sleep = sleepInWeek(allDone, basisWeek);
+  const poorSleep = sleep.answered >= cfg.volume.sleepMinAnswers && sleep.poor / sleep.answered >= cfg.volume.sleepPoorShare;
   const peak = recentPeakSets(allDone, targetWeekStart, 8, deloadWeekNo, lookup, cfg);
   const rate = bodyWeightRate(input.bodyWeights, today, cfg.bodyWeight.window, cfg.bodyWeight.minPoints);
   const cutTooFast = profile.phase === "cut" && rate !== null && rate < -cfg.bodyWeight.cutMaxLossPerWeek;
@@ -112,7 +114,7 @@ export function planNextWeek(input: CoachInput): CoachPlan {
       const d = nextMuscleTarget(muscle, band, {
         last, actual: actualMuscleSets(allDone, basisWeek, lookup, cfg).get(muscle) ?? 0, soreness: fb.soreness, pump: fb.pump, volumeFb: fb.volume, joint: fb.joint,
         trend: muscleTrend(perfWorkouts, muscle, lookup, addDays(basisWeek, -7)), adherence: adh, doneSessions: doneN, plannedSessions: plannedN,
-        rejectedRecently: rejectedRecently("muscle", muscle, "sets"),
+        rejectedRecently: rejectedRecently("muscle", muscle, "sets"), poorSleep,
       }, mods);
       wanted = d.target; reason = d.reason; extra.push(...d.extra);
     }
@@ -173,6 +175,7 @@ export function planNextWeek(input: CoachInput): CoachPlan {
   if (mode === "welcome-back") notes.push({ kind: "info", reason: P("why.note.welcome", { days: gap ?? 0 }) });
   if (deloadType === "scheduled") notes.push({ kind: "info", reason: P("why.note.deloadScheduled") });
   if (deloadType === "early") { notes.push({ kind: "warn", reason: P("why.note.deloadEarly") }); for (const r of deloadReasons) notes.push({ kind: "warn", reason: r }); }
+  if (poorSleep && mode === "normal") notes.push({ kind: "warn", reason: P("why.note.sleep", { poor: sleep.poor, n: sleep.answered }) });
   if (adh !== null && adh < cfg.volume.minAdherence && mode === "normal") notes.push({ kind: "warn", reason: P("why.note.adherence", { done: doneN, planned: plannedN }) });
   if (season) for (const n of season.notes) notes.push({ kind: "info", reason: P(`why.${n}`) });
   for (const d of disruptionsIn(targetWeekStart, profile.region)) notes.push({ kind: "info", reason: P(`why.${d.note}`) });

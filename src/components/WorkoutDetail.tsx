@@ -40,6 +40,7 @@ export default function WorkoutDetail({ workout, workouts, lookup, onClose, onDe
           <div className="card" style={{ padding: 10 }}><dt className="muted text-xs">{t("wk.sumVolume")}</dt><dd className="font-bold">{fmtWeight(s.volumeKg, unit)} {unit}</dd></div>
           <div className="card" style={{ padding: 10 }}><dt className="muted text-xs">{t("wk.sumSets")}</dt><dd className="font-bold">{s.workingSets}</dd></div>
         </dl>
+        {workout.sleep && <p className="text-sm muted">{t("sleep.label", { v: t(`sleep.${workout.sleep}`) })}</p>}
         {(workout.feel || workout.sessionFatigue) && (
           <p className="text-sm muted">{t("hist.sessionFeel", { feel: workout.feel ? t(`fb.feel.${workout.feel}`) : "–", fatigue: workout.sessionFatigue ? t(`fb.fatigue.${workout.sessionFatigue}`) : "–" })}</p>
         )}

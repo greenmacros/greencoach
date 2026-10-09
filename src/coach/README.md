@@ -47,6 +47,7 @@ Checked in this order:
      their last two sessions;
    - average session fatigue over the last 3 sessions >= `fatigueAvg` (4/5);
    - average soreness >= `soreAvg` (2.5/3) and average difficulty >= `difficultyAvg` (4/5) over 2 weeks.
+   - poor sleep (from the optional check-in) before `sleepPoor` (4) of the last `sleepOf` (6) sessions that answered.
    Accepting it shifts the mesocycle so this week is the deload and a fresh mesocycle follows.
 5. **welcome-back**: last workout more than `gap.welcomeBackDays` (7) days ago. Volume held; loads reduced
    linearly from -5% (7 days) to -10% (21 days).
@@ -90,6 +91,7 @@ The **soft cap** (how high plain progression may climb) is MEV + volumeFocus x (
 | Still sore, performance fine | hold | `why.vol.hold.sore` |
 | Performance down (e1RM change <= -2%, x season tolerance) | hold | `why.vol.hold.perf` |
 | Adherence below 60% of planned sessions | hold | `why.vol.hold.adherence` |
+| Poor sleep before at least half of last week's sessions (2+ answers) | hold | `why.vol.hold.sleep` |
 | User rejected extra sets in the last 2 weeks | hold | `why.vol.hold.rejected` |
 | Cut phase and at/above MEV | hold | `why.vol.hold.cut` |
 | Recovered (soreness <= 1) and low pump or "not enough" | +2 (capped by experience) | `why.vol.add.recovered` |

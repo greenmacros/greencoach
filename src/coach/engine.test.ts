@@ -439,6 +439,24 @@ describe("weekly volume per muscle", () => {
     expect(m.delta).toBe(1);
   });
 
+  it("poor sleep before most of last week's sessions holds volume instead of adding", () => {
+    const prog = program([session("A", [{ ex: BENCH, sets: 5, lo: 6, hi: 10 }]), session("B", [{ ex: INCLINE, sets: 5, lo: 8, hi: 12 }])], [0, null, null, 1, null, null, null]);
+    const ws = (sleep: 1 | 2 | 3) => [workout(week(2), [bench(x3(80, 8, 2))], { sleep }), workout(addDays(week(2), 3), [bench(x3(80, 8, 2))], { sleep })];
+    const poor = run(all, { program: prog, workouts: ws(1) });
+    expect(muscleFor(poor, "chest").reason.key).toBe("why.vol.hold.sleep");
+    expect(muscleFor(poor, "chest").delta).toBe(0);
+    expect(poor.notes.some(n => n.reason.key === "why.note.sleep")).toBe(true);
+    expect(muscleFor(run(all, { program: prog, workouts: ws(3) }), "chest").reason.key).toBe("why.vol.add.default");
+  });
+
+  it("repeated poor sleep counts toward an early deload", () => {
+    const f = (d: string, ex: string, w: number) => workout(d, [{ ex, sets: x3(w, 8, 2) }], { sleep: 1 });
+    const ws = [f(week(2), BENCH, 80), f(addDays(week(2), 3), SQUAT, 100), f(week(3), BENCH, 80), f(addDays(week(3), 3), SQUAT, 100)];
+    const p = run(all, { today: addDays(week(3), 6), targetWeekStart: week(4), workouts: ws });
+    expect(p.deload.type).toBe("early");
+    expect(p.deload.reasons).toContainEqual({ key: "why.deload.early.sleep", params: { poor: 4, n: 4 } });
+  });
+
   it("default progression above MEV adds one set toward MAV", () => {
     const prog = program([session("A", [{ ex: BENCH, sets: 5, lo: 6, hi: 10 }]), session("B", [{ ex: INCLINE, sets: 5, lo: 8, hi: 12 }])], [0, null, null, 1, null, null, null]);
     const m = muscleFor(run(all, { program: prog, workouts: [workout(week(2), [bench(x3(80, 8, 2))]), workout(addDays(week(2), 3), [bench(x3(80, 8, 2))])] }), "chest");

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { skipOnboarding } from "./helpers";
+import { acceptSafety, skipOnboarding } from "./helpers";
 
 async function makeLink(page: import("@playwright/test").Page) {
   await page.goto("/");
@@ -19,6 +19,7 @@ test("share a plan as a link and import it on another device by opening the link
 
   const other = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
   await other.goto(link.replace(/^https?:\/\/[^/]+/, ""));
+  await acceptSafety(other);
   const sheet = other.getByRole("dialog", { name: "Import a shared plan" });
   await expect(sheet.getByText("Example: 4-day focus split")).toBeVisible();
   await expect(sheet.getByText(/4 sessions · 4 days a week/)).toBeVisible();
