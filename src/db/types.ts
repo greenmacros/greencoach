@@ -32,6 +32,8 @@ export interface Settings extends BaseRecord {
   coachMode?: "auto" | "ask";
   /** When the user confirmed the safety notice (shown once until then). */
   safetyAcceptedAt?: string | null;
+  /** When the quick tour was finished or skipped (shown once after setup; replayable in Settings). */
+  tourSeenAt?: string | null;
   /** The user's own resistance bands, lightest first (defaults when missing). */
   bands?: import("../bands/bands").Band[];
 }

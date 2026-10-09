@@ -22,12 +22,18 @@ export function SafetyText() {
 
 /** Shown once (and to existing users once) until the user confirms they have read it. */
 export function SafetyGate() {
-  const { t, update } = useApp();
+  const { t, update, settings } = useApp();
   const [ok, setOk] = useState(false);
   return (
     <div className="sheet" style={{ zIndex: 60, alignItems: "stretch" }}>
       <div className="sheet-body grid gap-3" role="dialog" aria-modal="true" aria-labelledby="safety-h"
         style={{ maxHeight: "none", borderRadius: 0, alignContent: "start", overflowY: "auto", paddingTop: "calc(20px + env(safe-area-inset-top))" }}>
+        {/* Language first: the notice must be readable before it is agreed to. */}
+        <div className="seg" role="group" aria-label="Language / 言語" style={{ maxWidth: 260 }}>
+          {([["en", "English"], ["ja", "日本語"]] as const).map(([l, label]) => (
+            <button key={l} lang={l} aria-pressed={settings.lang === l} onClick={() => void update({ lang: l })}>{label}</button>
+          ))}
+        </div>
         <h1 id="safety-h" className="text-2xl font-bold">{t("safety.title")}</h1>
         <SafetyText />
         <p className="muted text-sm">{t("safety.privacy")}</p>

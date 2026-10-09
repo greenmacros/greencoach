@@ -25,6 +25,7 @@ const Coach = lazy(() => import("./pages/Coach"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Workout = lazy(() => import("./pages/Workout"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
+const Tour = lazy(() => import("./components/Tour"));
 
 export default function App() {
   const { settings, loaded, update, profile, t } = useApp();
@@ -146,6 +147,9 @@ export default function App() {
       </main>
       {!active && !firstRun && <TabBar tab={tab} onChange={setTab} />}
       {!settings.safetyAcceptedAt && <SafetyGate />}
+      {settings.safetyAcceptedAt && settings.onboarded && !settings.tourSeenAt && !firstRun && !active && !shared && (
+        <Suspense fallback={null}><Tour onClose={() => void update({ tourSeenAt: new Date().toISOString() })} /></Suspense>
+      )}
       {shared && lib.ready && <ImportPlanSheet plan={shared} lib={lib} busy={importing} onImport={() => void importShared()} onCancel={clearShared} />}
       {importMsg && (
         <div role="status" className="card flex items-center gap-3 fixed left-4 right-4 mx-auto max-w-xl" style={{ bottom: "calc(6.5rem + env(safe-area-inset-bottom))", zIndex: 40, borderColor: "var(--accent)" }}>

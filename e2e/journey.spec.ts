@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { acceptSafety } from "./helpers";
+import { acceptSafety, dismissTour } from "./helpers";
 
 const MONDAY = new Date(2026, 9, 5, 10, 0, 0);
 
@@ -25,6 +25,7 @@ async function journey(page: Page, lang: "en" | "ja", theme: "light" | "dark") {
   await page.getByRole("button", { name: s.next }).click();
   await page.getByRole("button", { name: s.next }).click(); // my equipment
   await page.getByRole("button", { name: s.start }).first().click();
+  await dismissTour(page);
 
   // 2. today's workout with the docked rest timer
   await page.getByRole("button", { name: s.startWorkout }).click();
@@ -55,6 +56,7 @@ test("works offline after the first load", async ({ page, context }) => {
   await acceptSafety(page);
   await expect(page.getByRole("button", { name: /^(Skip setup|設定をスキップ)$/ })).toBeVisible();
   await page.getByRole("button", { name: /^(Skip setup|設定をスキップ)$/ }).click();
+  await dismissTour(page); // lazy chunk must come from the cache
   await page.getByRole("button", { name: "Program", exact: true }).click(); // lazy chunk must come from the cache
   await expect(page.getByText("Start from a template")).toBeVisible();
   await page.getByRole("button", { name: "Library", exact: true }).click();
@@ -79,6 +81,8 @@ for (const theme of ["light", "dark"] as const) {
     await scan("my equipment");
     await page.getByRole("button", { name: "Next" }).click();
     await page.getByRole("button", { name: "Start with this" }).first().click();
+    await scan("quick tour");
+    await dismissTour(page);
     await scan("today");
     await page.getByRole("button", { name: "Start workout" }).click();
     await scan("workout");
@@ -97,6 +101,11 @@ test("the safety notice must be confirmed once, and stays readable in Settings",
   await expect(gate.getByText(/not medical advice/)).toBeVisible();
   await page.screenshot({ path: "test-results/safety.png" });
   await expect(gate.getByRole("button", { name: "Continue" })).toBeDisabled();
+  // readable in either language before agreeing
+  await gate.getByRole("button", { name: "日本語" }).click();
+  const ja = page.getByRole("dialog", { name: "はじめる前に" });
+  await expect(ja.getByText(/医学的な助言ではなく/)).toBeVisible();
+  await ja.getByRole("button", { name: "English" }).click();
   await gate.getByRole("checkbox").check();
   await gate.getByRole("button", { name: "Continue" }).click();
   await expect(gate).toBeHidden();
@@ -105,6 +114,7 @@ test("the safety notice must be confirmed once, and stays readable in Settings",
   await expect(page.getByRole("button", { name: "Skip setup" })).toBeVisible();
   await expect(page.getByRole("dialog", { name: "Before you start" })).toHaveCount(0);
   await page.getByRole("button", { name: "Skip setup" }).click();
+  await dismissTour(page);
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await expect(page.getByRole("heading", { name: "About & safety" })).toBeVisible();
   await expect(page.getByText(/^Agreed on /)).toBeVisible();
@@ -124,6 +134,7 @@ test("pick my equipment during setup; the library and the starting plan follow i
   // dumbbells + bands: the home template is recommended
   await expect(page.getByRole("article", { name: "Home dumbbells + bands" }).getByRole("button", { name: "Start with this" })).toBeVisible();
   await page.getByRole("article", { name: "Home dumbbells + bands" }).getByRole("button", { name: "Start with this" }).click();
+  await dismissTour(page);
 
   await page.getByRole("button", { name: "Program", exact: true }).click();
   await page.getByRole("button", { name: "Library", exact: true }).click();
@@ -136,4 +147,25 @@ test("pick my equipment during setup; the library and the starting plan follow i
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await expect(page.getByRole("heading", { name: "My equipment" })).toBeVisible();
   await expect(page.getByRole("group", { name: "My equipment" }).getByRole("button", { name: "Bands" })).toHaveAttribute("aria-pressed", "true");
+});
+
+test("quick tour: shown once after setup, swipe through, replay from Settings", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await acceptSafety(page);
+  await page.getByRole("button", { name: "Skip setup" }).click();
+  const tour = page.getByRole("dialog", { name: "Quick tour" });
+  await expect(tour.getByRole("heading", { name: "Your workout of the day" })).toBeVisible();
+  await page.screenshot({ path: "test-results/tour-1.png" });
+  for (let i = 0; i < 5; i++) await tour.getByRole("button", { name: "Next" }).click();
+  await expect(tour.getByRole("heading", { name: "Your data stays with you" })).toBeVisible();
+  await tour.getByRole("button", { name: "Start training" }).click();
+  await expect(tour).toBeHidden();
+  await page.waitForTimeout(400);
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Settings", exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Quick tour" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page.getByRole("button", { name: "Show the quick tour" }).click();
+  await expect(page.getByRole("dialog", { name: "Quick tour" }).getByRole("heading", { name: "Your workout of the day" })).toBeVisible();
 });

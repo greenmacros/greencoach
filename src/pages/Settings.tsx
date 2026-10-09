@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useApp } from "../app-context";
 import { repo } from "../db";
 import type { Lang, ThemePref, WeightUnit } from "../db/types";
@@ -15,12 +15,14 @@ import type { BackupFile } from "../db/types";
 import BandsEditor from "../components/BandsEditor";
 import { SafetyCard } from "../components/Safety";
 import EquipmentEditor from "../components/EquipmentEditor";
+const Tour = lazy(() => import("../components/Tour"));
 
 type Estimate = Awaited<ReturnType<typeof repo.storageEstimate>>;
 
 export default function Settings({ lib, prog, workouts }: { lib: LibraryApi; prog: ProgramApi; workouts: WorkoutLog[] }) {
   const { settings, update, profile, updateProfile, t, reloadAll, dataVersion } = useApp();
   const [estimate, setEstimate] = useState<Estimate>(null);
+  const [touring, setTouring] = useState(false);
   const [pending, setPending] = useState<{ file: unknown; n: number } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -177,6 +179,12 @@ export default function Settings({ lib, prog, workouts }: { lib: LibraryApi; pro
         )}
         {msg && <p role="status" className="font-semibold">{msg}</p>}
       </div>
+      <div className="card grid gap-2">
+        <h2 className="font-bold">{t("tour.replay")}</h2>
+        <button className="btn justify-self-start" onClick={() => setTouring(true)}>{t("tour.replayBtn")}</button>
+        {touring && <Suspense fallback={null}><Tour onClose={() => setTouring(false)} /></Suspense>}
+      </div>
+
       <SafetyCard />
       <p className="muted text-sm text-center">{t("about.free")}</p>
       <AppVersion />
