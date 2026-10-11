@@ -209,3 +209,51 @@ test("optional sleep check-in at the start of a workout", async ({ page }) => {
   await page.getByRole("group", { name: "How did you sleep last night?" }).getByRole("button", { name: "OK", exact: true }).click();
   await expect(page.getByRole("button", { name: "Sleep: OK · change" })).toBeVisible();
 });
+
+test("each exercise says what to log as weight", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await startFullBody(page);
+  await expect(page.getByRole("article", { name: "Barbell Squat" }).getByText("Weight: total, including the bar (a standard bar is 20 kg).")).toBeVisible();
+  await expect(page.getByRole("article", { name: "Dumbbell Shoulder Press" }).getByText("Weight: one dumbbell, even when you use two.")).toBeVisible();
+  await page.screenshot({ path: "test-results/weight-hint.png" });
+});
+
+test("edit a past session: change reps and date, or cancel to keep it as it was", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await startFullBody(page);
+  const sq = page.getByRole("article", { name: "Barbell Squat" });
+  await sq.getByRole("textbox", { name: /^Set 1 Weight/ }).fill("100");
+  await sq.getByRole("textbox", { name: "Set 1 Reps" }).fill("5");
+  await sq.getByRole("button", { name: "Mark set done: Set 1" }).click();
+  await page.getByRole("button", { name: "Finish", exact: true }).click();
+  await page.getByRole("button", { name: "Save workout" }).click();
+
+  const openDetail = async () => {
+    await page.getByRole("button", { name: "Progress", exact: true }).click();
+    await page.getByRole("button", { name: "History", exact: true }).click();
+    await page.getByRole("button", { name: /Full Body A/ }).first().click();
+    return page.getByRole("dialog", { name: "Workout details" });
+  };
+
+  // edit: 5 → 7 reps and move it to the day before
+  let detail = await openDetail();
+  await expect(detail.getByText("100 kg × 5")).toBeVisible();
+  await detail.getByRole("button", { name: "Edit" }).click();
+  await expect(page.getByText(/Editing a past session/)).toBeVisible();
+  await expect(page.getByRole("region", { name: "Rest timer" })).toHaveCount(0);
+  await page.getByRole("article", { name: "Barbell Squat" }).getByRole("textbox", { name: "Set 1 Reps" }).fill("7");
+  await page.getByLabel("Date").fill("2026-10-04");
+  await page.screenshot({ path: "test-results/edit-session.png" });
+  await page.getByRole("button", { name: "Save changes" }).click();
+  detail = await openDetail();
+  await expect(detail.getByText("100 kg × 7")).toBeVisible();
+  await expect(detail.getByText(/Oct 4/)).toBeVisible();
+
+  // cancel: nothing changes
+  await detail.getByRole("button", { name: "Edit" }).click();
+  await page.getByRole("article", { name: "Barbell Squat" }).getByRole("textbox", { name: "Set 1 Reps" }).fill("9");
+  await page.waitForTimeout(400); // the draft autosaves; cancel must still restore the saved session
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  detail = await openDetail();
+  await expect(detail.getByText("100 kg × 7")).toBeVisible();
+});

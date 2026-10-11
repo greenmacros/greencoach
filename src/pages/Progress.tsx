@@ -9,13 +9,14 @@ import History from "./History";
 import BodyView from "./progress/BodyView";
 import ExerciseTrends from "./progress/ExerciseTrends";
 import Overview from "./progress/Overview";
+import type { WorkoutLog } from "../workout/types";
 
 type View = "overview" | "exercises" | "body" | "history";
 
 const lsGet = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
 const lsSet = (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* per-viewer convenience */ } };
 
-export default function Progress({ lib, hist, prog }: { lib: LibraryApi; hist: ReturnType<typeof useHistory>; prog: ProgramApi }) {
+export default function Progress({ lib, hist, prog, onEdit }: { lib: LibraryApi; hist: ReturnType<typeof useHistory>; prog: ProgramApi; onEdit?: (w: WorkoutLog) => void }) {
   const { t } = useApp();
   const body = useBody();
   const [range, setRangeState] = useState<Range>(() => (RANGES as string[]).includes(lsGet("gc_range") ?? "") ? (lsGet("gc_range") as Range) : "3months");
@@ -36,7 +37,7 @@ export default function Progress({ lib, hist, prog }: { lib: LibraryApi; hist: R
       {view === "overview" && <Overview range={range} workouts={hist.finished} lib={lib} prog={prog} body={body} />}
       {view === "exercises" && <ExerciseTrends range={range} workouts={hist.finished} lib={lib} today={prog.todayKey} />}
       {view === "body" && <BodyView range={range} body={body} today={prog.todayKey} />}
-      {view === "history" && <History lib={lib} hist={hist} />}
+      {view === "history" && <History lib={lib} hist={hist} onEdit={onEdit} />}
     </section>
   );
 }

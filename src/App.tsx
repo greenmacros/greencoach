@@ -37,6 +37,8 @@ export default function App() {
   const completed = useMemo(() => new Set(hist.finished.map(w => w.dayKey)), [hist.finished]);
   const prog = useProgram(completed);
   const [active, setActive] = useState<WorkoutLog | null>(null);
+  /** The saved version of a finished session being edited (restored on cancel); null when logging normally. */
+  const [editing, setEditing] = useState<WorkoutLog | null>(null);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
   const start = async (sessionId: string | null, dayKey: string) => {
@@ -54,7 +56,10 @@ export default function App() {
     setActive(saved);
   };
 
-  const close = async () => { setActive(null); await hist.reload(); };
+  const close = async () => { setActive(null); setEditing(null); await hist.reload(); };
+  const edit = (w: WorkoutLog) => { setEditing(w); setActive(w); };
+  // While editing, the session itself is not its own "last time".
+  const historyForActive = useMemo(() => (editing ? hist.finished.filter(w => w.id !== editing.id) : hist.finished), [editing, hist.finished]);
 
   // Opened from a shared-plan link (#plan=…): offer to import it.
   const [shared, setShared] = useState<SharedPlan | "bad" | null>(null);
@@ -120,7 +125,7 @@ export default function App() {
           {firstRun ? (
             <Onboarding prog={prog} onDone={() => setTab("today")} />
           ) : active ? (
-            <Workout key={active.id} initial={active} lib={lib} history={hist.finished} coachChanges={coachChanges} onExit={() => void close()} onClose={() => void close()} />
+            <Workout key={active.id} initial={active} lib={lib} history={historyForActive} coachChanges={editing ? undefined : coachChanges} original={editing ?? undefined} onExit={() => void close()} onClose={() => void close()} />
           ) : (
             <>
               <BackupNotice />
@@ -135,7 +140,7 @@ export default function App() {
               ) : tab === "program" ? (
                 <Program prog={prog} lib={lib} />
               ) : tab === "progress" ? (
-                <Progress lib={lib} hist={hist} prog={prog} />
+                <Progress lib={lib} hist={hist} prog={prog} onEdit={edit} />
               ) : tab === "coach" ? (
                 <Coach prog={prog} lib={lib} finished={hist.finished} initialTarget={coachTarget} />
               ) : (

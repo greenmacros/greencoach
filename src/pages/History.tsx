@@ -12,7 +12,7 @@ import type { WorkoutLog } from "../workout/types";
 import type { useHistory } from "../workout/useHistory";
 import Icon from "../components/Icon";
 
-export default function History({ lib, hist }: { lib: LibraryApi; hist: ReturnType<typeof useHistory> }) {
+export default function History({ lib, hist, onEdit }: { lib: LibraryApi; hist: ReturnType<typeof useHistory>; onEdit?: (w: WorkoutLog) => void }) {
   const { t, settings } = useApp();
   const lang = settings.lang, unit = settings.weightUnit;
   const [open, setOpen] = useState<WorkoutLog | null>(null);
@@ -52,7 +52,7 @@ export default function History({ lib, hist }: { lib: LibraryApi; hist: ReturnTy
         </div>
       ))}
 
-      {open && <WorkoutDetail workout={open} workouts={hist.finished} lookup={lib.byId} onClose={() => setOpen(null)} onDelete={w => void remove(w)} onExercise={ex => setExHist(ex)} />}
+      {open && <WorkoutDetail workout={open} workouts={hist.finished} lookup={lib.byId} onClose={() => setOpen(null)} onDelete={w => void remove(w)} onExercise={ex => setExHist(ex)} onEdit={onEdit && (w => { setOpen(null); onEdit(w); })} />}
       {exHist && <ExerciseHistory ex={exHist} workouts={hist.finished} onClose={() => setExHist(null)} />}
 
       {undo && (

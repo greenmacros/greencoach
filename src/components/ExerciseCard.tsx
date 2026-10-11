@@ -7,10 +7,11 @@ import type { ExerciseLog, SetLog } from "../workout/types";
 import type { WeightUnit } from "../db/types";
 import ExerciseMedia from "./ExerciseMedia";
 import ExercisePreview from "./ExercisePreview";
+import { weightHintKey, weightKind } from "../workout/weightHint";
 import SkipSheet from "./SkipSheet";
 import type { AutoChange } from "../coach/auto";
 import { changeParts, isMajor } from "../coach/changeText";
-import { bandsOf, isBandsOnly } from "../bands/bands";
+import { bandsOf } from "../bands/bands";
 import { explain } from "../coach/explain";
 import SetRow from "./SetRow";
 import Stepper from "./Stepper";
@@ -36,17 +37,6 @@ interface Props {
   coach?: AutoChange;
 }
 
-type Kind = "weight" | "addWeight" | "assist" | "band";
-
-/** Which label the weight column carries: loaded bodyweight moves add weight, assisted machines subtract it. */
-function weightKind(ex: Exercise | undefined): Kind {
-  if (!ex) return "weight";
-  if (/assisted/i.test(ex.name.en)) return "assist";
-  if (isBandsOnly(ex)) return "band";
-  const bw = ex.equipment.every(e => ["bodyweight", "pullup-bar", "dip-bars", "bench", "trx"].includes(e));
-  return bw ? "addWeight" : "weight";
-}
-
 export default function ExerciseCard({ log, ex, unit, prev, prSets, index, count, onChange, onSetToggle, onAddSet, onMove, onRemove, onSwap, onFeedback, coach }: Props) {
   const { t, settings } = useApp();
   const [more, setMore] = useState(false);
@@ -58,6 +48,7 @@ export default function ExerciseCard({ log, ex, unit, prev, prSets, index, count
   const step = weightStep(ex?.equipment ?? [], unit);
   const doneCount = log.sets.filter(s => s.done).length;
   const kind = weightKind(ex);
+  const hintKey = weightHintKey(ex);
   const allDone = log.sets.length > 0 && log.sets.every(s => s.done || s.skipped) && doneCount > 0;
   const hasFeedback = log.difficulty !== undefined || log.pump !== undefined || log.jointPain !== undefined || log.volume !== undefined;
 
@@ -115,6 +106,7 @@ export default function ExerciseCard({ log, ex, unit, prev, prSets, index, count
           <button className="btn" onClick={() => onChange(e => unskipExercise(e))}>{t("wk.undoSkip")}</button>
         </div>
       ) : <>
+      {hintKey && <p className="muted text-xs" style={{ marginBottom: -4 }}><Icon name="info" size="1em" /> {t(hintKey, { bar: unit === "kg" ? "20 kg" : "45 lb" /* standard Olympic bar in each system */ })}</p>}
       <div className="grid text-xs font-bold uppercase muted" aria-hidden="true" style={{ gridTemplateColumns: "40px minmax(0,1.3fr) minmax(0,1fr) 54px 48px", gap: 4, textAlign: "center" }}>
         <span /><span>{kind === "band" ? t("wk.col.band") : `${t(`wk.col.${kind}`)} (${unit})`}</span><span>{t("wk.col.reps")}</span><span>{t("wk.rir")}</span><span>{t("wk.col.log")}</span>
       </div>

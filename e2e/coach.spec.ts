@@ -44,6 +44,12 @@ test("log a session, see next week's plan with reasons, accept it, and the next 
   await expect(page.getByRole("heading", { name: "Weekly sets per muscle" })).toBeVisible();
   await expect(page.getByLabel("Quads").getByText(/Quads:/).first()).toBeVisible();
 
+  // the accepted weight is stored before the week turns (a reload within milliseconds could otherwise outrun the write)
+  await expect.poll(() => page.evaluate(() => new Promise<boolean>(res => {
+    const r = indexedDB.open("greencoach");
+    r.onsuccess = () => { const q = r.result.transaction("suggestions").objectStore("suggestions").getAll(); q.onsuccess = () => { res(q.result.some((x: { status?: string }) => x.status === "accepted")); r.result.close(); }; };
+  }))).toBe(true);
+
   // Next Monday: the squat is pre-filled with the accepted weight
   await page.clock.setFixedTime(new Date(2026, 9, 12, 10, 0, 0));
   await page.reload();

@@ -43,7 +43,7 @@ const BASE = {
   "tour.today.tip": { en: "The day changes at 4:00, so a late-night session still counts for the day you started.", ja: "日付は4時に切り替わるので、深夜のトレーニングも始めた日の記録になります。" },
   "tour.log.title": { en: "Log each set", ja: "セットを記録" },
   "tour.log.body": { en: "Enter weight and reps, then tap the circle to log the set. RIR means reps in reserve: how many more clean reps you could have done (0 = none left). The rest timer starts on its own between sets.", ja: "重量と回数を入れ、丸をタップして記録します。RIRは「あと何回できたか」（0＝限界）。セット間の休憩タイマーは自動で始まります。" },
-  "tour.log.tip": { en: "Tap a set number for set types or to skip a set. Tap the picture to see the exercise larger with the muscles it targets.", ja: "セット番号をタップするとセットの種類やスキップを選べます。画像をタップすると拡大して対象の筋肉を確認できます。" },
+  "tour.log.tip": { en: "Barbells: total including the bar. Dumbbells: one dumbbell. Machines: the number on the stack. Each exercise shows a one-line reminder. Tap a set number for set types or to skip a set.", ja: "バーベルはバー込みの合計、ダンベルは1個分、マシンはスタックの数字。各種目に1行の説明が出ます。セット番号をタップするとセットの種類やスキップを選べます。" },
   "tour.feedback.title": { en: "Tell the coach how it went", ja: "感想をコーチに伝える" },
   "tour.feedback.body": { en: "After an exercise's last set, a short sheet asks about pump, soreness from last time, joint pain and volume. It takes seconds and is what the coach uses to decide next week.", ja: "種目の最後のセットのあと、パンプ、前回の筋肉痛、関節の痛み、量について短く聞かれます。数秒で終わり、コーチが翌週を決める材料になります。" },
   "tour.feedback.tip": { en: "Skipping something? Use Skip with a reason: pain counts as joint pain, and often-skipped exercises get a keep / optional / remove question.", ja: "やらない種目は理由を付けてスキップ。痛みは関節の痛みとして記録され、よく飛ばす種目は「残す・任意・外す」を聞かれます。" },

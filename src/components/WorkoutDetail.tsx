@@ -15,9 +15,11 @@ interface Props {
   onClose: () => void;
   onDelete: (w: WorkoutLog) => void;
   onExercise: (ex: Exercise) => void;
+  /** Open this session for editing (sets, weights, reps, exercises, date). */
+  onEdit?: (w: WorkoutLog) => void;
 }
 
-export default function WorkoutDetail({ workout, workouts, lookup, onClose, onDelete, onExercise }: Props) {
+export default function WorkoutDetail({ workout, workouts, lookup, onClose, onDelete, onExercise, onEdit }: Props) {
   const { t, settings } = useApp();
   const lang = settings.lang, unit = settings.weightUnit;
   const [confirm, setConfirm] = useState(false);
@@ -85,7 +87,12 @@ export default function WorkoutDetail({ workout, workouts, lookup, onClose, onDe
             <button className="btn btn-danger flex-1" onClick={() => onDelete(workout)}>{t("hist.delete")}</button>
             <button className="btn flex-1" onClick={() => setConfirm(false)}>{t("data.cancel")}</button>
           </div>
-        ) : <button className="btn btn-danger" onClick={() => setConfirm(true)}>{t("hist.delete")}</button>}
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {onEdit && <button className="btn btn-primary" onClick={() => onEdit(workout)}>{t("hist.edit")}</button>}
+            <button className="btn btn-danger" onClick={() => setConfirm(true)}>{t("hist.delete")}</button>
+          </div>
+        )}
       </div>
     </div>
   );

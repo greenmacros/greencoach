@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../app-context";
 import { repo } from "../db";
 import { SCHEMA_VERSION } from "../db/types";
@@ -69,11 +69,13 @@ export function useCoach(prog: ProgramApi, lib: LibraryApi, finished: readonly W
   // eslint-disable-next-line react-hooks/exhaustive-deps -- lib is a fresh object each render; its data is what matters
   }, [baseline, program, lib.ready, lib.all, lib.byId, finished, soreness, bodyWeights, rejections, keptSlots, profile, settings.region, settings.weightUnit, today, targetWeekStart]);
 
-  const decide = useCallback(async (decisions: Map<string, Decision>) => {
+  const decideNow = useCallback(async (decisions: Map<string, Decision>) => {
     if (!plan || !program || decisions.size === 0) return;
     // Freeze the baseline the first time anything is decided, so the remaining proposals stay put.
-    if (!baselines.has(targetWeekStart)) await repo.put("suggestions", { id: BASE + targetWeekStart, weekKey: targetWeekStart, program, schemaVersion: SCHEMA_VERSION } as never);
-    const prior = new Map(records.filter(r => r.weekKey === targetWeekStart).map(r => [r.slotId, r]));
+    // Read the stored state, not the render's: a queued decision must see the one saved just before it.
+    const fresh = await loadCoachData();
+    if (!fresh.baselines.has(targetWeekStart)) await repo.put("suggestions", { id: BASE + targetWeekStart, weekKey: targetWeekStart, program, schemaVersion: SCHEMA_VERSION } as never);
+    const prior = new Map(fresh.records.filter(r => r.weekKey === targetWeekStart).map(r => [r.slotId, r]));
     // Undoing an earlier accept restores the values the exercise had before.
     const toApply = new Map<string, Decision>();
     for (const [slotId, d] of decisions) {
@@ -81,11 +83,20 @@ export function useCoach(prog: ProgramApi, lib: LibraryApi, finished: readonly W
       if (d.status === "rejected" && was && was.status !== "rejected") toApply.set(slotId, { status: "edited", values: was.before, swapTo: undefined });
       else toApply.set(slotId, d);
     }
-    const next = applyDecisions(program, plan, toApply);
-    if (decisions.size > 0 && next !== program) await prog.save(next);
+    // Apply onto the latest stored program: quick taps (Accept, then Keep on another exercise) must not save a stale copy.
+    const latest = ((await repo.get("programs", program.id)) as unknown as Program | undefined) ?? program;
+    if ([...toApply.values()].some(d => d.status !== "rejected")) await prog.save(applyDecisions(latest, plan, toApply));
     for (const rec of toRecords(plan, decisions, id => lib.byId(id)?.primary[0] ?? "other")) await repo.put("suggestions", rec as never);
     await reload();
-  }, [plan, program, baselines, records, targetWeekStart, prog, lib, reload]);
+  }, [plan, program, targetWeekStart, prog, lib, reload]);
+
+  // Decisions run one at a time, so a quick second tap never reads the program before the first one saved it.
+  const queue = useRef<Promise<void>>(Promise.resolve());
+  const decide = useCallback((decisions: Map<string, Decision>) => {
+    const run = queue.current.then(() => decideNow(decisions));
+    queue.current = run.catch(() => {});
+    return run;
+  }, [decideNow]);
 
   const slotSet = (slotId: string, d: Decision) => decide(new Map([[slotId, d]]));
   return {

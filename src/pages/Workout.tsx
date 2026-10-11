@@ -8,7 +8,7 @@ import { repo } from "../db";
 import { formatDayLong } from "../lib/format";
 import type { LibraryApi } from "../library/useLibrary";
 import { primeAudio, acquireWakeLock } from "../workout/alerts";
-import { addSet, buildExerciseLog, moveExercise, previousSets, pruneUnfinished, updateExercise } from "../workout/model";
+import { addSet, buildExerciseLog, moveExercise, previousSets, pruneUnfinished, updateExercise, hasAnyDoneSet } from "../workout/model";
 import type { ExerciseLog, WorkoutLog } from "../workout/types";
 import { useRestTimer } from "../workout/useRestTimer";
 import { useWorkout } from "../workout/useWorkout";
@@ -20,6 +20,7 @@ import { prText } from "../workout/prText";
 import { vibrate } from "../workout/alerts";
 import type { AutoChange } from "../coach/auto";
 import Icon from "../components/Icon";
+import { dayKey } from "../lib/id";
 
 interface Props {
   initial: WorkoutLog;
@@ -31,11 +32,16 @@ interface Props {
   onClose: (saved: WorkoutLog | null) => void;
   /** This week's automatic coach changes, by program slot id. */
   coachChanges?: Map<string, AutoChange>;
+  /** Editing a finished session: its saved version, restored if the edit is cancelled. */
+  original?: WorkoutLog;
 }
 
-export default function Workout({ initial, lib, history, onExit, onClose, coachChanges }: Props) {
+export default function Workout({ initial, lib, history, onExit, onClose, coachChanges, original }: Props) {
+  const editMode = !!original;
   const { t, settings, update } = useApp();
-  const { workout, mutate, flush } = useWorkout(initial);
+  const localToday = dayKey(new Date(), settings.dayStartHour);
+  const { workout, mutate, flush } = useWorkout(initial, { autosave: !original });
+  const [editError, setEditError] = useState(false);
   const timer = useRestTimer({ title: t("timer.done"), body: t("timer.doneBody") });
   const [picker, setPicker] = useState<{ swap: string | null } | null>(null);
   const [finishing, setFinishing] = useState(false);
@@ -71,12 +77,14 @@ export default function Workout({ initial, lib, history, onExit, onClose, coachC
     const idx = workout.exercises.findIndex(e => e.id === ex.id);
     const nextEx = workout.exercises[idx + 1];
     const wasDone = ex.sets.find(s => s.id === setId)?.done;
+    // A set ticked while editing a past session belongs to that session's time, not to now.
+    const doneAt = editMode ? workout.finishedAt ?? workout.startedAt : new Date().toISOString();
     mutate(w => updateExercise(w, ex.id, e => ({
-      ...e, sets: e.sets.map(s => (s.id === setId ? { ...s, done: !s.done, doneAt: s.done ? null : new Date().toISOString() } : s)),
+      ...e, sets: e.sets.map(s => (s.id === setId ? { ...s, done: !s.done, doneAt: s.done ? null : doneAt } : s)),
     })));
     const finishesExercise = ex.sets.every(s => s.id === setId || s.done || s.skipped);
     // Finishing the last set of an exercise opens the feedback sheet once.
-    if (!wasDone && !asked.has(ex.id) && finishesExercise) {
+    if (!wasDone && !editMode && !asked.has(ex.id) && finishesExercise) {
       asked.add(ex.id);
       setFbFor(ex.id);
     }
@@ -90,7 +98,7 @@ export default function Workout({ initial, lib, history, onExit, onClose, coachC
       primeAudio(); // allowed here: inside a tap
       const inSuperset = ex.supersetGroup !== null && nextEx?.supersetGroup === ex.supersetGroup;
       // No rest timer after an exercise's last set: the user is moving on to the next exercise.
-      if (!inSuperset && !finishesExercise) timer.start(ex.restSec);
+      if (!inSuperset && !finishesExercise && !editMode) timer.start(ex.restSec);
     }
   };
 
@@ -107,6 +115,24 @@ export default function Workout({ initial, lib, history, onExit, onClose, coachC
     mutate(w => updateExercise(w, logId, e => ({ ...e, exerciseId })));
     void lib.markUsed(exerciseId);
   };
+
+  /** Edit mode: keep the original finish time, drop sets that are not logged, close. */
+  const saveEdit = async () => {
+    if (!hasAnyDoneSet(workout)) return setEditError(true); // an empty session is deleted in History, not saved
+    const saved = (await repo.put("workouts", pruneUnfinished({ ...workout, finishedAt: workout.finishedAt ?? original!.finishedAt }) as never)) as unknown as WorkoutLog;
+    onClose(saved);
+  };
+  const cancelEdit = () => onClose(original!); // nothing was stored while editing
+
+  /** Moving a session to another day moves its timestamps too, so history stays in order. */
+  const moveTo = (d: string) => mutate(w => {
+    const ms = (Date.parse(d + "T12:00:00") - Date.parse(w.dayKey + "T12:00:00"));
+    const shift = (iso: string | null) => (iso ? new Date(Date.parse(iso) + ms).toISOString() : iso);
+    return {
+      ...w, dayKey: d, startedAt: shift(w.startedAt)!, finishedAt: shift(w.finishedAt),
+      exercises: w.exercises.map(e => ({ ...e, sets: e.sets.map(s => ({ ...s, doneAt: shift(s.doneAt) })) })),
+    };
+  });
 
   const save = async (notes: string) => {
     await flush();
@@ -131,14 +157,29 @@ export default function Workout({ initial, lib, history, onExit, onClose, coachC
   return (
     <section className="grid gap-3" style={{ paddingBottom: "calc(14rem + env(safe-area-inset-bottom))" }}>
       <header className="flex items-center gap-2">
-        <button className="btn" onClick={() => { void flush(); onExit(); }}><Icon name="back" /> {t("wk.back")}</button>
+        {editMode
+          ? <button className="btn" onClick={cancelEdit}>{t("hist.cancelEdit")}</button>
+          : <button className="btn" onClick={() => { void flush(); onExit(); }}><Icon name="back" /> {t("wk.back")}</button>}
         <div className="flex-1 min-w-0 text-center">
           {workout.mesoWeek && workout.mesoDay && <p className="text-xs font-bold uppercase muted" style={{ letterSpacing: 0.5 }}>{t("wk.dayLabel", { w: workout.mesoWeek, d: workout.mesoDay })}</p>}
           <h1 className="font-bold truncate">{title}</h1>
           <p className="muted text-xs">{formatDayLong(workout.dayKey, settings.lang)} · {doneSets}/{totalSets}</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setFinishing(true)}>{t("wk.finish")}</button>
+        {editMode
+          ? <button className="btn btn-primary" onClick={() => void saveEdit()}>{t("hist.saveEdit")}</button>
+          : <button className="btn btn-primary" onClick={() => setFinishing(true)}>{t("wk.finish")}</button>}
       </header>
+
+      {editMode && (
+        <div className="card grid gap-2" style={{ padding: 12, borderColor: "var(--accent)" }} role="status">
+          <p className="text-sm font-semibold">{t("hist.editing")}</p>
+          <label className="flex items-center gap-2 text-sm"><span className="muted">{t("hist.date")}</span>
+            <input type="date" className="field" style={{ maxWidth: 200 }} value={workout.dayKey} max={localToday}
+              onChange={e => { const d = e.target.value; if (/^\d{4}-\d{2}-\d{2}$/.test(d) && d <= localToday) moveTo(d); }} />
+          </label>
+          {editError && <p role="alert" className="text-sm" style={{ color: "var(--danger)" }}>{t("hist.editEmpty")}</p>}
+        </div>
+      )}
 
       <label className="flex items-center gap-2 text-sm muted">
         <input type="checkbox" checked={settings.keepAwake} onChange={e => void update({ keepAwake: e.target.checked })} />{t("wk.keepAwake")}
@@ -201,11 +242,11 @@ export default function Workout({ initial, lib, history, onExit, onClose, coachC
           onNotes={notes => mutate(w => ({ ...w, notes }))} />
       )}
 
-      <RestTimerBar timer={timer} onChoose={sec => {
+      {!editMode && <RestTimerBar timer={timer} onChoose={sec => {
         // Choosing a time also becomes this exercise's rest for the rest of the workout.
         const lastDone = [...workout.exercises].reverse().find(e => e.sets.some(s => s.done));
         if (lastDone) mutate(w => updateExercise(w, lastDone.id, e => ({ ...e, restSec: sec })));
-      }} />
+      }} />}
       {toast && (
         <div role="status" className="card fixed left-4 right-4 mx-auto max-w-xl font-semibold" style={{ bottom: "calc(13rem + env(safe-area-inset-bottom))", zIndex: 25, borderColor: "var(--accent)" }}><Icon name="trophy" style={{ color: "var(--accent)" }} /> {toast}</div>
       )}

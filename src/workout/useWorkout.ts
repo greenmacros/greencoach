@@ -6,7 +6,8 @@ import type { WorkoutLog } from "./types";
  * Holds the workout being logged and autosaves it as a draft (finishedAt === null) on every change,
  * so an accidental refresh or a killed tab never loses a session.
  */
-export function useWorkout(initial: WorkoutLog) {
+export function useWorkout(initial: WorkoutLog, opts: { autosave?: boolean } = {}) {
+  const autosave = opts.autosave ?? true;
   const [workout, setWorkout] = useState(initial);
   const latest = useRef(initial);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -22,11 +23,13 @@ export function useWorkout(initial: WorkoutLog) {
   const mutate = useCallback((fn: (w: WorkoutLog) => WorkoutLog) => {
     const next = fn(latest.current);
     latest.current = next;
-    dirty.current = true;
     setWorkout(next);
+    // Editing a finished session works on a copy: nothing is stored until the user saves.
+    if (!autosave) return;
+    dirty.current = true;
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => void flush(), 300);
-  }, [flush]);
+  }, [flush, autosave]);
 
   useEffect(() => {
     const onHide = () => { if (document.visibilityState === "hidden") void flush(); };
