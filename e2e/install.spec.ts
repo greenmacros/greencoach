@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { skipOnboarding } from "./helpers";
 
+// A fixed Monday, so the test does not depend on the machine's time zone (the training day starts at 04:00).
+const MONDAY = new Date(2026, 9, 5, 10, 0, 0);
 const usePlan = async (page: import("@playwright/test").Page) => {
   await page.getByRole("button", { name: "Program", exact: true }).click();
   await page.getByRole("article").filter({ hasText: "Full body 3×" }).getByRole("button", { name: "Use this template" }).click();
@@ -11,7 +13,9 @@ test.describe("on iPhone Safari", () => {
   test.use({ userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1", viewport: { width: 390, height: 844 } });
 
   test("shows the two Add to Home Screen steps, and Not now hides them for good", async ({ page }) => {
-    await page.goto("/");
+    await page.clock.install({ time: MONDAY });
+    await page.clock.install({ time: MONDAY });
+  await page.goto("/");
     await skipOnboarding(page);
     await usePlan(page);
     const card = page.getByRole("region", { name: "Install GreenCoach" });
@@ -29,6 +33,7 @@ test.describe("on iPhone Safari", () => {
 });
 
 test("where the browser supports it (Android Chrome), an Install button opens the browser's prompt", async ({ page }) => {
+  await page.clock.install({ time: MONDAY });
   await page.goto("/");
   await skipOnboarding(page);
   await usePlan(page);
@@ -45,6 +50,7 @@ test("where the browser supports it (Android Chrome), an Install button opens th
 });
 
 test("nothing is shown where the browser cannot install (and once installed)", async ({ page }) => {
+  await page.clock.install({ time: MONDAY });
   await page.goto("/");
   await skipOnboarding(page);
   await usePlan(page);
