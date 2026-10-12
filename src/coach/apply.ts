@@ -1,5 +1,5 @@
 import { addDays } from "../program/schedule";
-import type { Program } from "../program/types";
+import type { ExerciseSlot, Program } from "../program/types";
 import type { CoachPlan, SlotSuggestion } from "./types";
 import { suggestionId, type CoachSuggestionRecord, type SlotValues, type SuggestionStatus } from "./records";
 
@@ -68,6 +68,16 @@ export function toRecords(plan: CoachPlan, decisions: ReadonlyMap<string, Decisi
   }
   return out;
 }
+
+/** A program slot's values in the coach's terms. */
+export const slotValues = (e: ExerciseSlot): SlotValues => ({
+  sets: e.sets, repMin: e.repMin, repMax: e.repMax, rir: e.rir, restSec: e.restSec, weightKg: e.weightKg ?? null, bands: e.bands ?? null,
+});
+
+/** Same sets, reps, RIR, rest, weight and bands. */
+export const sameValues = (a: SlotValues, b: SlotValues) =>
+  a.sets === b.sets && a.repMin === b.repMin && a.repMax === b.repMax && a.rir === b.rir && a.restSec === b.restSec &&
+  (a.weightKg ?? null) === (b.weightKg ?? null) && sameBands(a.bands, b.bands);
 
 export const sameBands = (x: readonly string[] | null | undefined, y: readonly string[] | null | undefined) =>
   [...(x ?? [])].sort().join("+") === [...(y ?? [])].sort().join("+");

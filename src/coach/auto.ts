@@ -4,7 +4,7 @@ import type { LibraryApi } from "../library/useLibrary";
 import { weekStart } from "../program/schedule";
 import type { Program } from "../program/types";
 import type { WorkoutLog } from "../workout/types";
-import { applyDecisions, beforeValues, isNoChange, proposedValues, toRecords, type Decision } from "./apply";
+import { applyDecisions, beforeValues, isNoChange, proposedValues, sameValues, slotValues, toRecords, type Decision } from "./apply";
 import { rejectionsFrom, type CoachSuggestionRecord, type SlotValues } from "./records";
 import { BASE, loadCoachData, makePlan } from "./run";
 import type { CoachPlan, PlanMode, Reason } from "./types";
@@ -37,6 +37,12 @@ export function autoAction(plan: CoachPlan): "apply" | "review" | "skip" {
   if (plan.mode === "first") return "skip";
   if (plan.mode === "ramp" || plan.mode === "welcome-back" || plan.deload.type === "early") return "review";
   return "apply";
+}
+
+/** The user changed this exercise after the coach's update (or replaced / removed it): their version wins. */
+export function isOverridden(c: AutoChange, program: Program | undefined): boolean {
+  const slot = program?.sessions.flatMap(s => s.exercises).find(e => e.id === c.slotId);
+  return !slot || slot.exerciseId !== c.exerciseId || !sameValues(slotValues(slot), c.after);
 }
 
 export const changesOf = (plan: CoachPlan): AutoChange[] =>

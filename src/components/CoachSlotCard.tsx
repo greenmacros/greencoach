@@ -35,9 +35,12 @@ interface Props {
   onAccept: (swapTo?: string) => void;
   onReject: () => void;
   onEdit: (v: Partial<SlotValues>) => void;
+  /** The user changed this exercise after the plan was made: accepting asks first. */
+  edited?: boolean;
 }
 
-export default function CoachSlotCard({ s, swap, decided, lib, onAccept, onReject, onEdit }: Props) {
+export default function CoachSlotCard({ s, swap, decided, lib, onAccept, onReject, onEdit, edited }: Props) {
+  const [confirmReplace, setConfirmReplace] = useState(false);
   const { t, settings } = useApp();
   const unit = settings.weightUnit;
   const [editing, setEditing] = useState(false);
@@ -69,6 +72,17 @@ export default function CoachSlotCard({ s, swap, decided, lib, onAccept, onRejec
         <Delta label={t("coach.rir")} last={String(s.last.rir)} next={String(shown.rir)} trend={s.trend.rir} />
       </div>
       <p className="text-sm"><span className="font-semibold">{t("coach.why")}:</span> {explain(s.reason, t)}</p>
+      {edited && (
+        <div role="status" className="card grid gap-2 text-sm" style={{ padding: 10, borderColor: "var(--accent)" }}>
+          <p>{t("coach.editedTitle")}</p>
+          {confirmReplace && (
+            <div className="flex flex-wrap gap-2">
+              <button className="btn" onClick={() => setConfirmReplace(false)}>{t("coach.keepMine")}</button>
+              <button className="btn btn-primary" onClick={() => { setConfirmReplace(false); onAccept(); }}>{t("coach.replaceMine")}</button>
+            </div>
+          )}
+        </div>
+      )}
       {s.extra.length > 0 && (
         <>
           <button className="text-left text-sm muted bg-transparent border-0 p-0 cursor-pointer underline" style={{ font: "inherit", fontSize: 14 }} aria-expanded={more} onClick={() => setMore(m => !m)}>
@@ -111,7 +125,7 @@ export default function CoachSlotCard({ s, swap, decided, lib, onAccept, onRejec
         <p className="muted text-sm">{t("coach.noChange")}</p>
       ) : (
         <div className="flex flex-wrap gap-2">
-          {decided?.status !== "accepted" && decided?.status !== "edited" && <button className="btn btn-primary" onClick={() => onAccept()}>{t("coach.accept")}</button>}
+          {decided?.status !== "accepted" && decided?.status !== "edited" && <button className="btn btn-primary" onClick={() => (edited ? setConfirmReplace(true) : onAccept())}>{t("coach.accept")}</button>}
           <button className="btn" onClick={() => { setDraft(decided?.status === "edited" ? decided.final : p); setEditing(true); }}>{t("coach.edit")}</button>
           {decided?.status !== "rejected" && <button className="btn" onClick={onReject}>{t("coach.reject")}</button>}
         </div>

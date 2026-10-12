@@ -8,7 +8,7 @@ import { SCHEMA_VERSION } from "./db/types";
 import { newId } from "./lib/id";
 import { useLibrary } from "./library/useLibrary";
 import { mesoPosition, trainingDayNumber, weekStart } from "./program/schedule";
-import type { AutoRecord } from "./coach/auto";
+import { isOverridden, type AutoRecord } from "./coach/auto";
 import AutoCoachCard from "./components/AutoCoachCard";
 import ImportPlanSheet from "./components/ImportPlanSheet";
 import { SafetyGate } from "./components/Safety";
@@ -121,8 +121,10 @@ export default function App() {
   }, [loaded, prog.ready, hist.ready, lib.ready, program?.id, prog.todayKey, hist.finished.length, settings.coachMode, active === null]);
   const autoAct = (fn: (m: typeof import("./coach/auto")) => Promise<AutoRecord>) => void import("./coach/auto").then(fn).then(setAuto);
   const coachChanges = useMemo(
-    () => (auto?.status === "applied" && active && weekStart(active.dayKey) === auto.weekKey ? new Map(auto.changes.map(c => [c.slotId, c])) : undefined),
-    [auto, active],
+    // Only the coach's changes the user kept: an exercise they edited afterwards shows their version, unmarked.
+    () => (auto?.status === "applied" && active && weekStart(active.dayKey) === auto.weekKey
+      ? new Map(auto.changes.filter(c => !isOverridden(c, prog.active)).map(c => [c.slotId, c])) : undefined),
+    [auto, active, prog.active],
   );
 
   if (!loaded || !prog.ready || !hist.ready) return null;
@@ -148,7 +150,7 @@ export default function App() {
               {tab === "today" ? (
                 <Today prog={prog} lib={lib} hist={hist} selected={selectedDay} setSelected={setSelectedDay} onStart={(s, d, sl) => void start(s, d, sl)} goProgram={() => setTab("program")}
                   banner={auto && !auto.seen && program ? (
-                    <AutoCoachCard rec={auto} lib={lib}
+                    <AutoCoachCard rec={auto} lib={lib} program={program}
                       onDismiss={() => autoAct(m => m.dismissAutoCoach(auto))}
                       onUndo={() => autoAct(m => m.undoAutoCoach(auto, program, prog.save))}
                       onReview={() => { setTabState("coach"); setCoachTarget("this"); }} />

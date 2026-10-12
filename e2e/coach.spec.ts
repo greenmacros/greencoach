@@ -127,3 +127,28 @@ test("automatic changes can be undone, and 'ask me each week' turns them off", a
   await page.getByRole("button", { name: "Ask me each week" }).click();
   await expect(page.getByRole("button", { name: "Ask me each week" })).toHaveAttribute("aria-pressed", "true");
 });
+
+test("your own edits after the coach's update win: no coach mark, and the Coach tab asks before replacing them", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await logSquatWeek(page);
+  await page.getByRole("status").filter({ hasText: "Coach updated this week" }).getByRole("button", { name: "OK", exact: true }).click();
+
+  // edit the squat in the program: one more set than the coach planned
+  await page.getByRole("button", { name: "Program", exact: true }).click();
+  await page.getByRole("heading", { name: "Full Body A" }).locator("..").locator("..").getByRole("button", { name: "Edit", exact: true }).click();
+  await page.getByRole("button", { name: "Increase: Sets: Barbell Squat" }).click();
+
+  // the workout shows your version without the coach's mark
+  await page.getByRole("button", { name: "Workout", exact: true }).click();
+  await page.getByRole("button", { name: "Start workout" }).click();
+  const squat = page.getByRole("article", { name: "Barbell Squat" });
+  await expect(squat.getByRole("textbox", { name: "Set 4 Reps" })).toBeVisible();
+  await expect(squat.getByRole("button", { name: /^Coach change:/ })).toHaveCount(0);
+  await page.getByRole("button", { name: "Back", exact: true }).click();
+
+  // the Coach tab (this week) flags it and asks before replacing it
+  await page.getByRole("button", { name: "Coach", exact: true }).click();
+  await page.getByRole("button", { name: "This week" }).click();
+  const card = page.getByRole("article", { name: "Barbell Squat" });
+  await expect(card.getByText("You changed this exercise after this plan was made.")).toBeVisible();
+});

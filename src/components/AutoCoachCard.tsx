@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useApp } from "../app-context";
-import type { AutoRecord } from "../coach/auto";
+import { isOverridden, type AutoRecord } from "../coach/auto";
+import type { Program } from "../program/types";
 import { changeParts, isMajor } from "../coach/changeText";
 import { explain } from "../coach/explain";
 import { bandsOf } from "../bands/bands";
@@ -9,6 +10,8 @@ import Icon from "./Icon";
 
 interface Props {
   rec: AutoRecord;
+  /** The current program, to tell which changes the user has since overridden. */
+  program?: Program;
   lib: LibraryApi;
   onUndo: () => void;
   onDismiss: () => void;
@@ -18,7 +21,7 @@ interface Props {
 const SHOWN = 4;
 
 /** Summary of what automatic coaching did this week (or what it wants the user to review). */
-export default function AutoCoachCard({ rec, lib, onUndo, onDismiss, onReview }: Props) {
+export default function AutoCoachCard({ rec, lib, program, onUndo, onDismiss, onReview }: Props) {
   const { t, settings } = useApp();
   const [why, setWhy] = useState(false);
   const [all, setAll] = useState(false);
@@ -59,7 +62,7 @@ export default function AutoCoachCard({ rec, lib, onUndo, onDismiss, onReview }:
           {list.map(c => (
             <li key={c.slotId} className="text-sm">
               <span className="font-semibold">{name(c.exerciseId)}</span>{" "}
-              {changeParts(c, settings.weightUnit, t, false, bandsOf(settings)).map((p, i) => (
+              {isOverridden(c, program) ? <span className="muted">{t("auto.overridden")}</span> : changeParts(c, settings.weightUnit, t, false, bandsOf(settings)).map((p, i) => (
                 <span key={i} className="whitespace-nowrap" style={{ color: p.dir === "up" ? "var(--accent)" : "var(--danger)" }}>
                   {i > 0 && <span className="muted"> · </span>}<Icon name={p.dir === "up" ? "triUp" : "triDown"} size="0.8em" /> {p.text}
                 </span>

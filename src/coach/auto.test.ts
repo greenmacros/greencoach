@@ -3,7 +3,7 @@ import { loadBundled } from "../library/data";
 import type { Exercise } from "../library/types";
 import { addDays } from "../program/schedule";
 import { applyDecisions, toRecords, type Decision } from "./apply";
-import { autoAction, changesOf, undoProgram } from "./auto";
+import { autoAction, changesOf, isOverridden, undoProgram } from "./auto";
 import { BENCH, history, run, standardProgram, week, workout } from "./fixtures";
 
 let all: Exercise[];
@@ -41,5 +41,17 @@ describe("automatic coaching", () => {
     const undone = undoProgram(applied, prog, ids);
     const strip = (p: typeof prog) => p.sessions.map(s => s.exercises.map(e => [e.sets, e.repMin, e.repMax, e.rir, e.restSec, e.weightKg ?? null]));
     expect(strip(undone)).toEqual(strip(prog));
+  });
+
+  it("knows when the user changed an exercise after the coach's update (their version wins)", () => {
+    const prog = standardProgram();
+    const plan = run(all, { program: prog, workouts: strongBench() });
+    const applied = applyDecisions(prog, plan, new Map<string, Decision>(plan.slots.map(s => [s.slotId, { status: "accepted" }])));
+    const c = changesOf(plan).find(x => x.exerciseId === BENCH)!;
+    expect(isOverridden(c, applied)).toBe(false);
+    const edited = { ...applied, sessions: applied.sessions.map(s => ({ ...s, exercises: s.exercises.map(e => (e.id === c.slotId ? { ...e, sets: e.sets + 1 } : e)) })) };
+    expect(isOverridden(c, edited)).toBe(true);
+    const removed = { ...applied, sessions: applied.sessions.map(s => ({ ...s, exercises: s.exercises.filter(e => e.id !== c.slotId) })) };
+    expect(isOverridden(c, removed)).toBe(true);
   });
 });

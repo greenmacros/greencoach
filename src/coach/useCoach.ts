@@ -8,7 +8,7 @@ import type { Program } from "../program/types";
 import type { ProgramApi } from "../program/useProgram";
 import type { SorenessRecord } from "../feedback/soreness";
 import type { WorkoutLog } from "../workout/types";
-import { applyDecisions, beforeValues, toRecords, type Decision } from "./apply";
+import { applyDecisions, beforeValues, sameValues, slotValues, toRecords, type Decision } from "./apply";
 import { BASE, KEEP, loadCoachData, makePlan } from "./run";
 import { rejectionsFrom, type CoachSuggestionRecord, type SlotValues } from "./records";
 import type { BodyWeightPoint, CoachPlan } from "./types";
@@ -24,7 +24,10 @@ export interface CoachApi {
   accept: (slotId: string, swapTo?: string) => Promise<void>;
   edit: (slotId: string, values: Partial<SlotValues>) => Promise<void>;
   reject: (slotId: string) => Promise<void>;
-  acceptAll: () => Promise<void>;
+  /** Accepts every undecided suggestion except exercises the user changed since; returns how many were kept. */
+  acceptAll: () => Promise<number>;
+  /** Exercises the user edited after this week's plan was made (accepting would overwrite their change). */
+  edited: ReadonlySet<string>;
   reset: () => Promise<void>;
   /** Answer a "you keep skipping this" question. */
   dropAnswer: (slotId: string, answer: "optional" | "remove" | "keep") => Promise<void>;
@@ -59,6 +62,21 @@ export function useCoach(prog: ProgramApi, lib: LibraryApi, finished: readonly W
   const program = prog.active;
   const baseline = baselines.get(targetWeekStart);
   const decided = useMemo(() => new Map(records.filter(r => r.weekKey === targetWeekStart).map(r => [r.slotId, r])), [records, targetWeekStart]);
+  // Edited since the plan: the slot now differs from what the plan started from (the frozen baseline) or from what
+  // was decided for it. Without a baseline the plan is computed from the current program, so nothing is "edited".
+  const edited = useMemo(() => {
+    const out = new Set<string>();
+    if (!baseline || !program) return out;
+    const before = new Map(baseline.sessions.flatMap(s => s.exercises).map(e => [e.id, e]));
+    for (const e of program.sessions.flatMap(s => s.exercises)) {
+      const d = decided.get(e.id);
+      const b = before.get(e.id);
+      const expected = d && d.status !== "rejected" ? d.final : b ? slotValues(b) : null;
+      if (!expected) continue;
+      if ((b && b.exerciseId !== e.exerciseId && !d?.swapTo) || !sameValues(slotValues(e), expected)) out.add(e.id);
+    }
+    return out;
+  }, [baseline, program, decided]);
   // Rejections from earlier weeks damp repeat suggestions; this week's own decisions must not change this week's plan.
   const rejections = useMemo(() => rejectionsFrom(records.filter(r => r.weekKey < targetWeekStart)), [records, targetWeekStart]);
 
@@ -105,11 +123,18 @@ export function useCoach(prog: ProgramApi, lib: LibraryApi, finished: readonly W
     edit: (slotId, values) => slotSet(slotId, { status: "edited", values }),
     reject: slotId => slotSet(slotId, { status: "rejected" }),
     acceptAll: async () => {
-      if (!plan) return;
+      if (!plan) return 0;
       const m = new Map<string, Decision>();
-      for (const s of plan.slots) if (!decided.has(s.slotId)) m.set(s.slotId, { status: "accepted" });
+      let kept = 0;
+      for (const s of plan.slots) {
+        if (decided.has(s.slotId)) continue;
+        if (edited.has(s.slotId)) { kept++; continue; } // never overwrite the user's own change in bulk
+        m.set(s.slotId, { status: "accepted" });
+      }
       await decide(m);
+      return kept;
     },
+    edited,
     dropAnswer: async (slotId, answer) => {
       if (!program) return;
       if (answer === "keep") await repo.put("suggestions", { id: KEEP + slotId, dayKey: today, schemaVersion: SCHEMA_VERSION } as never);
