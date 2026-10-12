@@ -257,3 +257,20 @@ test("edit a past session: change reps and date, or cancel to keep it as it was"
   detail = await openDetail();
   await expect(detail.getByText("100 kg × 7")).toBeVisible();
 });
+
+test("answer the sleep question before starting; the workout keeps it", async ({ page }) => {
+  await page.clock.install({ time: new Date(2026, 9, 5, 10, 0, 0) });
+  await page.goto("/");
+  await skipOnboarding(page);
+  await page.getByRole("button", { name: "Program", exact: true }).click();
+  await page.getByRole("article").filter({ hasText: "Full body 3×" }).getByRole("button", { name: "Use this template" }).click();
+  await page.getByRole("button", { name: "Workout", exact: true }).click();
+  const q = page.getByRole("group", { name: "How did you sleep last night?" });
+  await q.getByRole("button", { name: "Well" }).click();
+  // switching tabs keeps the answer
+  await page.getByRole("button", { name: "Coach", exact: true }).click();
+  await page.getByRole("button", { name: "Workout", exact: true }).click();
+  await expect(page.getByRole("group", { name: "How did you sleep last night?" }).getByRole("button", { name: "Well" })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Start workout" }).click();
+  await expect(page.getByRole("button", { name: "Sleep: Well · change" })).toBeVisible();
+});

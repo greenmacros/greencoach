@@ -8,6 +8,7 @@ import type { DayOverride } from "../program/types";
 import { repo } from "../db";
 import type { useHistory } from "../workout/useHistory";
 import Icon from "../components/Icon";
+import SleepCheck, { type Sleep } from "../components/SleepCheck";
 
 interface Props {
   prog: ProgramApi;
@@ -16,7 +17,7 @@ interface Props {
   /** Selected day (null = today); lives in App so it survives opening a workout. */
   selected: string | null;
   setSelected: (k: string | null) => void;
-  onStart: (sessionId: string | null, dayKey: string) => void;
+  onStart: (sessionId: string | null, dayKey: string, sleep?: Sleep) => void;
   goProgram: () => void;
   /** Shown under the heading, e.g. the automatic coach summary. */
   banner?: ReactNode;
@@ -26,6 +27,12 @@ export default function Today({ prog, lib, hist, selected, setSelected, onStart,
   const { t, settings } = useApp();
   const lang = settings.lang;
   const [moving, setMoving] = useState(false);
+  // Remembered for the day, so switching tabs before starting does not lose the answer.
+  const sleepKey = `gc_sleep_${prog.todayKey}`;
+  const [sleep, setSleepState] = useState<Sleep | undefined>(() => {
+    try { const v = Number(sessionStorage.getItem(sleepKey)); return v === 1 || v === 2 || v === 3 ? v : undefined; } catch { return undefined; }
+  });
+  const setSleep = (v: Sleep) => { setSleepState(v); try { sessionStorage.setItem(sleepKey, String(v)); } catch { /* storage unavailable */ } };
   const [undo, setUndo] = useState<{ before: DayOverride[]; touched: string[]; text: string } | null>(null);
 
   const dayKey = selected ?? prog.todayKey;
@@ -126,7 +133,10 @@ export default function Today({ prog, lib, hist, selected, setSelected, onStart,
             })}
           </ol>
           {day.status !== "done" && (
-            <button className="btn btn-primary" style={{ minHeight: 56, fontSize: 18 }} onClick={() => onStart(session.id, dayKey)}>{t("today.start")}</button>
+            <>
+              {dayKey === prog.todayKey && <SleepCheck value={sleep} onChange={setSleep} />}
+              <button className="btn btn-primary" style={{ minHeight: 56, fontSize: 18 }} onClick={() => onStart(session.id, dayKey, dayKey === prog.todayKey ? sleep : undefined)}>{t("today.start")}</button>
+            </>
           )}
           {day.status !== "done" && (
             <div className="flex flex-wrap gap-2">
@@ -158,7 +168,8 @@ export default function Today({ prog, lib, hist, selected, setSelected, onStart,
         <div className="card grid gap-2">
           <h2 className="text-xl font-bold">{t("today.rest")}</h2>
           <p className="muted">{t("today.restBody")}</p>
-          <button className="btn" onClick={() => onStart(null, dayKey)}>{t("today.quick")}</button>
+          {dayKey === prog.todayKey && <SleepCheck value={sleep} onChange={setSleep} />}
+          <button className="btn" onClick={() => onStart(null, dayKey, dayKey === prog.todayKey ? sleep : undefined)}>{t("today.quick")}</button>
         </div>
       )}
 

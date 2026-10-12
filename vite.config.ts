@@ -20,7 +20,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt", // updates wait while a workout is in progress (see src/pwa.ts)
       includeAssets: ["icon.svg", "icon-192.png", "icon-512.png"],
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,webmanifest,woff2}"],

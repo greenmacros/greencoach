@@ -61,6 +61,7 @@ const BASE = {
   "about.check": { en: "Check for updates", ja: "アップデートを確認" },
   "about.latest": { en: "You have the latest version.", ja: "最新バージョンです。" },
   "about.updating": { en: "New version found, reloading…", ja: "新しいバージョンがあります。再読み込みしています…" },
+  "about.afterWorkout": { en: "A new version is ready. It installs when you finish or leave this workout.", ja: "新しいバージョンがあります。このワークアウトを終えるか離れると更新されます。" },
   "about.offline": { en: "Could not check (offline?).", ja: "確認できませんでした（オフライン？）。" },
   "settings.theme": { en: "Theme", ja: "テーマ" },
   "theme.system": { en: "System", ja: "システム" },

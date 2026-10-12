@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { applyUpdateIfIdle, onUpdateReady, setBusy, updateReady } from "./pwa";
 import { useApp } from "./app-context";
 import TabBar, { type Tab } from "./components/TabBar";
 import BackupNotice from "./components/BackupNotice";
@@ -41,7 +42,7 @@ export default function App() {
   const [editing, setEditing] = useState<WorkoutLog | null>(null);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
-  const start = async (sessionId: string | null, dayKey: string) => {
+  const start = async (sessionId: string | null, dayKey: string, sleep?: 1 | 2 | 3) => {
     const program = prog.active;
     const session = program?.sessions.find(s => s.id === sessionId) ?? null;
     // Resume an existing draft of the same session on the same day instead of starting over.
@@ -52,11 +53,18 @@ export default function App() {
       mesoWeek: program ? mesoPosition(program, dayKey).week : undefined,
       mesoDay: program && session ? trainingDayNumber(program, dayKey) : undefined,
     });
-    const saved = (await repo.put("workouts", { ...base, id: newId(), schemaVersion: SCHEMA_VERSION } as never)) as unknown as WorkoutLog;
+    const saved = (await repo.put("workouts", { ...base, ...(sleep ? { sleep } : {}), id: newId(), schemaVersion: SCHEMA_VERSION } as never)) as unknown as WorkoutLog;
     setActive(saved);
   };
 
-  const close = async () => { setActive(null); setEditing(null); await hist.reload(); };
+  const close = async () => { setActive(null); setEditing(null); await hist.reload(); applyUpdateIfIdle(); };
+
+  // Updates never reload the page during a workout; one that arrived meanwhile applies when the workout closes.
+  const activeRef = useRef(active);
+  activeRef.current = active;
+  useEffect(() => setBusy(() => activeRef.current !== null), []);
+  const [updateWaiting, setUpdateWaiting] = useState(updateReady());
+  useEffect(() => onUpdateReady(() => setUpdateWaiting(true)), []);
   const edit = (w: WorkoutLog) => { setEditing(w); setActive(w); };
   // While editing, the session itself is not its own "last time".
   const historyForActive = useMemo(() => (editing ? hist.finished.filter(w => w.id !== editing.id) : hist.finished), [editing, hist.finished]);
@@ -125,12 +133,15 @@ export default function App() {
           {firstRun ? (
             <Onboarding prog={prog} onDone={() => setTab("today")} />
           ) : active ? (
+            <>
+            {updateWaiting && <p className="muted text-xs text-center" role="status" style={{ marginBottom: 8 }}>{t("about.afterWorkout")}</p>}
             <Workout key={active.id} initial={active} lib={lib} history={historyForActive} coachChanges={editing ? undefined : coachChanges} original={editing ?? undefined} onExit={() => void close()} onClose={() => void close()} />
+            </>
           ) : (
             <>
               <BackupNotice />
               {tab === "today" ? (
-                <Today prog={prog} lib={lib} hist={hist} selected={selectedDay} setSelected={setSelectedDay} onStart={(s, d) => void start(s, d)} goProgram={() => setTab("program")}
+                <Today prog={prog} lib={lib} hist={hist} selected={selectedDay} setSelected={setSelectedDay} onStart={(s, d, sl) => void start(s, d, sl)} goProgram={() => setTab("program")}
                   banner={auto && !auto.seen && program ? (
                     <AutoCoachCard rec={auto} lib={lib}
                       onDismiss={() => autoAct(m => m.dismissAutoCoach(auto))}

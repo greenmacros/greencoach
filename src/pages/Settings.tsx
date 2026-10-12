@@ -15,6 +15,7 @@ import type { BackupFile } from "../db/types";
 import BandsEditor from "../components/BandsEditor";
 import { SafetyCard } from "../components/Safety";
 import EquipmentEditor from "../components/EquipmentEditor";
+import { applyUpdate, checkForUpdate } from "../pwa";
 const Tour = lazy(() => import("../components/Tour"));
 
 type Estimate = Awaited<ReturnType<typeof repo.storageEstimate>>;
@@ -197,13 +198,9 @@ function AppVersion() {
   const { t, settings } = useApp();
   const [msg, setMsg] = useState("");
   const check = async () => {
-    try {
-      const reg = await navigator.serviceWorker?.getRegistration();
-      if (!reg) return setMsg(t("about.latest"));
-      await reg.update();
-      if (reg.installing || reg.waiting) { setMsg(t("about.updating")); setTimeout(() => location.reload(), 2500); }
-      else setMsg(t("about.latest"));
-    } catch { setMsg(t("about.offline")); }
+    if (!navigator.onLine) return setMsg(t("about.offline"));
+    if (await checkForUpdate()) { setMsg(t("about.updating")); setTimeout(applyUpdate, 1200); }
+    else setMsg(t("about.latest"));
   };
   return (
     <div className="grid gap-2 justify-items-center text-center">

@@ -20,7 +20,7 @@ Log your sets, say how the session felt, and get next week's plan with a one-lin
 | Skipping | Mark exercises **optional** in the program. During a workout, skip a set or a whole exercise with a reason (short on time, too tired, dizzy, pain, equipment busy); "pain" counts as joint-pain feedback. An exercise skipped in 3 of its last 4 sessions makes the coach ask: keep it, make it optional, or remove it |
 | Quick tour | Six short cards after setup (today's workout, logging and RIR, feedback, the weekly coach, your program, your data); replay anytime from Settings → How to use GreenCoach |
 | Safety | One-time notice with a confirmation checkbox and an English / 日本語 switch (not medical advice, when to see a doctor first, when to stop, train at your own risk, privacy); always readable in Settings → About & safety. Skipping for dizziness or pain shows what to do |
-| Sleep | Optional one-tap "How did you sleep?" at the start of a workout: poor sleep before most of last week's sessions holds volume, and poor sleep in 4 of the last 6 counts toward an early deload |
+| Sleep | Optional one-tap "How did you sleep?" right above Start workout (or at the top of the workout): poor sleep before most of last week's sessions holds volume, and poor sleep in 4 of the last 6 counts toward an early deload |
 | Editing history | Open any past session from Progress → History and edit sets, weights, reps, exercises or the date; nothing is stored until Save changes, and Cancel leaves it untouched |
 | Feedback | After an exercise: joint pain, soreness from last time for that muscle, pump, volume, difficulty. After the session: how it felt and fatigue |
 | My equipment | Tick exactly what you have (dumbbells with your heaviest pair, bench, bands, kettlebell, pull-up and dip bars, TRX, barbell, EZ bar, landmine, Smith, cable, machines) during setup or in Settings. The library shows only what you can do (one tap shows all), swaps stay within your equipment, the starting template follows it, and the coach never suggests dumbbells heavier than yours (it adds reps instead) |
@@ -95,6 +95,8 @@ Progress photos are compressed on the device and never leave it (they are includ
 - **Cloudflare Pages**: build command `npm run build`, output directory `dist`; `public/_headers` keeps the service worker uncached and hashed assets immutable.
 
 Serve over HTTPS (all three do) so the service worker and installation work.
+
+Updates: the app checks for a new version at start, every 30 minutes and when it returns to the foreground. A new version installs right away, except during a workout: then it waits until the workout is finished or left (`src/pwa.ts`).
 
 ## Known limits
 

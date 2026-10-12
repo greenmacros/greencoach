@@ -119,7 +119,7 @@ test("automatic changes can be undone, and 'ask me each week' turns them off", a
   const card = page.getByRole("status").filter({ hasText: "Coach updated this week" });
   await card.getByRole("button", { name: "Undo" }).click();
   await expect(page.getByText(/Changes undone/)).toBeVisible();
-  await page.getByRole("button", { name: "OK", exact: true }).click();
+  await page.getByRole("status").filter({ hasText: "Changes undone" }).getByRole("button", { name: "OK", exact: true }).click();
   await page.getByRole("button", { name: "Start workout" }).click();
   await expect(page.getByRole("article", { name: "Barbell Squat" }).getByRole("textbox", { name: /^Set 1 Weight/ })).toHaveValue("100");
   await page.getByRole("button", { name: "Back", exact: true }).click();

@@ -19,6 +19,7 @@ export const WORKOUT_MESSAGES = {
   "sleep.1": { en: "Poorly", ja: "あまり眠れず" },
   "sleep.2": { en: "OK", ja: "まあまあ" },
   "sleep.3": { en: "Well", ja: "よく眠れた" },
+  "sleep.optional": { en: "(optional)", ja: "（任意）" },
   "sleep.label": { en: "Sleep: {v}", ja: "睡眠：{v}" },
   "sleep.answered": { en: "Sleep: {v} · change", ja: "睡眠：{v}・変更" },
   "fb.given": { en: "Given:", ja: "入力済み：" },
