@@ -16,6 +16,8 @@ import BandsEditor from "../components/BandsEditor";
 import { SafetyCard } from "../components/Safety";
 import EquipmentEditor from "../components/EquipmentEditor";
 import { applyUpdate, checkForUpdate } from "../pwa";
+import { NutritionCard } from "../components/Nutrition";
+import InstallCard from "../components/InstallCard";
 const Tour = lazy(() => import("../components/Tour"));
 
 type Estimate = Awaited<ReturnType<typeof repo.storageEstimate>>;
@@ -123,6 +125,10 @@ export default function Settings({ lib, prog, workouts }: { lib: LibraryApi; pro
         }} />{t("settings.notify")}</label>
         <p className="muted text-sm">{t("settings.notifyHint")}</p>
       </div>
+
+      <InstallCard />
+
+      <NutritionCard />
 
       <BandsEditor />
 

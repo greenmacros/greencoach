@@ -34,6 +34,8 @@ export interface Settings extends BaseRecord {
   safetyAcceptedAt?: string | null;
   /** When the quick tour was finished or skipped (shown once after setup; replayable in Settings). */
   tourSeenAt?: string | null;
+  /** Planned week from GreenMacros (daily totals only), when linked. */
+  nutrition?: import("../nutrition/nutrition").NutritionPlan | null;
   /** The user's own resistance bands, lightest first (defaults when missing). */
   bands?: import("../bands/bands").Band[];
 }

@@ -13,6 +13,8 @@ import AutoCoachCard from "./components/AutoCoachCard";
 import ImportPlanSheet from "./components/ImportPlanSheet";
 import { SafetyGate } from "./components/Safety";
 import type { SharedPlan } from "./program/share";
+import { NUTRITION_KEY, decodeNutrition, type NutritionPlan } from "./nutrition/nutrition";
+import { NutritionImportSheet } from "./components/Nutrition";
 import { useProgram } from "./program/useProgram";
 import { createWorkout } from "./workout/model";
 import type { WorkoutLog } from "./workout/types";
@@ -71,12 +73,15 @@ export default function App() {
 
   // Opened from a shared-plan link (#plan=…): offer to import it.
   const [shared, setShared] = useState<SharedPlan | "bad" | null>(null);
+  const [nutritionLink, setNutritionLink] = useState<NutritionPlan | "bad" | null>(null);
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState("");
   useEffect(() => {
     const read = () => void import("./program/share").then(async m => {
       const code = m.codeFromHash(location.hash);
       if (code) setShared(await m.decodePlan(code).catch(() => "bad" as const));
+      const nc = location.hash.startsWith("#" + NUTRITION_KEY) ? location.hash.slice(1 + NUTRITION_KEY.length) : null;
+      if (nc) { try { setNutritionLink(decodeNutrition(nc)); } catch { setNutritionLink("bad"); } }
     });
     read();
     window.addEventListener("hashchange", read);
@@ -163,8 +168,12 @@ export default function App() {
       </main>
       {!active && !firstRun && <TabBar tab={tab} onChange={setTab} />}
       {!settings.safetyAcceptedAt && <SafetyGate />}
-      {settings.safetyAcceptedAt && settings.onboarded && !settings.tourSeenAt && !firstRun && !active && !shared && (
+      {settings.safetyAcceptedAt && settings.onboarded && !settings.tourSeenAt && !firstRun && !active && !shared && !nutritionLink && (
         <Suspense fallback={null}><Tour onClose={() => void update({ tourSeenAt: new Date().toISOString() })} /></Suspense>
+      )}
+      {nutritionLink && settings.safetyAcceptedAt && (
+        <NutritionImportSheet plan={nutritionLink} onCancel={() => { setNutritionLink(null); clearShared(); }}
+          onUse={() => { if (nutritionLink !== "bad") void update({ nutrition: nutritionLink }); setNutritionLink(null); clearShared(); setImportMsg(t("nut.done")); }} />
       )}
       {shared && lib.ready && <ImportPlanSheet plan={shared} lib={lib} busy={importing} onImport={() => void importShared()} onCancel={clearShared} />}
       {importMsg && (

@@ -21,6 +21,8 @@ const PATHS = {
   more: "M12 5.5v.5M12 11.75v.5M12 18v.5",
   copy: "M9 9h11v11H9zM15 9V4H4v11h5",
   trash: "M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3",
+  share: "M12 3v12M8 7l4-4 4 4M6 11H5v10h14V11h-1",
+  addBox: "M5 4h14v16H5zM12 8v8M8 12h8",
   undo: "M4 9h11a5 5 0 010 10H9M4 9l4-4M4 9l4 4",
   link: "M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1",
 } as const;

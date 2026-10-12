@@ -9,6 +9,7 @@ import { repo } from "../db";
 import type { useHistory } from "../workout/useHistory";
 import Icon from "../components/Icon";
 import SleepCheck, { type Sleep } from "../components/SleepCheck";
+import InstallCard from "../components/InstallCard";
 
 interface Props {
   prog: ProgramApi;
@@ -76,6 +77,7 @@ export default function Today({ prog, lib, hist, selected, setSelected, onStart,
         </p>
       </div>
       {banner}
+      <InstallCard dismissible />
 
       <div className="grid grid-cols-7 gap-1" role="group" aria-label="Week">
         {days.map(k => {

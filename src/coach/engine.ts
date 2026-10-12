@@ -14,6 +14,7 @@ import type { CoachConfig } from "./config";
 import type { Program } from "../program/types";
 import type { SkipReason, WorkoutLog } from "../workout/types";
 import { wasSkipped } from "../workout/model";
+import { nutritionNotes, summarize as summarizeNutrition } from "../nutrition/nutrition";
 import { bandFor, nextMuscleTarget, startVolume, type Modifiers } from "./volume";
 
 const P = (key: string, params?: Reason["params"]): Reason => ({ key, params });
@@ -180,6 +181,10 @@ export function planNextWeek(input: CoachInput): CoachPlan {
   if (season) for (const n of season.notes) notes.push({ kind: "info", reason: P(`why.${n}`) });
   for (const d of disruptionsIn(targetWeekStart, profile.region)) notes.push({ kind: "info", reason: P(`why.${d.note}`) });
   if (profile.phase === "cut") notes.push({ kind: "good", reason: P("why.note.cut") });
+  if (input.nutrition) {
+    const latest = [...input.bodyWeights].sort((a, b) => a.dayKey.localeCompare(b.dayKey)).at(-1)?.kg ?? null;
+    for (const n of nutritionNotes(summarizeNutrition(input.nutrition, today), profile.phase, latest, rate)) notes.push({ kind: n.kind, reason: P(n.key, n.params) });
+  }
   if (cutTooFast) notes.push({ kind: "warn", reason: P("why.note.cutFast", { pct: Math.round(Math.abs(rate!) * 1000) / 10 }) });
   if (bulkTooFast) notes.push({ kind: "info", reason: P("why.note.bulkFast", { pct: Math.round(rate! * 1000) / 10 }) });
 

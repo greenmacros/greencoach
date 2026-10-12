@@ -45,6 +45,8 @@ export interface CoachInput {
   soreness: readonly SorenessRecord[];
   bodyWeights: readonly BodyWeightPoint[];
   rejections: readonly Rejection[];
+  /** The planned week from GreenMacros, when the user linked it. */
+  nutrition?: import("../nutrition/nutrition").NutritionPlan | null;
   /** Slots the user chose to keep after a drop suggestion, with the day they decided (asked again after a while). */
   keptSlots?: Readonly<Record<string, string>>;
   /** The user's bands, lightest first (for band exercises). */
