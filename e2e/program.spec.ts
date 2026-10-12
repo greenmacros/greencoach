@@ -96,6 +96,11 @@ test("replacing an exercise keeps sets and reps but drops the old target weight"
   await page.getByRole("button", { name: /Barbell Bench Press - Medium Grip/ }).first().click();
   await page.getByRole("dialog", { name: "Barbell Bench Press - Medium Grip" }).getByRole("button", { name: "Add", exact: true }).click();
   await expect(page.getByRole("listitem").filter({ hasText: "Barbell Bench Press - Medium Grip" })).toBeVisible();
+  // the old notes are kept but questioned once
+  const replaced = page.getByRole("listitem").filter({ hasText: "Barbell Bench Press - Medium Grip" });
+  await expect(replaced.getByText("These notes were written for Smith Machine Bench Press. Do they still fit?")).toBeVisible();
+  await replaced.getByRole("button", { name: "Clear notes" }).click();
+  await expect(replaced.getByRole("textbox", { name: /^Notes/ })).toHaveValue("");
   await page.waitForTimeout(600); // let the program write land before the reload
   // Wednesday's workout: barbell bench, same 3 sets, no 60 kg carried over
   await page.clock.setFixedTime(new Date(2026, 9, 7, 10, 0, 0));

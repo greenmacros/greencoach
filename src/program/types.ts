@@ -16,6 +16,8 @@ export interface ExerciseSlot {
   weightKg?: number | null;
   /** Target band(s) for band exercises, set when a coach suggestion is accepted. */
   bands?: string[] | null;
+  /** After a replacement: the exercise the notes were written for, until the user keeps or clears them. */
+  notesFrom?: string | null;
   /** Optional: done when there is time and energy; skipping it is expected. */
   optional?: boolean;
 }

@@ -16,12 +16,15 @@ interface Props {
   onMove: (dir: -1 | 1) => void;
   onRemove: () => void;
   onReplace: () => void;
+  /** Exercise lookup, to name the exercise old notes were written for. */
+  lookup?: (id: string) => Exercise | undefined;
 }
 
-export default function SlotEditor({ slot, ex, index, count, hasNext, onChange, onMove, onRemove, onReplace }: Props) {
+export default function SlotEditor({ slot, ex, index, count, hasNext, onChange, onMove, onRemove, onReplace, lookup }: Props) {
   const { t, settings } = useApp();
   const set = (patch: Partial<ExerciseSlot>) => onChange({ ...slot, ...patch });
   const name = ex ? ex.name[settings.lang] : t("prog.missing");
+  const notesFromName = slot.notesFrom ? lookup?.(slot.notesFrom)?.name[settings.lang] ?? slot.notesFrom : "";
   return (
     <li className="card grid gap-3" style={{ padding: 12 }}>
       <div className="flex items-start gap-2">
@@ -39,6 +42,15 @@ export default function SlotEditor({ slot, ex, index, count, hasNext, onChange, 
       <label className="grid gap-1 text-sm"><span className="muted">{t("prog.rest.label")} ({formatRest(slot.restSec)})</span>
         <Stepper label={`${t("prog.rest.label")}: ${name}`} value={slot.restSec} min={15} max={600} step={15} suffix="s" onChange={v => set({ restSec: v })} />
       </label>
+      {slot.notesFrom && slot.notes.trim() && (
+        <div role="status" className="card grid gap-2 text-sm" style={{ padding: 10, borderColor: "var(--accent)" }}>
+          <p>{t("prog.notesFrom", { name: notesFromName })}</p>
+          <div className="flex flex-wrap gap-2">
+            <button className="btn" onClick={() => set({ notesFrom: null })}>{t("prog.keepNotes")}</button>
+            <button className="btn" onClick={() => set({ notes: "", notesFrom: null })}>{t("prog.clearNotes")}</button>
+          </div>
+        </div>
+      )}
       <TextInput className="field" placeholder={t("prog.notes")} aria-label={`${t("prog.notes")}: ${name}`} value={slot.notes} onValue={v => set({ notes: v })} />
       <div className="flex flex-wrap gap-2">
         {hasNext && <button className="chip" aria-pressed={slot.supersetGroup !== null} onClick={() => set({ supersetGroup: slot.supersetGroup === null ? 1 : null })}>{t("prog.superset")}</button>}

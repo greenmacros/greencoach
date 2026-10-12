@@ -42,6 +42,8 @@ export function applyDecisions(program: Program, plan: CoachPlan, decisions: Rea
         // A swapped exercise starts without a remembered weight.
         weightKg: d.swapTo ? null : v.weightKg,
         bands: d.swapTo ? null : v.bands ?? slot.bands ?? null,
+        // Notes were written for the old exercise: keep them, but ask once (see SlotEditor).
+        ...(d.swapTo && d.swapTo !== slot.exerciseId && slot.notes.trim() ? { notesFrom: slot.notesFrom ?? slot.exerciseId } : {}),
       };
     }),
   }));

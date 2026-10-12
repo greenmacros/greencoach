@@ -58,7 +58,9 @@ export default function ProgramBuilder({ prog, lib, program, onNew }: Props) {
       exercises: replaceSlotId
         // A replacement keeps sets, reps and rest but not the old exercise's target weight or bands (a Smith bar and a
         // free barbell are not the same load); the workout then pre-fills from your own history with the new one.
-        ? s.exercises.map(e => (e.id === replaceSlotId ? { ...e, exerciseId: exId, weightKg: null, bands: null } : e))
+        ? s.exercises.map(e => (e.id === replaceSlotId
+          ? { ...e, exerciseId: exId, weightKg: null, bands: null, notesFrom: e.notes.trim() && e.exerciseId !== exId ? (e.notesFrom ?? e.exerciseId) : null }
+          : e))
         : [...s.exercises, newSlot(exId, isCompound)],
     }));
     setPicker(null);
@@ -142,7 +144,7 @@ export default function ProgramBuilder({ prog, lib, program, onNew }: Props) {
                   {s.exercises.length === 0 && <p className="muted">{t("prog.emptySession")}</p>}
                   <ol className="grid gap-3">
                     {s.exercises.map((slot, i) => (
-                      <SlotEditor key={slot.id} slot={slot} ex={lib.byId(slot.exerciseId)} index={i} count={s.exercises.length} hasNext={i < s.exercises.length - 1}
+                      <SlotEditor key={slot.id} slot={slot} ex={lib.byId(slot.exerciseId)} lookup={lib.byId} index={i} count={s.exercises.length} hasNext={i < s.exercises.length - 1}
                         onChange={x => void updateSlot(s, x)} onMove={d => void move(s, i, d)}
                         onRemove={() => void patchSession(s.id, x => ({ ...x, exercises: x.exercises.filter(e => e.id !== slot.id) }))}
                         onReplace={() => setPicker({ sessionId: s.id, replaceSlotId: slot.id })} />
