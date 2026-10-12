@@ -56,7 +56,9 @@ export default function ProgramBuilder({ prog, lib, program, onNew }: Props) {
     await patchSession(sessionId, s => ({
       ...s,
       exercises: replaceSlotId
-        ? s.exercises.map(e => (e.id === replaceSlotId ? { ...e, exerciseId: exId } : e))
+        // A replacement keeps sets, reps and rest but not the old exercise's target weight or bands (a Smith bar and a
+        // free barbell are not the same load); the workout then pre-fills from your own history with the new one.
+        ? s.exercises.map(e => (e.id === replaceSlotId ? { ...e, exerciseId: exId, weightKg: null, bands: null } : e))
         : [...s.exercises, newSlot(exId, isCompound)],
     }));
     setPicker(null);

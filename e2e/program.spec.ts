@@ -66,3 +66,42 @@ test("edit a program: add an exercise, change sets, reorder", async ({ page }) =
   await page.getByRole("button", { name: "Edit" }).click();
   await expect(page.getByRole("textbox", { name: /^Sets:/ })).toHaveValue("4"); // persisted
 });
+
+test("replacing an exercise keeps sets and reps but drops the old target weight", async ({ page }) => {
+  await page.clock.install({ time: new Date(2026, 9, 5, 10, 0, 0) });
+  await page.goto("/");
+  await skipOnboarding(page);
+  await page.getByRole("button", { name: "Program", exact: true }).click();
+  await page.getByRole("article").filter({ hasText: "Example" }).getByRole("button", { name: "Use this template" }).click();
+  // give the Smith bench a remembered target weight, as an accepted coach suggestion would
+  await page.evaluate(() => new Promise<void>(res => {
+    const r = indexedDB.open("greencoach");
+    r.onsuccess = () => {
+      const tx = r.result.transaction("programs", "readwrite"), st = tx.objectStore("programs");
+      const q = st.getAll();
+      q.onsuccess = () => {
+        const p = q.result.find((x: { active: boolean }) => x.active);
+        for (const s of p.sessions) for (const e of s.exercises) if (e.exerciseId === "Smith_Machine_Bench_Press") e.weightKg = 60;
+        st.put(p);
+      };
+      tx.oncomplete = () => { r.result.close(); res(); };
+    };
+  }));
+  await page.reload();
+  await page.getByRole("button", { name: "Program", exact: true }).click();
+  await page.getByRole("heading", { name: "Chest & Arms" }).locator("..").locator("..").getByRole("button", { name: "Edit", exact: true }).click();
+  const slot = page.getByRole("listitem").filter({ hasText: "Smith Machine Bench Press" });
+  await slot.getByRole("button", { name: "Replace" }).click();
+  await page.getByRole("searchbox", { name: /Search exercises/ }).fill("barbell bench press medium");
+  await page.getByRole("button", { name: /Barbell Bench Press - Medium Grip/ }).first().click();
+  await page.getByRole("dialog", { name: "Barbell Bench Press - Medium Grip" }).getByRole("button", { name: "Add", exact: true }).click();
+  await expect(page.getByRole("listitem").filter({ hasText: "Barbell Bench Press - Medium Grip" })).toBeVisible();
+  await page.waitForTimeout(600); // let the program write land before the reload
+  // Wednesday's workout: barbell bench, same 3 sets, no 60 kg carried over
+  await page.clock.setFixedTime(new Date(2026, 9, 7, 10, 0, 0));
+  await page.reload();
+  await page.getByRole("button", { name: "Start workout" }).click();
+  const bench = page.getByRole("article", { name: "Barbell Bench Press - Medium Grip" });
+  await expect(bench.getByRole("textbox", { name: "Set 3 Reps" })).toBeVisible();
+  await expect(bench.getByRole("textbox", { name: /^Set 1 Weight/ })).toHaveValue("");
+});
