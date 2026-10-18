@@ -79,4 +79,21 @@ describe("program check", () => {
     expect(f.length).toBeGreaterThan(1);
     expect(new Set(f.map(x => x.sessionId)).size).toBeGreaterThan(1);
   });
+
+  it("warns when a muscle is over its limit only through exercises that train it secondarily", () => {
+    const pressing = program([session("Press", [{ ex: BENCH, sets: 12, lo: 6, hi: 10 }, { ex: INCLINE, sets: 12, lo: 8, hi: 12 }, { ex: "Dumbbell_Shoulder_Press", sets: 12, lo: 8, hi: 12 }])], [0, null, 0, null, 0, null, null]);
+    const f = checkProgram(base({ program: pressing }));
+    expect(f.find(x => x.id === "overNote:triceps")).toMatchObject({ kind: "overNote", muscle: "triceps" });
+  });
+
+  it("push/pull suggestions are back exercises only, and an ignored back suggestion no longer hides them", () => {
+    const pushy = program([
+      session("A", [{ ex: BENCH, sets: 4, lo: 6, hi: 10 }, { ex: INCLINE, sets: 4, lo: 8, hi: 12 }, { ex: "Dumbbell_Shoulder_Press", sets: 4, lo: 8, hi: 12 }, { ex: ROW, sets: 2, lo: 8, hi: 12 }]),
+      session("B", [{ ex: SQUAT, sets: 4, lo: 5, hi: 8 }, { ex: LEGCURL, sets: 4, lo: 10, hi: 15 }]),
+    ], [0, null, 1, null, 0, null, null]);
+    const f = checkProgram(base({ program: pushy, dismissed: { "under:lats": week(2), "under:middle-back": week(2) } }));
+    const bal = f.find(x => x.id === "balance");
+    if (bal?.kind !== "balance") throw new Error("expected a push/pull suggestion");
+    for (const id of bal.candidates) expect(["lats", "middle-back"]).toContain(all.find(e => e.id === id)!.primary[0]);
+  });
 });

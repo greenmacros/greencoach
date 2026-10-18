@@ -1,6 +1,6 @@
 import { canDo } from "../library/equipment";
 import type { EquipmentId, Exercise, Muscle } from "../library/types";
-import { daysBetween, estimateMinutes } from "../program/schedule";
+import { addDays, daysBetween, estimateMinutes, weekStart } from "../program/schedule";
 import type { Program, SessionTemplate } from "../program/types";
 import { exerciseIdsInTemplates } from "../program/templates";
 import type { WorkoutLog } from "../workout/types";
@@ -29,6 +29,8 @@ export type Finding =
   | { id: string; kind: "under"; muscle: Muscle; sets: number; target: number; focus: boolean; sessionId: string; addSets: number; candidates: string[] }
   | { id: string; kind: "pain"; muscle: Muscle; sets: number; target: number }
   | { id: string; kind: "over"; muscle: Muscle; sets: number; mrv: number; sessionId: string; slotId: string; exerciseId: string; newSets: number }
+  /** Over MRV but no single exercise can be trimmed (the volume comes from exercises that train it secondarily). */
+  | { id: string; kind: "overNote"; muscle: Muscle; sets: number; mrv: number }
   | { id: string; kind: "balance"; push: number; pull: number; sessionId: string; addSets: number; candidates: string[] }
   | { id: string; kind: "crowded"; muscle: Muscle; sessionId: string; sets: number; cap: number }
   | { id: string; kind: "long"; sessionId: string; minutes: number };
@@ -42,6 +44,8 @@ export interface CheckInput {
   have: ReadonlySet<EquipmentId>;
   workouts: readonly WorkoutLog[];
   today: string;
+  /** Monday of the week the coach is planning (its season is used, so both agree on limits). Defaults to this week. */
+  planWeekStart?: string;
   /** Finding ids the user ignored, with the day: asked again after DISMISS_DAYS. */
   dismissed?: Readonly<Record<string, string>>;
   config?: CoachConfig;
@@ -76,10 +80,10 @@ export function painfulMuscles(workouts: readonly WorkoutLog[], lookup: CheckInp
 }
 
 /** Up to `n` sensible exercises for a muscle (and optional movement patterns), best first. */
-export function candidatesFor(args: { muscle?: Muscle; patterns?: Set<string>; all: readonly Exercise[]; have: ReadonlySet<EquipmentId>; exclude: ReadonlySet<string>; maxDifficulty: number; preferIsolation: boolean; n?: number }): string[] {
+export function candidatesFor(args: { muscle?: Muscle; muscles?: readonly Muscle[]; patterns?: Set<string>; all: readonly Exercise[]; have: ReadonlySet<EquipmentId>; exclude: ReadonlySet<string>; maxDifficulty: number; preferIsolation: boolean; n?: number }): string[] {
   const k = known();
   return args.all
-    .filter(e => (!args.muscle || e.primary[0] === args.muscle) && (!args.patterns || args.patterns.has(e.pattern)))
+    .filter(e => (!args.muscle || e.primary[0] === args.muscle) && (!args.muscles || args.muscles.includes(e.primary[0])) && (!args.patterns || args.patterns.has(e.pattern)))
     .filter(e => !AVOID_CATEGORIES.has(e.category) && !AVOID_PATTERNS.has(e.pattern) && e.difficulty <= args.maxDifficulty && canDo(e, args.have) && !args.exclude.has(e.id))
     .sort((a, b) =>
       Number(k.has(b.id)) - Number(k.has(a.id)) ||            // well-known lifts first (they are in our templates)
@@ -93,8 +97,9 @@ export function candidatesFor(args: { muscle?: Muscle; patterns?: Set<string>; a
 export function checkProgram(input: CheckInput): Finding[] {
   const cfg = input.config ?? COACH_CONFIG;
   const { program, profile, lookup } = input;
-  // Same landmarks as the weekly coach, season included, so the two never disagree about "too much".
-  const season = seasonFor(input.today, profile.region);
+  // Same landmarks as the weekly coach, season included (for this week, as the coach picks it: mid-week), so the
+  // two never disagree about "too much".
+  const season = seasonFor(addDays(input.planWeekStart ?? weekStart(input.today), 3), profile.region);
   const mods: Modifiers = {
     cfg, exp: cfg.experience[profile.experience], goalMods: cfg.goal[profile.goal], phaseMods: cfg.phase[profile.phase],
     seasonMrv: season?.mrvMult ?? 1, perfTolerance: 1, experience: profile.experience, goal: profile.goal, phase: profile.phase,
@@ -106,16 +111,21 @@ export function checkProgram(input: CheckInput): Finding[] {
   const inProgram = new Set(program.sessions.flatMap(s => s.exercises.map(e => e.exerciseId)));
   const maxDifficulty = profile.experience === "beginner" ? 1 : profile.experience === "intermediate" ? 2 : 3;
   const out: Finding[] = [];
+  // Ignored findings are left out before anything else, so they neither show nor shape the others (session
+  // minutes, the push/pull check).
+  const dismissed = input.dismissed ?? {};
+  const live = (id: string) => !dismissed[id] || daysBetween(dismissed[id], input.today) >= DISMISS_DAYS;
+  const push2 = (f: Finding) => { if (live(f.id)) out.push(f); };
 
   // Where to add: the session with the fewest minutes so far, counting what earlier suggestions add, so several
   // suggestions spread over the week instead of piling onto one day.
   const minutes = new Map(sessions.map(x => [x.s.id, estimateMinutes(x.s)]));
-  const pickSession = (sets: number) => {
-    const at = [...sessions].sort((a, b) => minutes.get(a.s.id)! - minutes.get(b.s.id)!)[0];
-    // Sets per session: a session that runs twice a week needs half as many to add the same weekly sets.
+  const lightest = () => [...sessions].sort((a, b) => minutes.get(a.s.id)! - minutes.get(b.s.id)!)[0];
+  /** Reserve the lightest session for a suggestion. Sets per session: a session that runs twice a week needs half. */
+  const reserve = (at: { s: SessionTemplate; times: number }, sets: number) => {
     const perSession = Math.max(2, Math.ceil(sets / at.times));
     minutes.set(at.s.id, minutes.get(at.s.id)! + perSession * 2.5);
-    return { at: at.s, perSession };
+    return perSession;
   };
 
   for (const muscle of CHECK_MUSCLES) {
@@ -127,18 +137,21 @@ export function checkProgram(input: CheckInput): Finding[] {
       // Trim the exercise that trains it most.
       const slots = sessions.flatMap(x => x.s.exercises.map(e => ({ s: x.s, times: x.times, e }))).filter(x => lookup(x.e.exerciseId)?.primary[0] === muscle).sort((a, b) => b.e.sets * b.times - a.e.sets * a.times);
       const top = slots[0];
-      if (top) {
-        const cut = Math.min(Math.ceil((sets - band.mrv) / top.times), top.e.sets - 2);
-        if (cut > 0) out.push({ id: `over:${muscle}`, kind: "over", muscle, sets, mrv: band.mrv, sessionId: top.s.id, slotId: top.e.id, exerciseId: top.e.exerciseId, newSets: top.e.sets - cut });
-      }
+      const cut = top ? Math.min(Math.ceil((sets - band.mrv) / top.times), top.e.sets - 2) : 0;
+      if (top && cut > 0) push2({ id: `over:${muscle}`, kind: "over", muscle, sets, mrv: band.mrv, sessionId: top.s.id, slotId: top.e.id, exerciseId: top.e.exerciseId, newSets: top.e.sets - cut });
+      else push2({ id: `overNote:${muscle}`, kind: "overNote", muscle, sets, mrv: band.mrv });
       continue;
     }
     const missing = Math.ceil(target - sets);
     if (missing < 2) continue; // within a set of the target: not worth a change
-    if (pain.has(muscle)) { out.push({ id: `pain:${muscle}`, kind: "pain", muscle, sets, target }); continue; }
-    const { at, perSession } = pickSession(Math.min(4, Math.max(2, missing)));
-    const candidates = candidatesFor({ muscle, all: input.all, have: input.have, exclude: inProgram, maxDifficulty, preferIsolation: estimateMinutes(at) > 60 });
-    if (candidates.length) out.push({ id: `under:${muscle}`, kind: "under", muscle, sets, target, focus, sessionId: at.id, addSets: Math.min(4, perSession), candidates });
+    if (pain.has(muscle)) { push2({ id: `pain:${muscle}`, kind: "pain", muscle, sets, target }); continue; }
+    if (!live(`under:${muscle}`)) continue;
+    const at = lightest();
+    // Into a session that is already long, quicker isolation work ranks first.
+    const candidates = candidatesFor({ muscle, all: input.all, have: input.have, exclude: inProgram, maxDifficulty, preferIsolation: minutes.get(at.s.id)! > 60 });
+    if (!candidates.length) continue;
+    const perSession = reserve(at, Math.min(4, Math.max(2, missing)));
+    out.push({ id: `under:${muscle}`, kind: "under", muscle, sets, target, focus, sessionId: at.s.id, addSets: perSession, candidates });
   }
 
   // Pushing vs pulling (shoulder health and posture): pulling should at least come close.
@@ -146,20 +159,23 @@ export function checkProgram(input: CheckInput): Finding[] {
   const push = items.filter(i => i.ex && PUSH.has(i.ex.pattern)).reduce((n, i) => n + i.sets, 0);
   const pull = items.filter(i => i.ex && PULL.has(i.ex.pattern)).reduce((n, i) => n + i.sets, 0);
   const backAlready = out.some(f => f.kind === "under" && (f.muscle === "lats" || f.muscle === "middle-back"));
-  if (!backAlready && push - pull >= 4 && push > pull * 1.5 && !pain.has("middle-back") && !pain.has("lats")) {
-    const { at, perSession } = pickSession(Math.min(4, Math.max(2, Math.ceil((push - pull) / 2))));
-    const candidates = candidatesFor({ patterns: PULL, all: input.all, have: input.have, exclude: inProgram, maxDifficulty, preferIsolation: false });
-    if (candidates.length) out.push({ id: "balance", kind: "balance", push, pull, sessionId: at.id, addSets: Math.min(4, perSession), candidates });
+  if (!backAlready && live("balance") && push - pull >= 4 && push > pull * 1.5 && !pain.has("middle-back") && !pain.has("lats")) {
+    // Back exercises only (rows and pulldowns): no "pull" that is really a shoulder, chest or trap exercise.
+    const candidates = candidatesFor({ patterns: PULL, muscles: ["lats", "middle-back"], all: input.all, have: input.have, exclude: inProgram, maxDifficulty, preferIsolation: false });
+    if (candidates.length) {
+      const at = lightest();
+      const perSession = reserve(at, Math.min(4, Math.max(2, Math.ceil((push - pull) / 2))));
+      out.push({ id: "balance", kind: "balance", push, pull, sessionId: at.s.id, addSets: perSession, candidates });
+    }
   }
 
   // One muscle crowded into one session, and very long sessions.
   for (const { s } of sessions) {
     const per = weightedSets(s.exercises.map(e => ({ exercise: lookup(e.exerciseId), sets: e.sets })), cfg.secondaryWeight);
-    for (const [muscle, n] of per) if (CHECK_MUSCLES.includes(muscle) && n > cfg.volume.sessionCap) out.push({ id: `crowded:${s.id}:${muscle}`, kind: "crowded", muscle, sessionId: s.id, sets: Math.round(n * 10) / 10, cap: cfg.volume.sessionCap });
+    for (const [muscle, n] of per) if (CHECK_MUSCLES.includes(muscle) && n > cfg.volume.sessionCap) push2({ id: `crowded:${s.id}:${muscle}`, kind: "crowded", muscle, sessionId: s.id, sets: Math.round(n * 10) / 10, cap: cfg.volume.sessionCap });
     const minutes = estimateMinutes(s);
-    if (minutes > LONG_SESSION_MIN) out.push({ id: `long:${s.id}`, kind: "long", sessionId: s.id, minutes });
+    if (minutes > LONG_SESSION_MIN) push2({ id: `long:${s.id}`, kind: "long", sessionId: s.id, minutes });
   }
 
-  const dismissed = input.dismissed ?? {};
-  return out.filter(f => !dismissed[f.id] || daysBetween(dismissed[f.id], input.today) >= DISMISS_DAYS);
+  return out;
 }

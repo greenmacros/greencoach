@@ -29,6 +29,7 @@ Log your sets, say how the session felt, and get next week's plan with a one-lin
 | Bands | "My bands" in Settings: your own bands by name and color, lightest to heaviest (kg optional). Band exercises are logged by band (combine several), and the coach moves you up one band at a time |
 | Records | Heaviest weight, estimated 1RM, reps at a weight, best set volume, with a subtle celebration |
 | Coach | Next week's sets / reps / weight / RIR per exercise and weekly sets per muscle, each with a colored change and a "Why". Accept all, edit, or keep as is (remembered). Swap suggestions, deloads, welcome-back and ramp-in weeks, season and holiday awareness |
+| Program check | In Coach: the whole week against your goal and up to 3 focus muscles. Flags muscles below the volume that grows them (or below the growth range for focus muscles), above what they can recover from, too much pushing vs pulling, one muscle crowded into a session, and sessions over 90 minutes. Each finding offers a fitting exercise (with "See all options" for the whole library), a trim, or Ignore; nothing changes on its own, and muscles with recent joint pain never get more work |
 | Progress | Week / month / 3 months / year / all: volume, sets per muscle vs your productive range, per-muscle heatmap, training calendar, streak, adherence, session duration, PR timeline, per-exercise e1RM and top set, body weight with a smoothed trend, measurements, progress photos (on-device only), goals with projected dates |
 
 ## Development

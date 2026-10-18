@@ -68,7 +68,8 @@ export function undoProgram(program: Program, baseline: Program, slotIds: Readon
 
 export interface AutoContext {
   program: Program;
-  save: (p: Program) => Promise<unknown>;
+  /** Change the program from its latest stored version (shared queue with every other program write). */
+  change: (id: string, fn: (p: Program) => Program) => Promise<unknown>;
   finished: readonly WorkoutLog[];
   lib: LibraryApi;
   profile: Profile;
@@ -111,19 +112,18 @@ async function run(ctx: AutoContext, weekKey: string): Promise<AutoRecord | null
   if (action === "apply") {
     await repo.put("suggestions", { id: BASE + weekKey, weekKey, program: ctx.program, schemaVersion: SCHEMA_VERSION } as never);
     const decisions = new Map<string, Decision>(plan.slots.map(s => [s.slotId, { status: "accepted" }]));
-    const next = applyDecisions(ctx.program, plan, decisions);
-    await ctx.save(next);
+    await ctx.change(ctx.program.id, latest => applyDecisions(latest, plan, decisions));
     for (const r of toRecords(plan, decisions, id => ctx.lib.byId(id)?.primary[0] ?? "other")) await repo.put("suggestions", r as never);
   }
   return (await repo.put("suggestions", rec as never)) as unknown as AutoRecord;
 }
 
 /** Revert this week's automatic changes. They count as turned down, so the coach is gentler with the same raises. */
-export async function undoAutoCoach(rec: AutoRecord, program: Program, save: (p: Program) => Promise<unknown>): Promise<AutoRecord> {
+export async function undoAutoCoach(rec: AutoRecord, program: Program, change: AutoContext["change"]): Promise<AutoRecord> {
   const sg = (await repo.list("suggestions")) as unknown as CoachSuggestionRecord[];
   const week = sg.filter(r => r.id.startsWith("sug:") && r.weekKey === rec.weekKey);
   const base = (await repo.get("suggestions", BASE + rec.weekKey)) as unknown as { program: Program } | undefined;
-  if (base) await save(undoProgram(program, base.program, new Set(week.filter(r => r.status !== "rejected").map(r => r.slotId))));
+  if (base) await change(program.id, latest => undoProgram(latest, base.program, new Set(week.filter(r => r.status !== "rejected").map(r => r.slotId))));
   for (const r of week) if (r.status !== "rejected") await repo.put("suggestions", { ...r, status: "rejected", final: r.before } as never);
   return (await repo.put("suggestions", { ...rec, status: "undone", seen: false } as never)) as unknown as AutoRecord;
 }

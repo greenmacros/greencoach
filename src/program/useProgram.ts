@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useApp } from "../app-context";
 import { repo } from "../db";
 import { SCHEMA_VERSION } from "../db/types";
@@ -19,6 +19,8 @@ export interface ProgramApi {
   resolve: (dayKey: string) => ResolvedDay | null;
   createFromTemplate: (spec: TemplateSpec) => Promise<Program>;
   save: (p: Program) => Promise<Program>;
+  /** Change a program from its latest stored version. Changes run one at a time, so quick taps never overwrite each other. */
+  change: (id: string, fn: (p: Program) => Program) => Promise<Program | undefined>;
   setActive: (id: string) => Promise<void>;
   remove: (id: string) => Promise<Program | undefined>;
   restore: (p: Program) => Promise<void>;
@@ -57,11 +59,27 @@ export function useProgram(completed: ReadonlySet<string>): ProgramApi {
 
   const resolve = useCallback((dayKey: string) => (active ? resolveDay(active, overrides, dayKey, completed) : null), [active, overrides, completed]);
 
-  const save = useCallback(async (p: Program) => {
+  // Every program write goes through one queue, so a save never lands between another change's read and write.
+  const queue = useRef<Promise<unknown>>(Promise.resolve());
+  const enqueue = useCallback(<T,>(job: () => Promise<T>): Promise<T> => {
+    const run = queue.current.then(job);
+    queue.current = run.catch(() => undefined);
+    return run;
+  }, []);
+  const persist = useCallback(async (p: Program) => {
     const saved = (await repo.put("programs", p as never)) as unknown as Program;
     await reload();
     return saved;
   }, [reload]);
+
+  /** Save a whole program (as given). */
+  const save = useCallback((p: Program) => enqueue(() => persist(p)), [enqueue, persist]);
+
+  /** Change a program from its latest stored version (undefined when it no longer exists). */
+  const change = useCallback((id: string, fn: (p: Program) => Program) => enqueue(async () => {
+    const latest = (await repo.get("programs", id)) as unknown as Program | undefined;
+    return latest ? persist(fn(latest)) : undefined;
+  }), [enqueue, persist]);
 
   const setActive = useCallback(async (id: string) => {
     for (const p of programs) if (p.active !== (p.id === id)) await repo.put("programs", { ...p, active: p.id === id } as never);
@@ -111,5 +129,5 @@ export function useProgram(completed: ReadonlySet<string>): ProgramApi {
 
   const newSession = useCallback((name: string): SessionTemplate => ({ id: newId(), name, exercises: [] }), []);
 
-  return { ready, programs, active, overrides, completed, todayKey, resolve, createFromTemplate, save, setActive, remove, restore, applyPatches, restoreOverrides, newSession };
+  return { ready, programs, active, overrides, completed, todayKey, resolve, createFromTemplate, save, change, setActive, remove, restore, applyPatches, restoreOverrides, newSession };
 }

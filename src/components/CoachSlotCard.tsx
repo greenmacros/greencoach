@@ -43,12 +43,14 @@ interface Props {
 export default function CoachSlotCard({ s, swap, decided, lib, onAccept, onReject, onEdit, edited }: Props) {
   const [confirmReplace, setConfirmReplace] = useState(false);
   const [browsing, setBrowsing] = useState(false);
+  const [sameNote, setSameNote] = useState(false);
   /** Swap waiting for "Replace with the coach's" (the user edited this exercise); undefined = plain accept. */
   const [pendingSwap, setPendingSwap] = useState<string | undefined>(undefined);
-  // Picking the exercise it already is changes nothing (and must not clear its weight like a real swap would).
+  // Picking the exercise it already is means "keep it": nothing is applied (no swap, and not the coach's numbers).
   const swapTo = (id: string) => {
-    const to = id === s.exerciseId ? undefined : id;
-    if (edited) { setPendingSwap(to); setConfirmReplace(true); } else onAccept(to);
+    if (id === s.exerciseId) return setSameNote(true);
+    setSameNote(false);
+    if (edited) { setPendingSwap(id); setConfirmReplace(true); } else onAccept(id);
   };
   const { t, settings } = useApp();
   const unit = settings.weightUnit;
@@ -112,6 +114,7 @@ export default function CoachSlotCard({ s, swap, decided, lib, onAccept, onRejec
             {/* The shortlist fits equipment and movement; the full library is one tap away if none of them appeal. */}
             <button className="chip" onClick={() => setBrowsing(true)}>{t("pc.more")}</button>
           </div>
+          {sameNote && <p role="status" className="muted text-sm">{t("coach.sameExercise")}</p>}
           {browsing && <PickerSheet lib={lib} title={t("pc.pickTitle")} muscles={ex ? [ex.primary[0]] : undefined} onClose={() => setBrowsing(false)}
             onPick={picked => { setBrowsing(false); swapTo(picked.id); }} />}
         </div>

@@ -26,10 +26,10 @@ test("program check: finds a muscle with too little work, adds a suggested exerc
   const add = calves.getByRole("button", { name: /^Add .* · \d sets$/ }).first();
   const label = (await add.textContent())!;
   const name = label.replace(/^Add /, "").replace(/ · \d sets$/, "");
-  await add.click();
+  await add.dblclick(); // a double tap must not add it twice
   await expect(check.locator(".card").filter({ hasText: /^Lats: about/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Workout", exact: true }).click(); // Monday: Full Body A lists its exercises
-  await expect(page.getByText(name, { exact: true })).toBeVisible();
+  await expect(page.getByText(name, { exact: true })).toHaveCount(1);
 
   // focus muscles raise the bar
   await page.getByRole("button", { name: "Coach", exact: true }).click();

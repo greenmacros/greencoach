@@ -115,7 +115,7 @@ export default function App() {
     if (settings.coachMode === "ask") return setAuto(null);
     let live = true;
     void import("./coach/auto")
-      .then(m => m.runAutoCoach({ program, save: prog.save, finished: hist.finished, lib, profile, settings, today: prog.todayKey }))
+      .then(m => m.runAutoCoach({ program, change: prog.change, finished: hist.finished, lib, profile, settings, today: prog.todayKey }))
       .then(r => { if (live) setAuto(r); });
     return () => { live = false; };
     // Re-run only when the inputs that matter change (not on every program save, which the run itself causes).
@@ -154,7 +154,7 @@ export default function App() {
                   banner={auto && !auto.seen && program ? (
                     <AutoCoachCard rec={auto} lib={lib} program={program}
                       onDismiss={() => autoAct(m => m.dismissAutoCoach(auto))}
-                      onUndo={() => autoAct(m => m.undoAutoCoach(auto, program, prog.save))}
+                      onUndo={() => autoAct(m => m.undoAutoCoach(auto, program, prog.change))}
                       onReview={() => { setTabState("coach"); setCoachTarget("this"); }} />
                   ) : null} />
               ) : tab === "program" ? (

@@ -155,6 +155,17 @@ A non-optional exercise that was skipped (as a whole or every set, with a reason
 optional, or remove it, with the most common skip reason. Nothing is changed automatically. "Keep" is remembered for
 `askAgainDays` (28). Optional exercises are never asked about. A skip for "pain" also records joint pain 2 (hold + swap).
 
+## 4c. Program check (`programCheck.ts`)
+
+Looks at the weekly plan as a whole, with the same landmarks and season as the planner: muscles under MEV (or under
+MAV low for up to 3 focus muscles) get an exercise suggestion for the lightest session (suggestions spread over the
+week; a session that runs twice counts twice), muscles over MRV get a trim (or a note when the volume comes from
+secondary work), pushing more than 1.5x pulling gets a row/pulldown, more than `sessionCap` weighted sets of one
+muscle in one session and sessions over 90 minutes get a note. Candidates fit the user's equipment and experience,
+skip Olympic/plyometric/strongman lifts, and favour well-known lifts with pictures; "See all options" opens the full
+library filtered to the muscle. Muscles with joint pain 2+ in the last 3 weeks never get more work. Ignored findings
+come back after 28 days. Focus muscles also let the weekly planner climb to the top of their growth range.
+
 ## 5. Season and calendar
 
 `SEASONS` rows add rest time, scale MRV and loosen the performance thresholds (`perfTolerance`), plus notes:

@@ -101,9 +101,11 @@ export function useCoach(prog: ProgramApi, lib: LibraryApi, finished: readonly W
       if (d.status === "rejected" && was && was.status !== "rejected") toApply.set(slotId, { status: "edited", values: was.before, swapTo: undefined });
       else toApply.set(slotId, d);
     }
-    // Apply onto the latest stored program: quick taps (Accept, then Keep on another exercise) must not save a stale copy.
-    const latest = ((await repo.get("programs", program.id)) as unknown as Program | undefined) ?? program;
-    if ([...toApply.values()].some(d => d.status !== "rejected")) await prog.save(applyDecisions(latest, plan, toApply));
+    // Applied onto the latest stored program through the shared queue: no tap (here or in Program check) overwrites another.
+    if ([...toApply.values()].some(d => d.status !== "rejected") && !(await prog.change(program.id, latest => applyDecisions(latest, plan, toApply)))) {
+      await reload(); // the program no longer exists (deleted or replaced by an import): record nothing
+      return;
+    }
     for (const rec of toRecords(plan, decisions, id => lib.byId(id)?.primary[0] ?? "other")) await repo.put("suggestions", rec as never);
     await reload();
   }, [plan, program, targetWeekStart, prog, lib, reload]);
@@ -138,13 +140,13 @@ export function useCoach(prog: ProgramApi, lib: LibraryApi, finished: readonly W
     dropAnswer: async (slotId, answer) => {
       if (!program) return;
       if (answer === "keep") await repo.put("suggestions", { id: KEEP + slotId, dayKey: today, schemaVersion: SCHEMA_VERSION } as never);
-      else await prog.save({
-        ...program,
-        sessions: program.sessions.map(s => ({
+      else await prog.change(program.id, latest => ({
+        ...latest,
+        sessions: latest.sessions.map(s => ({
           ...s,
           exercises: answer === "remove" ? s.exercises.filter(e => e.id !== slotId) : s.exercises.map(e => (e.id === slotId ? { ...e, optional: true } : e)),
         })),
-      });
+      }));
       await reload();
     },
     reset: async () => {

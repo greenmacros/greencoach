@@ -66,7 +66,7 @@ export default function Coach({ prog, lib, finished, initialTarget }: { prog: Pr
       )}
       {plan.deload.type === "early" && <p className="muted text-sm">{t("coach.applyDeload")}</p>}
 
-      <ProgramCheck prog={prog} lib={lib} finished={finished} />
+      <ProgramCheck prog={prog} lib={lib} finished={finished} planWeekStart={plan.targetWeekStart} />
 
       {plan.drops.length > 0 && (
         <div className="grid gap-2">

@@ -28,9 +28,10 @@ export default function ProgramBuilder({ prog, lib, program, onNew }: Props) {
   const [sharing, setSharing] = useState(false);
   const [pasting, setPasting] = useState(false);
 
-  const patch = (p: Partial<Program>) => prog.save({ ...program, ...p });
+  // Edits apply to the latest stored program (through the shared queue), so they never undo a change made a moment ago.
+  const patch = (p: Partial<Program>) => prog.change(program.id, latest => ({ ...latest, ...p }));
   const patchSession = (id: string, fn: (s: SessionTemplate) => SessionTemplate) =>
-    patch({ sessions: program.sessions.map(s => (s.id === id ? fn(s) : s)) });
+    prog.change(program.id, latest => ({ ...latest, sessions: latest.sessions.map(s => (s.id === id ? fn(s) : s)) }));
 
   const addSession = async () => {
     const s = prog.newSession(t("prog.newSession"));
