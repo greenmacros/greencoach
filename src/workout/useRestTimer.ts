@@ -36,7 +36,11 @@ export interface RestTimer {
 
 export function useRestTimer(alertText: { title: string; body: string }): RestTimer {
   const { settings } = useApp();
-  const [state, setState] = useState<T.TimerState>(load);
+  // A countdown that ended while the app was closed (or saved by an older version at 0:00) starts as ready.
+  const [state, setState] = useState<T.TimerState>(() => {
+    const s = load();
+    return s.endsAt !== null && s.alerted && s.endsAt <= Date.now() ? T.idle : s;
+  });
   const [now, setNow] = useState(() => Date.now());
   const [finished, setFinished] = useState(false);
   const [recent, setRecent] = useState<number[]>([]);
@@ -57,7 +61,8 @@ export function useRestTimer(alertText: { title: string; body: string }): RestTi
       if (st.restVibrate) vibrate();
       if (st.restNotify && document.hidden) void notify(textRef.current.title, textRef.current.body);
       setFinished(true);
-      return T.markAlerted(s);
+      // Done: back to "ready" instead of sitting at 0:00 (the "rest done" message shows for a moment).
+      return T.idle;
     });
   }, []);
 

@@ -172,8 +172,7 @@ test("optional exercises, skipping with a reason, and no rest timer after an exe
     if (n < 3) await expect(page.getByRole("timer")).toBeVisible();
     else {
       await page.getByRole("dialog", { name: "Feedback" }).getByRole("button", { name: "Cancel" }).click();
-      await page.getByRole("button", { name: "Skip", exact: true }).click(); // stop the timer from set 2
-      await expect(page.getByRole("timer")).toHaveCount(0);
+      await expect(page.getByRole("timer")).toHaveCount(0); // the timer from set 2 is cleared, none started
     }
   }
 
@@ -273,4 +272,16 @@ test("answer the sleep question before starting; the workout keeps it", async ({
   await expect(page.getByRole("group", { name: "How did you sleep last night?" }).getByRole("button", { name: "Well" })).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "Start workout" }).click();
   await expect(page.getByRole("button", { name: "Sleep: Well · change" })).toBeVisible();
+});
+
+test("the rest timer goes back to ready when it reaches zero (it never sits at 0:00)", async ({ page }) => {
+  await startFullBody(page);
+  const sq = page.getByRole("article", { name: "Barbell Squat" });
+  await sq.getByRole("textbox", { name: "Set 1 Reps" }).fill("8");
+  await sq.getByRole("button", { name: "Mark set done: Set 1" }).click();
+  await expect(page.getByRole("timer")).toBeVisible();
+  await page.clock.runFor(181_000);
+  await expect(page.getByRole("timer")).toHaveCount(0);
+  await page.clock.runFor(5_000);
+  await expect(page.getByText("Rest timer ready")).toBeVisible();
 });

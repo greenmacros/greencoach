@@ -85,7 +85,7 @@ export default function CoachSlotCard({ s, swap, decided, lib, onAccept, onRejec
       )}
       {s.extra.length > 0 && (
         <>
-          <button className="text-left text-sm muted bg-transparent border-0 p-0 cursor-pointer underline" style={{ font: "inherit", fontSize: 14 }} aria-expanded={more} onClick={() => setMore(m => !m)}>
+          <button className="text-left text-sm muted bg-transparent border-0 p-0 cursor-pointer underline" style={{ font: "inherit", fontSize: 14, minHeight: 36 }} aria-expanded={more} onClick={() => setMore(m => !m)}>
             {more ? "−" : "+"} {s.extra.length}
           </button>
           {more && <ul className="text-sm muted list-disc pl-5">{s.extra.map((r, i) => <li key={i}>{explain(r, t)}</li>)}</ul>}

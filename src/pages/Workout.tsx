@@ -22,6 +22,7 @@ import type { AutoChange } from "../coach/auto";
 import Icon from "../components/Icon";
 import { dayKey } from "../lib/id";
 import SleepCheck from "../components/SleepCheck";
+import { useKeyboardOpen } from "../lib/keyboard";
 
 interface Props {
   initial: WorkoutLog;
@@ -43,6 +44,7 @@ export default function Workout({ initial, lib, history, onExit, onClose, coachC
   const localToday = dayKey(new Date(), settings.dayStartHour);
   const { workout, mutate, flush } = useWorkout(initial, { autosave: !original });
   const [editError, setEditError] = useState(false);
+  const keyboardOpen = useKeyboardOpen();
   const timer = useRestTimer({ title: t("timer.done"), body: t("timer.doneBody") });
   const [picker, setPicker] = useState<{ swap: string | null } | null>(null);
   const [finishing, setFinishing] = useState(false);
@@ -98,8 +100,10 @@ export default function Workout({ initial, lib, history, onExit, onClose, coachC
       }
       primeAudio(); // allowed here: inside a tap
       const inSuperset = ex.supersetGroup !== null && nextEx?.supersetGroup === ex.supersetGroup;
-      // No rest timer after an exercise's last set: the user is moving on to the next exercise.
-      if (!inSuperset && !finishesExercise && !editMode) timer.start(ex.restSec);
+      // No rest timer after an exercise's last set: the user is moving on to the next exercise (and any timer
+      // still showing from the previous set is cleared).
+      if (finishesExercise && !inSuperset) timer.skip();
+      else if (!inSuperset && !editMode) timer.start(ex.restSec);
     }
   };
 
@@ -238,7 +242,8 @@ export default function Workout({ initial, lib, history, onExit, onClose, coachC
           onNotes={notes => mutate(w => ({ ...w, notes }))} />
       )}
 
-      {!editMode && <RestTimerBar timer={timer} onChoose={sec => {
+      {/* Hidden while typing (it would cover the field on phones); the countdown keeps running. */}
+      {!editMode && !keyboardOpen && <RestTimerBar timer={timer} onChoose={sec => {
         // Choosing a time also becomes this exercise's rest for the rest of the workout.
         const lastDone = [...workout.exercises].reverse().find(e => e.sets.some(s => s.done));
         if (lastDone) mutate(w => updateExercise(w, lastDone.id, e => ({ ...e, restSec: sec })));
