@@ -4,7 +4,7 @@ import BarChart from "../../charts/BarChart";
 import ChartFrame from "../../charts/ChartFrame";
 import Heatmap from "../../charts/Heatmap";
 import MuscleBars from "../../charts/MuscleBars";
-import { formatDayKey, fmtWeight } from "../../lib/format";
+import { formatDayKey, fmtWeight, localeOf } from "../../lib/format";
 import type { LibraryApi } from "../../library/useLibrary";
 import { MUSCLES, type Muscle } from "../../library/types";
 import { addDays, weekDays, weekStart } from "../../program/schedule";
@@ -36,7 +36,7 @@ export default function Overview({ range, workouts, lib, prog, body }: Props) {
   const today = prog.todayKey;
   const start = rangeStart(range, today);
   const short = (k: string) => formatDayKey(k, lang, { month: "numeric", day: "numeric" });
-  const nf = new Intl.NumberFormat(lang === "ja" ? "ja-JP" : undefined, { maximumFractionDigits: 0 });
+  const nf = new Intl.NumberFormat(localeOf(lang), { maximumFractionDigits: 0 });
 
   const inRange = useMemo(() => workouts.filter(w => w.finishedAt && (start === null || w.dayKey >= start) && w.dayKey <= today), [workouts, start, today]);
   const weeks = useMemo(() => weeklyTotals(workouts, start, today, lib.byId), [workouts, start, today, lib.byId]);
