@@ -18,6 +18,8 @@ export interface CoachProfile {
   equipment: Equipment;
   region: Region;
   weightUnit: WeightUnit;
+  /** Muscles the user wants to prioritize (up to 3): their volume may climb into the growth range. */
+  focus?: readonly Muscle[];
   /** Heaviest dumbbell the user owns (kg); suggestions never go above it. */
   dumbbellMaxKg?: number | null;
 }

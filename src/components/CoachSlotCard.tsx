@@ -10,6 +10,7 @@ import Stepper from "./Stepper";
 import { bandLabel, bandsOf } from "../bands/bands";
 import { sameBands } from "../coach/apply";
 import Icon from "./Icon";
+import PickerSheet from "./PickerSheet";
 
 const COLOR: Record<Trend, string> = { up: "var(--accent)", down: "var(--danger)", same: "var(--muted)" };
 const ARROW: Record<Trend, React.ReactNode> = { up: <Icon name="triUp" size="0.8em" />, down: <Icon name="triDown" size="0.8em" />, same: "=" };
@@ -41,6 +42,14 @@ interface Props {
 
 export default function CoachSlotCard({ s, swap, decided, lib, onAccept, onReject, onEdit, edited }: Props) {
   const [confirmReplace, setConfirmReplace] = useState(false);
+  const [browsing, setBrowsing] = useState(false);
+  /** Swap waiting for "Replace with the coach's" (the user edited this exercise); undefined = plain accept. */
+  const [pendingSwap, setPendingSwap] = useState<string | undefined>(undefined);
+  // Picking the exercise it already is changes nothing (and must not clear its weight like a real swap would).
+  const swapTo = (id: string) => {
+    const to = id === s.exerciseId ? undefined : id;
+    if (edited) { setPendingSwap(to); setConfirmReplace(true); } else onAccept(to);
+  };
   const { t, settings } = useApp();
   const unit = settings.weightUnit;
   const [editing, setEditing] = useState(false);
@@ -77,8 +86,8 @@ export default function CoachSlotCard({ s, swap, decided, lib, onAccept, onRejec
           <p>{t("coach.editedTitle")}</p>
           {confirmReplace && (
             <div className="flex flex-wrap gap-2">
-              <button className="btn" onClick={() => setConfirmReplace(false)}>{t("coach.keepMine")}</button>
-              <button className="btn btn-primary" onClick={() => { setConfirmReplace(false); onAccept(); }}>{t("coach.replaceMine")}</button>
+              <button className="btn" onClick={() => { setConfirmReplace(false); setPendingSwap(undefined); }}>{t("coach.keepMine")}</button>
+              <button className="btn btn-primary" onClick={() => { setConfirmReplace(false); onAccept(pendingSwap); setPendingSwap(undefined); }}>{t("coach.replaceMine")}</button>
             </div>
           )}
         </div>
@@ -98,9 +107,13 @@ export default function CoachSlotCard({ s, swap, decided, lib, onAccept, onRejec
           <p className="text-sm font-semibold">{explain(swap.reason, t)}</p>
           <div className="flex flex-wrap gap-1.5">
             {swap.candidates.map(id => (
-              <button key={id} className="chip" onClick={() => onAccept(id)}>{t("coach.swapTo", { name: lib.byId(id)?.name[settings.lang] ?? id })}</button>
+              <button key={id} className="chip" onClick={() => swapTo(id)}>{t("coach.swapTo", { name: lib.byId(id)?.name[settings.lang] ?? id })}</button>
             ))}
+            {/* The shortlist fits equipment and movement; the full library is one tap away if none of them appeal. */}
+            <button className="chip" onClick={() => setBrowsing(true)}>{t("pc.more")}</button>
           </div>
+          {browsing && <PickerSheet lib={lib} title={t("pc.pickTitle")} muscles={ex ? [ex.primary[0]] : undefined} onClose={() => setBrowsing(false)}
+            onPick={picked => { setBrowsing(false); swapTo(picked.id); }} />}
         </div>
       )}
 

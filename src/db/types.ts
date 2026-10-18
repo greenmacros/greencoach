@@ -34,6 +34,8 @@ export interface Settings extends BaseRecord {
   safetyAcceptedAt?: string | null;
   /** When the quick tour was finished or skipped (shown once after setup; replayable in Settings). */
   tourSeenAt?: string | null;
+  /** Program-check findings the user ignored, with the day (asked again after four weeks). */
+  programCheckDismissed?: Record<string, string>;
   /** Planned week from GreenMacros (daily totals only), when linked. */
   nutrition?: import("../nutrition/nutrition").NutritionPlan | null;
   /** The user's own resistance bands, lightest first (defaults when missing). */
@@ -59,6 +61,8 @@ export interface Profile extends BaseRecord {
   myEquipment?: import("../library/types").EquipmentId[];
   /** Heaviest dumbbell the user has, in kg (per dumbbell). The coach never suggests more. */
   dumbbellMaxKg?: number | null;
+  /** Muscles to prioritize (up to 3), used by the weekly coach and the program check. */
+  focusMuscles?: import("../library/types").Muscle[];
 }
 
 /** Tables that hold user data. Later milestones give these concrete record types. */

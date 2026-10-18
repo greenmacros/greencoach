@@ -1,0 +1,165 @@
+import { canDo } from "../library/equipment";
+import type { EquipmentId, Exercise, Muscle } from "../library/types";
+import { daysBetween, estimateMinutes } from "../program/schedule";
+import type { Program, SessionTemplate } from "../program/types";
+import { exerciseIdsInTemplates } from "../program/templates";
+import type { WorkoutLog } from "../workout/types";
+import { COACH_CONFIG, type CoachConfig } from "./config";
+import { plannedMuscleSets, weightedSets } from "./stats";
+import type { CoachProfile } from "./types";
+import { bandFor, type Modifiers } from "./volume";
+import { seasonFor } from "./seasons";
+
+/**
+ * Program check: looks at the whole weekly plan (not at one week's progression) and points out what it can back up:
+ * muscles below the volume that grows them (or below the growth range for focus muscles), muscles above what they can
+ * recover from, too much pushing vs pulling, one muscle crowded into one session, and very long sessions.
+ * Nothing is changed without the user: each finding carries a suggested action they can apply, change or ignore.
+ * Safety: muscles with recent joint pain never get more work; suggested exercises fit the user's equipment, are not
+ * Olympic, plyometric or strongman lifts, and match their experience.
+ */
+
+/** Muscles the check plans for. Small or indirectly trained ones (forearms, traps, neck, lower back…) are left out. */
+export const CHECK_MUSCLES: Muscle[] = ["chest", "shoulders", "triceps", "biceps", "lats", "middle-back", "quadriceps", "hamstrings", "glutes", "calves"];
+export const MAX_FOCUS = 3;
+const LONG_SESSION_MIN = 90;
+export const DISMISS_DAYS = 28;
+
+export type Finding =
+  | { id: string; kind: "under"; muscle: Muscle; sets: number; target: number; focus: boolean; sessionId: string; addSets: number; candidates: string[] }
+  | { id: string; kind: "pain"; muscle: Muscle; sets: number; target: number }
+  | { id: string; kind: "over"; muscle: Muscle; sets: number; mrv: number; sessionId: string; slotId: string; exerciseId: string; newSets: number }
+  | { id: string; kind: "balance"; push: number; pull: number; sessionId: string; addSets: number; candidates: string[] }
+  | { id: string; kind: "crowded"; muscle: Muscle; sessionId: string; sets: number; cap: number }
+  | { id: string; kind: "long"; sessionId: string; minutes: number };
+
+export interface CheckInput {
+  program: Program;
+  all: readonly Exercise[];
+  lookup: (id: string) => Exercise | undefined;
+  profile: CoachProfile;
+  focus: readonly Muscle[];
+  have: ReadonlySet<EquipmentId>;
+  workouts: readonly WorkoutLog[];
+  today: string;
+  /** Finding ids the user ignored, with the day: asked again after DISMISS_DAYS. */
+  dismissed?: Readonly<Record<string, string>>;
+  config?: CoachConfig;
+}
+
+const PUSH = new Set(["h-push", "v-press"]);
+const PULL = new Set(["h-pull", "v-pull"]);
+const AVOID_CATEGORIES = new Set(["olympic weightlifting", "strongman", "plyometrics", "stretching", "cardio"]);
+const AVOID_PATTERNS = new Set(["olympic", "plyo", "carry", "cardio", "mobility"]);
+
+/** The week's sessions, each once, with how many days a week it runs (a set added to it counts that many times). */
+function sessionsInWeek(p: Program): { s: SessionTemplate; times: number }[] {
+  const out = new Map<string, { s: SessionTemplate; times: number }>();
+  for (const id of p.week) {
+    const s = p.sessions.find(x => x.id === id);
+    if (s) out.set(s.id, { s, times: (out.get(s.id)?.times ?? 0) + 1 });
+  }
+  return [...out.values()];
+}
+
+let knownIds: Set<string> | null = null;
+const known = () => (knownIds ??= new Set(exerciseIdsInTemplates()));
+
+/** Muscles whose exercises had joint pain 2+ in the last three weeks: never add work there. */
+export function painfulMuscles(workouts: readonly WorkoutLog[], lookup: CheckInput["lookup"], today: string): Set<Muscle> {
+  const out = new Set<Muscle>();
+  for (const w of workouts) {
+    if (!w.finishedAt || daysBetween(w.dayKey, today) > 21) continue;
+    for (const e of w.exercises) if ((e.jointPain ?? 0) >= 2) { const m = lookup(e.exerciseId)?.primary[0]; if (m) out.add(m); }
+  }
+  return out;
+}
+
+/** Up to `n` sensible exercises for a muscle (and optional movement patterns), best first. */
+export function candidatesFor(args: { muscle?: Muscle; patterns?: Set<string>; all: readonly Exercise[]; have: ReadonlySet<EquipmentId>; exclude: ReadonlySet<string>; maxDifficulty: number; preferIsolation: boolean; n?: number }): string[] {
+  const k = known();
+  return args.all
+    .filter(e => (!args.muscle || e.primary[0] === args.muscle) && (!args.patterns || args.patterns.has(e.pattern)))
+    .filter(e => !AVOID_CATEGORIES.has(e.category) && !AVOID_PATTERNS.has(e.pattern) && e.difficulty <= args.maxDifficulty && canDo(e, args.have) && !args.exclude.has(e.id))
+    .sort((a, b) =>
+      Number(k.has(b.id)) - Number(k.has(a.id)) ||            // well-known lifts first (they are in our templates)
+      Number(b.frames > 0 || !!b.media) - Number(a.frames > 0 || !!a.media) || // then ones with a picture
+      Number((b.mechanic === "isolation") === args.preferIsolation) - Number((a.mechanic === "isolation") === args.preferIsolation) ||
+      a.fatigue - b.fatigue || a.name.en.localeCompare(b.name.en))
+    .slice(0, args.n ?? 3)
+    .map(e => e.id);
+}
+
+export function checkProgram(input: CheckInput): Finding[] {
+  const cfg = input.config ?? COACH_CONFIG;
+  const { program, profile, lookup } = input;
+  // Same landmarks as the weekly coach, season included, so the two never disagree about "too much".
+  const season = seasonFor(input.today, profile.region);
+  const mods: Modifiers = {
+    cfg, exp: cfg.experience[profile.experience], goalMods: cfg.goal[profile.goal], phaseMods: cfg.phase[profile.phase],
+    seasonMrv: season?.mrvMult ?? 1, perfTolerance: 1, experience: profile.experience, goal: profile.goal, phase: profile.phase,
+  };
+  const sessions = sessionsInWeek(program);
+  if (!sessions.length) return [];
+  const planned = plannedMuscleSets(program, lookup, cfg);
+  const pain = painfulMuscles(input.workouts, lookup, input.today);
+  const inProgram = new Set(program.sessions.flatMap(s => s.exercises.map(e => e.exerciseId)));
+  const maxDifficulty = profile.experience === "beginner" ? 1 : profile.experience === "intermediate" ? 2 : 3;
+  const out: Finding[] = [];
+
+  // Where to add: the session with the fewest minutes so far, counting what earlier suggestions add, so several
+  // suggestions spread over the week instead of piling onto one day.
+  const minutes = new Map(sessions.map(x => [x.s.id, estimateMinutes(x.s)]));
+  const pickSession = (sets: number) => {
+    const at = [...sessions].sort((a, b) => minutes.get(a.s.id)! - minutes.get(b.s.id)!)[0];
+    // Sets per session: a session that runs twice a week needs half as many to add the same weekly sets.
+    const perSession = Math.max(2, Math.ceil(sets / at.times));
+    minutes.set(at.s.id, minutes.get(at.s.id)! + perSession * 2.5);
+    return { at: at.s, perSession };
+  };
+
+  for (const muscle of CHECK_MUSCLES) {
+    const band = bandFor(muscle, mods);
+    const sets = Math.round((planned.get(muscle) ?? 0) * 10) / 10;
+    const focus = input.focus.includes(muscle);
+    const target = focus ? band.mavLow : band.mev;
+    if (sets > band.mrv) {
+      // Trim the exercise that trains it most.
+      const slots = sessions.flatMap(x => x.s.exercises.map(e => ({ s: x.s, times: x.times, e }))).filter(x => lookup(x.e.exerciseId)?.primary[0] === muscle).sort((a, b) => b.e.sets * b.times - a.e.sets * a.times);
+      const top = slots[0];
+      if (top) {
+        const cut = Math.min(Math.ceil((sets - band.mrv) / top.times), top.e.sets - 2);
+        if (cut > 0) out.push({ id: `over:${muscle}`, kind: "over", muscle, sets, mrv: band.mrv, sessionId: top.s.id, slotId: top.e.id, exerciseId: top.e.exerciseId, newSets: top.e.sets - cut });
+      }
+      continue;
+    }
+    const missing = Math.ceil(target - sets);
+    if (missing < 2) continue; // within a set of the target: not worth a change
+    if (pain.has(muscle)) { out.push({ id: `pain:${muscle}`, kind: "pain", muscle, sets, target }); continue; }
+    const { at, perSession } = pickSession(Math.min(4, Math.max(2, missing)));
+    const candidates = candidatesFor({ muscle, all: input.all, have: input.have, exclude: inProgram, maxDifficulty, preferIsolation: estimateMinutes(at) > 60 });
+    if (candidates.length) out.push({ id: `under:${muscle}`, kind: "under", muscle, sets, target, focus, sessionId: at.id, addSets: Math.min(4, perSession), candidates });
+  }
+
+  // Pushing vs pulling (shoulder health and posture): pulling should at least come close.
+  const items = sessions.flatMap(x => x.s.exercises.map(e => ({ ex: lookup(e.exerciseId), sets: e.sets * x.times })));
+  const push = items.filter(i => i.ex && PUSH.has(i.ex.pattern)).reduce((n, i) => n + i.sets, 0);
+  const pull = items.filter(i => i.ex && PULL.has(i.ex.pattern)).reduce((n, i) => n + i.sets, 0);
+  const backAlready = out.some(f => f.kind === "under" && (f.muscle === "lats" || f.muscle === "middle-back"));
+  if (!backAlready && push - pull >= 4 && push > pull * 1.5 && !pain.has("middle-back") && !pain.has("lats")) {
+    const { at, perSession } = pickSession(Math.min(4, Math.max(2, Math.ceil((push - pull) / 2))));
+    const candidates = candidatesFor({ patterns: PULL, all: input.all, have: input.have, exclude: inProgram, maxDifficulty, preferIsolation: false });
+    if (candidates.length) out.push({ id: "balance", kind: "balance", push, pull, sessionId: at.id, addSets: Math.min(4, perSession), candidates });
+  }
+
+  // One muscle crowded into one session, and very long sessions.
+  for (const { s } of sessions) {
+    const per = weightedSets(s.exercises.map(e => ({ exercise: lookup(e.exerciseId), sets: e.sets })), cfg.secondaryWeight);
+    for (const [muscle, n] of per) if (CHECK_MUSCLES.includes(muscle) && n > cfg.volume.sessionCap) out.push({ id: `crowded:${s.id}:${muscle}`, kind: "crowded", muscle, sessionId: s.id, sets: Math.round(n * 10) / 10, cap: cfg.volume.sessionCap });
+    const minutes = estimateMinutes(s);
+    if (minutes > LONG_SESSION_MIN) out.push({ id: `long:${s.id}`, kind: "long", sessionId: s.id, minutes });
+  }
+
+  const dismissed = input.dismissed ?? {};
+  return out.filter(f => !dismissed[f.id] || daysBetween(dismissed[f.id], input.today) >= DISMISS_DAYS);
+}

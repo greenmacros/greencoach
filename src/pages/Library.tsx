@@ -10,6 +10,7 @@ import { EQUIPMENT, MUSCLES, PATTERNS, type CustomExerciseRecord, type Exercise 
 import type { LibraryApi } from "../library/useLibrary";
 import TextInput from "../components/TextInput";
 import Icon from "../components/Icon";
+import type { Muscle } from "../library/types";
 
 const ROW = 76;
 
@@ -19,15 +20,17 @@ interface Props {
   onPick?: (ex: Exercise) => void;
   /** Height of the scrolling list. */
   listHeight?: string;
+  /** Start filtered to these muscles (e.g. "see all options" for one muscle). */
+  initialMuscles?: Muscle[];
 }
 
 const toggle = <T,>(arr: T[], v: T) => (arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v]);
 
-export default function Library({ lib, onPick, listHeight = "calc(100dvh - 22rem)" }: Props) {
+export default function Library({ lib, onPick, listHeight = "calc(100dvh - 22rem)", initialMuscles }: Props) {
   const { t, settings, profile } = useApp();
   const have = useMemo(() => myEquipment(profile), [profile]);
   const lang = settings.lang;
-  const [f, setF] = useState<Filters>(emptyFilters);
+  const [f, setF] = useState<Filters>(() => ({ ...emptyFilters, muscles: initialMuscles ?? [] }));
   const [open, setOpen] = useState<Exercise | null>(null);
   const [creating, setCreating] = useState(false);
   const [showFilters, setShowFilters] = useState(false);

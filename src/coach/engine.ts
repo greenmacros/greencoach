@@ -38,6 +38,8 @@ export function planNextWeek(input: CoachInput): CoachPlan {
     experience: profile.experience, goal: profile.goal, phase: profile.phase,
   };
 
+  // Focus muscles may keep climbing to the top of their growth range (as when the goal is muscle); the rest follow the goal.
+  const focusMods: Modifiers = { ...mods, goalMods: { ...mods.goalMods, volumeFocus: 1 } };
   const notes: CoachNote[] = [];
   const meso = mesoPosition(program, targetWeekStart);
   const basisMeso = mesoPosition(program, basisWeek);
@@ -92,7 +94,8 @@ export function planNextWeek(input: CoachInput): CoachPlan {
   const trainedMuscles = [...planned.keys()].filter(m => (planned.get(m) ?? 0) > 0).sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b));
   const muscleRows: MuscleSuggestion[] = [];
   for (const muscle of trainedMuscles) {
-    const band = bandFor(muscle, mods);
+    const mm = profile.focus?.includes(muscle) ? focusMods : mods; // focus muscles climb to the top of their range
+    const band = bandFor(muscle, mm);
     const last = planned.get(muscle) ?? 0;
     const hasDirect = slots.some(a => a.mult > 0 && a.exercise.primary.includes(muscle));
     let wanted = last;
@@ -104,19 +107,19 @@ export function planNextWeek(input: CoachInput): CoachPlan {
     else if (mode === "welcome-back") { wanted = last; reason = P("why.vol.welcome", { muscle }); }
     else if (mode === "first") {
       // No history: respect the program the user chose. Raise muscles below the starting volume, trim only clear excess.
-      const start = startVolume(band, undefined, mods);
+      const start = startVolume(band, undefined, mm);
       if (last < start) { wanted = start; reason = P("why.vol.first", { muscle, n: start }); }
       else if (last > band.mavHigh) { wanted = band.mavHigh; reason = P("why.vol.firstCap", { muscle, n: band.mavHigh }); }
       else { wanted = last; reason = P("why.vol.firstKeep", { muscle, n: last }); }
     }
-    else if (newMeso) { wanted = startVolume(band, peak.get(muscle), mods); reason = P("why.vol.start", { muscle, n: wanted }); }
+    else if (newMeso) { wanted = startVolume(band, peak.get(muscle), mm); reason = P("why.vol.start", { muscle, n: wanted }); }
     else {
       const fb = muscleFeedback(allDone, input.soreness, muscle, basisWeek, lookup);
       const d = nextMuscleTarget(muscle, band, {
         last, actual: actualMuscleSets(allDone, basisWeek, lookup, cfg).get(muscle) ?? 0, soreness: fb.soreness, pump: fb.pump, volumeFb: fb.volume, joint: fb.joint,
         trend: muscleTrend(perfWorkouts, muscle, lookup, addDays(basisWeek, -7)), adherence: adh, doneSessions: doneN, plannedSessions: plannedN,
         rejectedRecently: rejectedRecently("muscle", muscle, "sets"), poorSleep,
-      }, mods);
+      }, mm);
       wanted = d.target; reason = d.reason; extra.push(...d.extra);
     }
 

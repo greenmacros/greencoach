@@ -9,6 +9,7 @@ import type { LibraryApi } from "../library/useLibrary";
 import type { ProgramApi } from "../program/useProgram";
 import type { Trend } from "../coach/types";
 import Icon from "../components/Icon";
+import ProgramCheck from "../components/ProgramCheck";
 
 const COLOR: Record<Trend, string> = { up: "var(--accent)", down: "var(--danger)", same: "var(--muted)" };
 const NOTE_ICON = { info: "info", warn: "warn", good: "ok" } as const;
@@ -64,6 +65,8 @@ export default function Coach({ prog, lib, finished, initialTarget }: { prog: Pr
         </ul>
       )}
       {plan.deload.type === "early" && <p className="muted text-sm">{t("coach.applyDeload")}</p>}
+
+      <ProgramCheck prog={prog} lib={lib} finished={finished} />
 
       {plan.drops.length > 0 && (
         <div className="grid gap-2">
