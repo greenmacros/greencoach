@@ -24,6 +24,20 @@ test("log a session, see next week's plan with reasons, accept it, and the next 
   await page.getByRole("button", { name: "Finish", exact: true }).click();
   await page.getByRole("button", { name: "Save workout" }).click();
 
+  // On Monday next week's plan is only a preview: decisions would change this week's remaining workouts
+  await page.getByRole("button", { name: "Coach", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "This week", level: 1 })).toBeVisible();
+  await page.getByRole("group", { name: "Next week" }).getByRole("button", { name: "Next week" }).click();
+  await expect(page.getByText(/^Preview\. Next week's plan opens on Saturday/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Accept all" })).toHaveCount(0);
+
+  // From Saturday it opens
+  await expect.poll(() => page.evaluate(() => new Promise<boolean>(res => {
+    const r = indexedDB.open("greencoach");
+    r.onsuccess = () => { const q = r.result.transaction("workouts").objectStore("workouts").getAll(); q.onsuccess = () => { res(q.result.some((w: { finishedAt: string | null }) => !!w.finishedAt)); r.result.close(); }; };
+  }))).toBe(true);
+  await page.clock.setFixedTime(new Date(2026, 9, 10, 10, 0, 0));
+  await page.reload();
   await page.getByRole("button", { name: "Coach", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Next week", level: 1 })).toBeVisible();
   const card = page.getByRole("article", { name: "Barbell Squat" });
@@ -147,8 +161,7 @@ test("your own edits after the coach's update win: no coach mark, and the Coach 
   await page.getByRole("button", { name: "Back", exact: true }).click();
 
   // the Coach tab (this week) flags it and asks before replacing it
-  await page.getByRole("button", { name: "Coach", exact: true }).click();
-  await page.getByRole("button", { name: "This week" }).click();
+  await page.getByRole("button", { name: "Coach", exact: true }).click(); // a week in progress opens on This week
   const card = page.getByRole("article", { name: "Barbell Squat" });
   await expect(card.getByText("You changed this exercise after this plan was made.")).toBeVisible();
 });

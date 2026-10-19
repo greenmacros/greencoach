@@ -38,6 +38,7 @@ export const COACH_MESSAGES = {
   "pc.add": { en: "Add {name} · {sets} sets", ja: "{name}を追加・{sets}セット" },
   "pc.more": { en: "See all options", ja: "ほかの種目を見る" },
   "pc.pickTitle": { en: "Choose an exercise", ja: "種目を選ぶ" },
+  "coach.nextPreview": { en: "Preview. Next week's plan opens on Saturday, or as soon as you have done this week's sessions. Accepting it earlier would change the workouts you still have this week.", ja: "プレビューです。来週のプランは土曜日、または今週のセッションを終えた時点で確定できます。それより前に確定すると、今週残りのワークアウトが変わってしまいます。" },
   "coach.sameExercise": { en: "That is the current exercise, so nothing changed.", ja: "現在の種目なので、何も変更していません。" },
   "pc.saveFailed": { en: "That change could not be saved. Please try again.", ja: "変更を保存できませんでした。もう一度お試しください。" },
   "pc.overNote": { en: "{m}: about {n} sets a week counting the exercises that also train it, more than the ~{mrv} you can recover from. Trim a set or two from the exercises that work it most.", ja: "{m}：補助的に使う種目も含めると週に約{n}セットで、回復できる約{mrv}セットを超えています。この部位を多く使う種目から1〜2セット減らしましょう。" },

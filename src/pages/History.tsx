@@ -11,13 +11,14 @@ import { computeAllPRs } from "../workout/pr";
 import type { WorkoutLog } from "../workout/types";
 import type { useHistory } from "../workout/useHistory";
 import Icon from "../components/Icon";
+import type { AnyRecord } from "../db/types";
 
 export default function History({ lib, hist, onEdit }: { lib: LibraryApi; hist: ReturnType<typeof useHistory>; onEdit?: (w: WorkoutLog) => void }) {
   const { t, settings } = useApp();
   const lang = settings.lang, unit = settings.weightUnit;
   const [open, setOpen] = useState<WorkoutLog | null>(null);
   const [exHist, setExHist] = useState<Exercise | null>(null);
-  const [undo, setUndo] = useState<WorkoutLog | null>(null);
+  const [undo, setUndo] = useState<{ w: WorkoutLog; feedback: AnyRecord[] } | null>(null);
 
   const prs = useMemo(() => computeAllPRs(hist.finished), [hist.finished]);
   const groups = useMemo(() => {
@@ -26,10 +27,14 @@ export default function History({ lib, hist, onEdit }: { lib: LibraryApi; hist: 
     return [...m.entries()].sort((a, b) => b[0].localeCompare(a[0]));
   }, [hist.finished]);
 
+  // Deleting a workout also deletes the feedback given in it (soreness answers), so nothing is left behind;
+  // Undo puts both back.
   const remove = async (w: WorkoutLog) => {
+    const feedback = (await repo.list("feedback")).filter(r => r.workoutId === w.id);
     await repo.remove("workouts", w.id);
+    for (const r of feedback) await repo.remove("feedback", r.id);
     setOpen(null);
-    setUndo(w);
+    setUndo({ w, feedback });
     await hist.reload();
   };
 
@@ -58,7 +63,7 @@ export default function History({ lib, hist, onEdit }: { lib: LibraryApi; hist: 
       {undo && (
         <div role="status" className="card flex items-center gap-3 fixed left-4 right-4 mx-auto max-w-xl" style={{ bottom: "calc(6.5rem + env(safe-area-inset-bottom))", zIndex: 40 }}>
           <span className="flex-1">{t("hist.deleted")}</span>
-          <button className="btn" onClick={async () => { await repo.put("workouts", undo as never); setUndo(null); await hist.reload(); }}>{t("hist.undo")}</button>
+          <button className="btn" onClick={async () => { await repo.put("workouts", undo.w as never); for (const r of undo.feedback) await repo.put("feedback", r as never); setUndo(null); await hist.reload(); }}>{t("hist.undo")}</button>
           <button className="btn" aria-label={t("lib.close")} onClick={() => setUndo(null)}><Icon name="close" /></button>
         </div>
       )}

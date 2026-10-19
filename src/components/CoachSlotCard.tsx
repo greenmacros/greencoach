@@ -38,9 +38,11 @@ interface Props {
   onEdit: (v: Partial<SlotValues>) => void;
   /** The user changed this exercise after the plan was made: accepting asks first. */
   edited?: boolean;
+  /** Preview only (next week before it opens): no decisions. */
+  readOnly?: boolean;
 }
 
-export default function CoachSlotCard({ s, swap, decided, lib, onAccept, onReject, onEdit, edited }: Props) {
+export default function CoachSlotCard({ s, swap, decided, lib, onAccept, onReject, onEdit, edited, readOnly }: Props) {
   const [confirmReplace, setConfirmReplace] = useState(false);
   const [browsing, setBrowsing] = useState(false);
   const [sameNote, setSameNote] = useState(false);
@@ -104,7 +106,7 @@ export default function CoachSlotCard({ s, swap, decided, lib, onAccept, onRejec
       )}
       {shown.restSec !== s.last.restSec && <p className="muted text-xs">{t("coach.rest")}: {formatRest(s.last.restSec)} → {formatRest(shown.restSec)}</p>}
 
-      {swap && !decided && (
+      {swap && !decided && !readOnly && (
         <div className="grid gap-1">
           <p className="text-sm font-semibold">{explain(swap.reason, t)}</p>
           <div className="flex flex-wrap gap-1.5">
@@ -139,7 +141,7 @@ export default function CoachSlotCard({ s, swap, decided, lib, onAccept, onRejec
         </div>
       ) : same && !decided ? (
         <p className="muted text-sm">{t("coach.noChange")}</p>
-      ) : (
+      ) : readOnly ? null : (
         <div className="flex flex-wrap gap-2">
           {decided?.status !== "accepted" && decided?.status !== "edited" && <button className="btn btn-primary" onClick={() => (edited ? setConfirmReplace(true) : onAccept())}>{t("coach.accept")}</button>}
           <button className="btn" onClick={() => { setDraft(decided?.status === "edited" ? decided.final : p); setEditing(true); }}>{t("coach.edit")}</button>

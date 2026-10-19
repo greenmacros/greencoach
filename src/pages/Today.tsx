@@ -28,12 +28,19 @@ export default function Today({ prog, lib, hist, selected, setSelected, onStart,
   const { t, settings } = useApp();
   const lang = settings.lang;
   const [moving, setMoving] = useState(false);
-  // Remembered for the day, so switching tabs before starting does not lose the answer.
+  // Remembered for the whole training day (also after the app is closed); it is saved with the workout when it starts.
+  // Only today's answer is kept: older days' keys are removed.
   const sleepKey = `gc_sleep_${prog.todayKey}`;
   const [sleep, setSleepState] = useState<Sleep | undefined>(() => {
-    try { const v = Number(sessionStorage.getItem(sleepKey)); return v === 1 || v === 2 || v === 3 ? v : undefined; } catch { return undefined; }
+    try { const v = Number(localStorage.getItem(sleepKey)); return v === 1 || v === 2 || v === 3 ? v : undefined; } catch { return undefined; }
   });
-  const setSleep = (v: Sleep) => { setSleepState(v); try { sessionStorage.setItem(sleepKey, String(v)); } catch { /* storage unavailable */ } };
+  const setSleep = (v: Sleep) => {
+    setSleepState(v);
+    try {
+      for (const k of Object.keys(localStorage)) if (k.startsWith("gc_sleep_") && k !== sleepKey) localStorage.removeItem(k);
+      localStorage.setItem(sleepKey, String(v));
+    } catch { /* storage unavailable */ }
+  };
   const [undo, setUndo] = useState<{ before: DayOverride[]; touched: string[]; text: string } | null>(null);
 
   const dayKey = selected ?? prog.todayKey;

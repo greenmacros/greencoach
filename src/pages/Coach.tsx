@@ -65,6 +65,7 @@ export default function Coach({ prog, lib, finished, initialTarget }: { prog: Pr
         </ul>
       )}
       {plan.deload.type === "early" && <p className="muted text-sm">{t("coach.applyDeload")}</p>}
+      {coach.nextLocked && <p role="status" className="card text-sm" style={{ borderColor: "var(--accent)" }}>{t("coach.nextPreview")}</p>}
 
       <ProgramCheck prog={prog} lib={lib} finished={finished} planWeekStart={plan.targetWeekStart} />
 
@@ -89,10 +90,10 @@ export default function Coach({ prog, lib, finished, initialTarget }: { prog: Pr
         </div>
       )}
 
-      <div className="flex gap-2">
+      {!coach.nextLocked && <div className="flex gap-2">
         <button className="btn btn-primary flex-1" disabled={pending === 0} onClick={() => void coach.acceptAll().then(n => setKeptMsg(n > 0 ? t("coach.keptEdited", { n }) : ""))}>{t("coach.acceptAll")}</button>
         {coach.decided.size > 0 && <button className="btn" aria-label={t("coach.reset")} title={t("coach.reset")} onClick={() => void coach.reset()}><Icon name="undo" /></button>}
-      </div>
+      </div>}
       {keptMsg && <p role="status" className="text-sm">{keptMsg}</p>}
 
       <div className="grid gap-2">
@@ -120,7 +121,7 @@ export default function Coach({ prog, lib, finished, initialTarget }: { prog: Pr
           <div key={sid} className="grid gap-2">
             <h3 className="font-semibold muted">{sessionName(sid)}</h3>
             {slots.map(s => (
-              <CoachSlotCard key={s.slotId} s={s} lib={lib} decided={coach.decided.get(s.slotId)} edited={coach.edited.has(s.slotId)} swap={plan.swaps.find(x => x.slotId === s.slotId)}
+              <CoachSlotCard key={s.slotId} s={s} lib={lib} decided={coach.decided.get(s.slotId)} edited={coach.edited.has(s.slotId)} readOnly={coach.nextLocked} swap={plan.swaps.find(x => x.slotId === s.slotId)}
                 onAccept={swapTo => void coach.accept(s.slotId, swapTo)} onReject={() => void coach.reject(s.slotId)} onEdit={v => void coach.edit(s.slotId, v)} />
             ))}
           </div>

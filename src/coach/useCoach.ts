@@ -3,7 +3,7 @@ import { useApp } from "../app-context";
 import { repo } from "../db";
 import { SCHEMA_VERSION } from "../db/types";
 import type { LibraryApi } from "../library/useLibrary";
-import { addDays, weekStart } from "../program/schedule";
+import { addDays, daysBetween, weekDays, weekStart } from "../program/schedule";
 import type { Program } from "../program/types";
 import type { ProgramApi } from "../program/useProgram";
 import type { SorenessRecord } from "../feedback/soreness";
@@ -20,6 +20,8 @@ export interface CoachApi {
   /** Stored decisions for the planned week, by slot id. */
   decided: Map<string, CoachSuggestionRecord>;
   target: "next" | "this";
+  /** Next week is shown as a preview only (decisions open from Saturday or when this week's sessions are done). */
+  nextLocked: boolean;
   setTarget: (t: "next" | "this") => void;
   accept: (slotId: string, swapTo?: string) => Promise<void>;
   edit: (slotId: string, values: Partial<SlotValues>) => Promise<void>;
@@ -45,7 +47,13 @@ export function useCoach(prog: ProgramApi, lib: LibraryApi, finished: readonly W
   const today = prog.todayKey;
   // A brand-new user plans the week they are in; everyone else plans the coming week unless they ask for this one.
   const [chosen, setChosen] = useState<"next" | "this" | null>(initialTarget ?? null);
-  const target: "next" | "this" = chosen ?? (finished.length === 0 ? "this" : "next");
+  // Next week's plan writes into the program right away, so it opens only once this week is effectively over
+  // (from Saturday, or when no planned session is left this week). Before that it is a preview: accepting it would
+  // change the workouts still to come this week.
+  const remainingThisWeek = weekDays(today).filter(d => d >= today).map(d => prog.resolve(d)).filter(r => r && r.sessionId && r.status === "planned").length;
+  const nextOpen = daysBetween(weekStart(today), today) >= 5 || remainingThisWeek === 0;
+  const target: "next" | "this" = chosen ?? (finished.length > 0 && nextOpen ? "next" : "this");
+  const nextLocked = target === "next" && !nextOpen;
   const targetWeekStart = target === "this" ? weekStart(today) : addDays(weekStart(today), 7);
 
   const reload = useCallback(async () => {
@@ -113,14 +121,15 @@ export function useCoach(prog: ProgramApi, lib: LibraryApi, finished: readonly W
   // Decisions run one at a time, so a quick second tap never reads the program before the first one saved it.
   const queue = useRef<Promise<void>>(Promise.resolve());
   const decide = useCallback((decisions: Map<string, Decision>) => {
+    if (nextLocked) return Promise.resolve(); // preview only (see nextOpen)
     const run = queue.current.then(() => decideNow(decisions));
     queue.current = run.catch(() => {});
     return run;
-  }, [decideNow]);
+  }, [decideNow, nextLocked]);
 
   const slotSet = (slotId: string, d: Decision) => decide(new Map([[slotId, d]]));
   return {
-    ready, plan, decided, target, setTarget: setChosen,
+    ready, plan, decided, target, setTarget: setChosen, nextLocked,
     accept: (slotId, swapTo) => slotSet(slotId, { status: "accepted", swapTo }),
     edit: (slotId, values) => slotSet(slotId, { status: "edited", values }),
     reject: slotId => slotSet(slotId, { status: "rejected" }),

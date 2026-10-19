@@ -96,4 +96,16 @@ describe("program check", () => {
     if (bal?.kind !== "balance") throw new Error("expected a push/pull suggestion");
     for (const id of bal.candidates) expect(["lats", "middle-back"]).toContain(all.find(e => e.id === id)!.primary[0]);
   });
+
+  it("in a split, new work goes to the day that already trains that muscle (back work on the back day)", () => {
+    const split = program([
+      session("Legs", [{ ex: SQUAT, sets: 3, lo: 5, hi: 8 }, { ex: LEGCURL, sets: 3, lo: 10, hi: 15 }]),
+      session("Back", [{ ex: "Wide-Grip_Lat_Pulldown", sets: 3, lo: 10, hi: 12 }, { ex: ROW, sets: 3, lo: 10, hi: 12 }]),
+      session("Chest", [{ ex: BENCH, sets: 3, lo: 6, hi: 10 }, { ex: INCLINE, sets: 3, lo: 8, hi: 12 }]),
+    ], [0, null, 1, null, 2, null, null]);
+    const f = checkProgram(base({ program: split }));
+    const lats = f.find(x => x.id === "under:lats");
+    if (lats?.kind !== "under") throw new Error("expected lats");
+    expect(split.sessions.find(x => x.id === lats.sessionId)!.name).toBe("Back");
+  });
 });

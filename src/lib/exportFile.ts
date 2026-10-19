@@ -4,6 +4,8 @@ import type { Settings } from "../db/types";
 
 /** Builds the backup, triggers a file download, and records the export time. */
 export async function exportData(update: (p: Partial<Settings>) => Promise<void>): Promise<void> {
+  // Record the export first, so the file itself says when it was made (restoring it does not bring back "never").
+  await update({ lastBackupAt: new Date().toISOString() });
   const backup = await repo.exportAll();
   const blob = new Blob([JSON.stringify(backup)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -14,5 +16,4 @@ export async function exportData(update: (p: Partial<Settings>) => Promise<void>
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  await update({ lastBackupAt: backup.exportedAt });
 }

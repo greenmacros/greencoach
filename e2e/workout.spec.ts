@@ -266,9 +266,11 @@ test("answer the sleep question before starting; the workout keeps it", async ({
   await page.getByRole("button", { name: "Workout", exact: true }).click();
   const q = page.getByRole("group", { name: "How did you sleep last night?" });
   await q.getByRole("button", { name: "Well" }).click();
-  // switching tabs keeps the answer
+  // switching tabs, and even closing and reopening the app, keeps the answer
   await page.getByRole("button", { name: "Coach", exact: true }).click();
   await page.getByRole("button", { name: "Workout", exact: true }).click();
+  await page.waitForTimeout(300);
+  await page.reload();
   await expect(page.getByRole("group", { name: "How did you sleep last night?" }).getByRole("button", { name: "Well" })).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "Start workout" }).click();
   await expect(page.getByRole("button", { name: "Sleep: Well · change" })).toBeVisible();

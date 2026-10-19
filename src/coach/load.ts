@@ -101,7 +101,14 @@ export function planSlot(slot: ExerciseSlot, ex: Exercise, newSets: number, sess
   const lastW = last.weightKg;
   const inc = lastW !== null ? increment(ex, lastW, ctx.unit, cfg) : increment(ex, 0, ctx.unit, cfg);
   const dir = isAssisted(ex) ? -1 : 1;
-  const wRound = (w: number) => (inc ? roundTo(w, inc) : w);
+  // Round on the user's own grid: steps of half an increment counted from the weight they actually use (24 kg + 2.5
+  // gives 26.5, never 26.25). Without a current weight, the plain grid from zero.
+  const wRound = (w: number) => {
+    if (!inc) return w;
+    if (lastW === null) return roundTo(w, inc);
+    const half = inc / 2;
+    return Math.max(0, Math.round((lastW + Math.round((w - lastW) / half) * half) * 1000) / 1000);
+  };
   const fmt = (kg: number) => Math.round(toDisplayWeight(kg, ctx.unit) * 100) / 100;
   const daysSince = daysBetween(last.dayKey, ctx.today);
 

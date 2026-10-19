@@ -303,6 +303,13 @@ describe("load progression", () => {
     expect(slotFor(out, DB).next.weightKg).toBe(21);
   });
 
+  it("suggested weights stay loadable from the weight actually used (24 kg + 2.5 = 26.5, not 26.25)", () => {
+    const GB = "Barbell_Glute_Bridge";
+    const prog = program([session("A", [{ ex: GB, sets: 3, lo: 12, hi: 15 }])], [0, null, null, null, null, null, null]);
+    const s = slotFor(run(all, { program: prog, workouts: [workout(week(2), [{ ex: GB, sets: x3(24, 15, 2), target: { repMin: 12, repMax: 15, rir: 2 } }])] }), GB);
+    expect(s.next.weightKg).toBe(26.5);
+  });
+
   it("bodyweight lifts at the top of the range suggest adding load", () => {
     const prog = program([session("Pull", [{ ex: PULLUP, sets: 3, lo: 6, hi: 10 }])], [0, null, null, null, null, null, null]);
     const p = run(all, { program: prog, workouts: [workout(week(2), [{ ex: PULLUP, sets: x3(null, 12, 2), target: { repMin: 6, repMax: 10, rir: 2 } }])] });
