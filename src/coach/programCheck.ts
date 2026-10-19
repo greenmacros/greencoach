@@ -26,7 +26,7 @@ const LONG_SESSION_MIN = 90;
 export const DISMISS_DAYS = 28;
 
 export type Finding =
-  | { id: string; kind: "under"; muscle: Muscle; sets: number; target: number; focus: boolean; sessionId: string; addSets: number; candidates: string[] }
+  | { id: string; kind: "under"; muscle: Muscle; sets: number; target: number; focus: boolean; sessionId: string; addSets: number; candidates: string[]; /** The day that trains it already has as much as one session can use. */ fullSessionId?: string }
   | { id: string; kind: "pain"; muscle: Muscle; sets: number; target: number }
   | { id: string; kind: "over"; muscle: Muscle; sets: number; mrv: number; sessionId: string; slotId: string; exerciseId: string; newSets: number }
   /** Over MRV but no single exercise can be trimmed (the volume comes from exercises that train it secondarily). */
@@ -94,6 +94,16 @@ export function candidatesFor(args: { muscle?: Muscle; muscles?: readonly Muscle
     .map(e => e.id);
 }
 
+const UPPER = new Set<Muscle>(["chest", "shoulders", "triceps", "biceps", "forearms", "lats", "middle-back", "traps", "neck"]);
+const LOWER = new Set<Muscle>(["quadriceps", "hamstrings", "glutes", "calves", "adductors", "abductors", "lower-back"]);
+const halfOf = (m: Muscle) => (UPPER.has(m) ? "upper" : LOWER.has(m) ? "lower" : null);
+/** Which half of the body a session mostly trains (by weighted sets). */
+function mainHalf(sets: ReadonlyMap<Muscle, number>): "upper" | "lower" | null {
+  let up = 0, low = 0;
+  for (const [m, n] of sets) { if (UPPER.has(m)) up += n; else if (LOWER.has(m)) low += n; }
+  return up > low ? "upper" : low > up ? "lower" : null;
+}
+
 export function checkProgram(input: CheckInput): Finding[] {
   const cfg = input.config ?? COACH_CONFIG;
   const { program, profile, lookup } = input;
@@ -124,14 +134,20 @@ export function checkProgram(input: CheckInput): Finding[] {
   const perMuscle = new Map(sessions.map(x => [x.s.id, weightedSets(x.s.exercises.map(e => ({ exercise: lookup(e.exerciseId), sets: e.sets })), cfg.secondaryWeight)]));
   /**
    * Where a muscle's new exercise goes: first a session that already trains it (a split keeps its logic: back work on
-   * the back day), as long as it stays under ~75 minutes and the per-session cap; otherwise the lightest session.
+   * the back day), as long as it stays under ~75 minutes and the per-session cap. When that day is full, another day
+   * of the same half of the body (chest on the back & shoulders day, not on leg day); only then the lightest session.
+   * `full` names the day that trains it but has no room, so the suggestion can say why it goes elsewhere.
    */
-  const bestFor = (muscles: readonly Muscle[], sets: number) => {
+  const bestFor = (muscles: readonly Muscle[], sets: number): { at: { s: SessionTemplate; times: number }; full?: string } => {
     const byMinutes = [...sessions].sort((a, b) => minutes.get(a.s.id)! - minutes.get(b.s.id)!);
-    const fits = byMinutes.filter(x => muscles.some(m => (perMuscle.get(x.s.id)!.get(m) ?? 0) >= 1)
-      && minutes.get(x.s.id)! + sets * 2.5 <= 75
-      && muscles.every(m => (perMuscle.get(x.s.id)!.get(m) ?? 0) + sets <= cfg.volume.sessionCap));
-    return fits[0] ?? byMinutes[0];
+    const trains = (x: { s: SessionTemplate }) => muscles.some(m => (perMuscle.get(x.s.id)!.get(m) ?? 0) >= 1);
+    const roomy = (x: { s: SessionTemplate }) => minutes.get(x.s.id)! + sets * 2.5 <= 75;
+    const fits = byMinutes.filter(x => trains(x) && roomy(x) && muscles.every(m => (perMuscle.get(x.s.id)!.get(m) ?? 0) + sets <= cfg.volume.sessionCap));
+    if (fits[0]) return { at: fits[0] };
+    const full = byMinutes.find(trains)?.s.id;
+    const half = halfOf(muscles[0]);
+    const same = half ? byMinutes.filter(x => !trains(x) && roomy(x) && mainHalf(perMuscle.get(x.s.id)!) === half) : [];
+    return { at: same[0] ?? byMinutes[0], full };
   };
   /** Reserve the lightest session for a suggestion. Sets per session: a session that runs twice a week needs half. */
   const reserve = (at: { s: SessionTemplate; times: number }, sets: number) => {
@@ -158,12 +174,12 @@ export function checkProgram(input: CheckInput): Finding[] {
     if (missing < 2) continue; // within a set of the target: not worth a change
     if (pain.has(muscle)) { push2({ id: `pain:${muscle}`, kind: "pain", muscle, sets, target }); continue; }
     if (!live(`under:${muscle}`)) continue;
-    const at = bestFor([muscle], Math.min(4, Math.max(2, missing)));
+    const { at, full } = bestFor([muscle], Math.min(4, Math.max(2, missing)));
     // Into a session that is already long, quicker isolation work ranks first.
     const candidates = candidatesFor({ muscle, all: input.all, have: input.have, exclude: inProgram, maxDifficulty, preferIsolation: minutes.get(at.s.id)! > 60 });
     if (!candidates.length) continue;
     const perSession = reserve(at, Math.min(4, Math.max(2, missing)));
-    out.push({ id: `under:${muscle}`, kind: "under", muscle, sets, target, focus, sessionId: at.s.id, addSets: perSession, candidates });
+    out.push({ id: `under:${muscle}`, kind: "under", muscle, sets, target, focus, sessionId: at.s.id, addSets: perSession, candidates, ...(full && full !== at.s.id ? { fullSessionId: full } : {}) });
   }
 
   // Pushing vs pulling (shoulder health and posture): pulling should at least come close.
@@ -176,7 +192,7 @@ export function checkProgram(input: CheckInput): Finding[] {
     const candidates = candidatesFor({ patterns: PULL, muscles: ["lats", "middle-back"], all: input.all, have: input.have, exclude: inProgram, maxDifficulty, preferIsolation: false });
     if (candidates.length) {
       const want = Math.min(4, Math.max(2, Math.ceil((push - pull) / 2)));
-      const at = bestFor(["lats", "middle-back"], want);
+      const { at } = bestFor(["lats", "middle-back"], want);
       const perSession = reserve(at, want);
       out.push({ id: "balance", kind: "balance", push, pull, sessionId: at.s.id, addSets: perSession, candidates });
     }

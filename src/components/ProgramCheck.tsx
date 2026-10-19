@@ -78,6 +78,7 @@ export default function ProgramCheck({ prog, lib, finished, planWeekStart }: { p
       case "under": return (
         <>
           <p>{t(f.focus ? "pc.underFocus" : "pc.under", { m: muscle(f.muscle), n: f.sets, target: f.target, session: sessionName(f.sessionId) })}</p>
+          {f.fullSessionId && <p className="muted">{t("pc.spread", { full: sessionName(f.fullSessionId), m: muscle(f.muscle), session: sessionName(f.sessionId) })}</p>}
           {candidates(f.candidates, f.sessionId, f.addSets, f.muscle)}
         </>
       );

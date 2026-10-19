@@ -28,6 +28,7 @@ export const COACH_MESSAGES = {
   "pc.hint": { en: "Looks at your whole week: muscles with too little or too much, pushing vs pulling, crowded or long sessions. Nothing changes until you choose.", ja: "週全体を見て、少なすぎる・多すぎる部位、押す種目と引く種目のバランス、1回に詰め込みすぎ・長すぎるセッションを確認します。選ぶまで何も変わりません。" },
   "pc.focus": { en: "Focus muscles (up to {n})", ja: "重点部位（{n}つまで）" },
   "pc.under": { en: "{m}: about {n} sets a week, below the {target} that grow it. Add an exercise to {session}:", ja: "{m}：週に約{n}セットで、成長に必要な{target}セットを下回っています。{session}に種目を追加：" },
+  "pc.spread": { en: "{full} already has about as much {m} as one session can use well, so the extra sets go on {session}. Spreading a muscle over two days also helps it grow.", ja: "{full}にはすでに1回で効果的にこなせる量の{m}が入っているため、追加分は{session}に入れます。2日に分けることも成長に役立ちます。" },
   "pc.underFocus": { en: "{m} is a focus muscle: about {n} sets a week, below the {target} where focus muscles grow best. Add an exercise to {session}:", ja: "{m}は重点部位です。週に約{n}セットで、よく伸びる{target}セットを下回っています。{session}に種目を追加：" },
   "pc.pain": { en: "{m} is below the {target} sets that grow it ({n} now), but you reported joint pain there recently, so nothing is added. If the pain keeps coming back, ask a professional.", ja: "{m}は成長に必要な{target}セット（現在{n}）を下回っていますが、最近関節の痛みがあったため追加しません。痛みが続く場合は専門家に相談してください。" },
   "pc.over": { en: "{m}: about {n} sets a week, more than the ~{mrv} you can recover from. Extra sets past that add fatigue, not growth.", ja: "{m}：週に約{n}セットで、回復できる約{mrv}セットを超えています。それ以上は成長より疲労が増えます。" },

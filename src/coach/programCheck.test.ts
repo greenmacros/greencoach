@@ -108,4 +108,16 @@ describe("program check", () => {
     if (lats?.kind !== "under") throw new Error("expected lats");
     expect(split.sessions.find(x => x.id === lats.sessionId)!.name).toBe("Back");
   });
+  it("when the day that trains a muscle is full, extra sets go on another upper-body day, not leg day", () => {
+    const split = program([
+      session("Quads", [{ ex: SQUAT, sets: 3, lo: 5, hi: 8 }, { ex: "Leg_Extensions", sets: 2, lo: 10, hi: 15 }]),
+      session("Chest", [{ ex: BENCH, sets: 5, lo: 6, hi: 10 }, { ex: INCLINE, sets: 5, lo: 8, hi: 12 }]),
+      session("Back", [{ ex: "Wide-Grip_Lat_Pulldown", sets: 3, lo: 10, hi: 12 }, { ex: ROW, sets: 3, lo: 10, hi: 12 }, { ex: "Dumbbell_Shoulder_Press", sets: 3, lo: 8, hi: 12 }]),
+    ], [0, null, 1, null, 2, null, null]);
+    const f = checkProgram(base({ program: split, focus: ["chest"] }));
+    const chest = f.find(x => x.id === "under:chest");
+    if (chest?.kind !== "under") throw new Error("expected chest");
+    expect(split.sessions.find(x => x.id === chest.sessionId)!.name).toBe("Back");
+    expect(split.sessions.find(x => x.id === chest.fullSessionId)!.name).toBe("Chest");
+  });
 });
