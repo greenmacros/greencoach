@@ -21,8 +21,8 @@ export default function ExerciseMedia({ ex, size = 96, lazy = true }: { ex: Exer
   if (ex.frames > 0 && !failed)
     return (
       <div style={box} className="xfade" data-frames={ex.frames}>
-        <img src={frameUrl(ex.id, 0)} alt="" loading={lazy ? "lazy" : undefined} decoding="async" onError={() => setFailed(true)} />
-        {ex.frames > 1 && <img className="xfade-b" src={frameUrl(ex.id, 1)} alt="" loading={lazy ? "lazy" : undefined} decoding="async" onError={() => setFailed(true)} />}
+        <img src={frameUrl(ex.imageId ?? ex.id, 0)} alt="" loading={lazy ? "lazy" : undefined} decoding="async" onError={() => setFailed(true)} />
+        {ex.frames > 1 && <img className="xfade-b" src={frameUrl(ex.imageId ?? ex.id, 1)} alt="" loading={lazy ? "lazy" : undefined} decoding="async" onError={() => setFailed(true)} />}
       </div>
     );
 

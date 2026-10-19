@@ -40,6 +40,10 @@ export interface Exercise {
   joints: JointNote[];
   /** Number of bundled frames (0, 1 or 2): /ex/<id>-0.webp, -1.webp */
   frames: number;
+  /** Whose photos to show (another exercise of the same movement); default: its own. */
+  imageId?: string;
+  /** Duplicate entry kept for old programs and history; not offered in the library or suggestions. */
+  hidden?: boolean;
   media?: Media;
   custom?: boolean;
   /** Free-text notes (custom exercises). */
@@ -52,6 +56,8 @@ export interface Exercise {
 export interface IndexRow {
   id: string; n: string; j: string; p: Muscle[]; s: Muscle[]; e: EquipmentId[]; pat: Pattern;
   m: "c" | "i" | null; d: 1 | 2 | 3; f: 1 | 2 | 3 | 4 | 5; cat: string; img: number; jt: JointNote[];
+  /** Photos borrowed from another exercise (the same movement). */ im?: string;
+  /** A duplicate of another entry: hidden from browsing, still resolves by id. */ hid?: 1;
 }
 
 /** User-created exercise, stored in the `exercises` table. */

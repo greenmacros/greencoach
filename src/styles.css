@@ -50,6 +50,12 @@ body {
 .scale .n { font-weight: 700; font-size: 16px; line-height: 1.1; }
 .scale .l { font-size: 12px; line-height: 1.2; overflow-wrap: anywhere; }
 .scale button[aria-pressed="true"] { border: 2px solid var(--tone); background: color-mix(in srgb, var(--tone) 18%, var(--surface)); font-weight: 600; }
+/* A tappable "How to" row: bordered like a button, with a chevron that turns when open. */
+.disclosure > summary { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); font-weight: 700; cursor: pointer; list-style: none; }
+.disclosure > summary::-webkit-details-marker { display: none; }
+.disclosure > summary svg { color: var(--accent); transition: transform .15s; }
+.disclosure[open] > summary svg { transform: rotate(180deg); }
+.disclosure > summary:hover { border-color: var(--accent); }
 .chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: transparent; font-weight: 600; }
 .field { min-height: 44px; width: 100%; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; box-sizing: border-box; }
 textarea.field { padding: 10px 12px; min-height: 96px; }

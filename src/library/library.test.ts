@@ -43,9 +43,18 @@ describe("bundled library", () => {
 
   it("bundled image frames exist on disk", () => {
     const missing: string[] = [];
-    for (const r of index as { id: string; img: number }[])
-      for (let f = 0; f < r.img; f++) if (!existsSync(`public/ex/${r.id}-${f}.webp`)) missing.push(`${r.id}-${f}`);
+    for (const r of index as { id: string; img: number; im?: string }[])
+      for (let f = 0; f < r.img; f++) if (!existsSync(`public/ex/${r.im ?? r.id}-${f}.webp`)) missing.push(`${r.id}-${f}`);
     expect(missing).toEqual([]);
+  });
+
+  it("templates only use exercises that are offered in the library (no hidden duplicates)", async () => {
+    const all = await loadBundled();
+    const hidden = new Set(all.filter(e => e.hidden).map(e => e.id));
+    const { readFileSync } = await import("node:fs");
+    const ids = [...readFileSync("src/program/templates.ts", "utf8").matchAll(/[sn]\("([^"]+)"/g)].map(m => m[1]);
+    expect(ids.length).toBeGreaterThan(20);
+    expect(ids.filter(id => hidden.has(id) || !all.some(e => e.id === id))).toEqual([]);
   });
 
   it("covers every equipment filter and the Smith machine / bands / TRX requirements", async () => {

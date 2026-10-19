@@ -15,9 +15,11 @@ const fromRow = (r: IndexRow): Exercise => ({
   category: r.cat,
   joints: r.jt,
   frames: r.img,
+  ...(r.im ? { imageId: r.im } : {}),
+  ...(r.hid ? { hidden: true } : {}),
 });
 
-/** The bundled library (938 exercises). Loaded lazily so it stays out of the initial JS. */
+/** The bundled library (all entries, duplicates included; useLibrary hides the duplicates). Loaded lazily so it stays out of the initial JS. */
 export async function loadBundled(): Promise<Exercise[]> {
   if (!cache) {
     const rows = (await import("../data/library/index.json")).default as IndexRow[];

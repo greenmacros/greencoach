@@ -57,8 +57,10 @@ export function useLibrary(): LibraryApi {
   useEffect(() => { void loadBundled().then(setBundled); }, []);
   useEffect(() => { void reload(); }, [reload, dataVersion]);
 
-  const all = useMemo(() => [...(bundled ?? []), ...customs.map(customToExercise)], [bundled, customs]);
-  const map = useMemo(() => new Map(all.map(e => [e.id, e])), [all]);
+  // Duplicates are left out of browsing and suggestions but still resolve by id (old programs, history).
+  const everything = useMemo(() => [...(bundled ?? []), ...customs.map(customToExercise)], [bundled, customs]);
+  const all = useMemo(() => everything.filter(e => !e.hidden), [everything]);
+  const map = useMemo(() => new Map(everything.map(e => [e.id, e])), [everything]);
   const favorites = useMemo(() => new Set([...flags.filter(f => f.favorite).map(f => f.exerciseId), ...customs.filter(c => c.favorite).map(c => c.id)]), [flags, customs]);
   const recent = useMemo(() => new Map(flags.filter(f => f.lastUsedAt).map(f => [f.exerciseId, f.lastUsedAt!])), [flags]);
 

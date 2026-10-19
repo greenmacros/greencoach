@@ -53,9 +53,9 @@ const BRO: SessionSpec[] = [
 
 const HOME: SessionSpec[] = [
   { name: { en: "Home Upper A", ja: "自宅 上半身 A" }, slots: [s("Dumbbell_Floor_Press", 3, 8, 12), s("One-Arm_Dumbbell_Row", 3, 8, 12), s(DBP, 3, 8, 12), s("x-band-face-pull", 3, 12, 20), s("Dumbbell_Bicep_Curl", 3, 10, 15), s("Standing_Dumbbell_Triceps_Extension", 3, 10, 15)] },
-  { name: { en: "Home Lower A", ja: "自宅 下半身 A" }, slots: [s("Goblet_Squat", 3, 8, 12), s("x-dumbbell-romanian-deadlift", 3, 8, 12), s("Split_Squat_with_Dumbbells", 2, 8, 12), s("Single_Leg_Glute_Bridge", 3, 10, 15), s("Standing_Dumbbell_Calf_Raise", 4, 12, 20), s("Plank", 3, 30, 60, 60)] },
+  { name: { en: "Home Lower A", ja: "自宅 下半身 A" }, slots: [s("Goblet_Squat", 3, 8, 12), s("x-dumbbell-romanian-deadlift", 3, 8, 12), s("x-bulgarian-split-squat", 2, 8, 12), s("Single_Leg_Glute_Bridge", 3, 10, 15), s("Standing_Dumbbell_Calf_Raise", 4, 12, 20), s("Plank", 3, 30, 60, 60)] },
   { name: { en: "Home Upper B", ja: "自宅 上半身 B" }, slots: [s("Pushups", 3, 8, 20), s("x-band-row", 3, 10, 15), s("Lateral_Raise_-_With_Bands", 3, 12, 20), s("Reverse_Flyes", 3, 12, 20), s("x-band-curl", 3, 10, 15), s("x-band-pushdown", 3, 10, 15)] },
-  { name: { en: "Home Lower B", ja: "自宅 下半身 B" }, slots: [s("Dumbbell_Squat", 3, 10, 15), s("Dumbbell_Lunges", 3, 8, 12), s("x-band-squat", 2, 12, 20), s("x-bodyweight-glute-bridge", 3, 12, 20), s("Standing_Dumbbell_Calf_Raise", 4, 12, 20), s("Crunches", 3, 10, 20)] },
+  { name: { en: "Home Lower B", ja: "自宅 下半身 B" }, slots: [s("Dumbbell_Squat", 3, 10, 15), s("Dumbbell_Lunges", 3, 8, 12), s("Squats_-_With_Bands", 2, 12, 20), s("x-bodyweight-glute-bridge", 3, 12, 20), s("Standing_Dumbbell_Calf_Raise", 4, 12, 20), s("Crunches", 3, 10, 20)] },
 ];
 
 // A user-contributed 4-day plan: one focus per day, warm-up and optional finishers kept as notes.
@@ -87,7 +87,7 @@ const EXAMPLE_4: SessionSpec[] = [
     n("Seated_Cable_Rows", 3, 10, 12, "Neutral grip.", "ニュートラルグリップ。"),
     opt(n("Smith_Machine_Stiff-Legged_Deadlift", 2, 8, 10, "Optional: only if energy is OK.", "任意：余力があるときだけ。", 150)),
     n("x-machine-lateral-raise", 3, 12, 15, "Pause at the top.", "トップで一瞬止める。"),
-    n("x-pec-dec-rear-delt", 2, 12, 15, "Machine or cable. Keep the shoulders down.", "マシンかケーブル。肩を下げたまま。"),
+    n("Reverse_Machine_Flyes", 2, 12, 15, "Machine or cable. Keep the shoulders down.", "マシンかケーブル。肩を下げたまま。"),
     opt(n("Dumbbell_Shoulder_Press", 2, 8, 10, "Optional: if recovered.", "任意：回復していれば。")),
   ] },
 ];

@@ -7,6 +7,7 @@ const src = read("./source/free-exercise-db.json");
 const { EXTRAS } = await import("./source/extras.mjs");
 const extras = EXTRAS;
 const { FIXES } = await import("./source/instruction-fixes.mjs");
+const { OVERRIDES, TWINS, IMAGE_FROM } = await import("./source/library-fixes.mjs");
 
 const tsv = p => new Map(readFileSync(new URL(p, import.meta.url), "utf8").split("\n").filter(Boolean).map(l => l.split("\t")));
 const jaNames = tsv("./i18n/names-ja.tsv");
@@ -115,11 +116,12 @@ function add(rec, steps, jaSteps) {
 const instrJa = {};
 
 for (const e of src) {
-  const p = e.primaryMuscles.map(muscle);
-  const s = (e.secondaryMuscles ?? []).map(muscle);
-  const eq = equipment(e);
-  const mech = e.mechanic === "isolation" ? "i" : e.mechanic === "compound" ? "c" : null;
-  const pat = pattern(e, p[0], eq);
+  const o = OVERRIDES[e.id] ?? {};
+  const p = o.p ?? e.primaryMuscles.map(muscle);
+  const s = (o.s ?? (e.secondaryMuscles ?? []).map(muscle)).filter(m => !p.includes(m));
+  const eq = o.e ?? equipment(e);
+  const mech = o.m ?? (e.mechanic === "isolation" ? "i" : e.mechanic === "compound" ? "c" : null);
+  const pat = o.pat ?? pattern(e, p[0], eq);
   const ja = jaNames.get(e.name);
   if (!ja) missingJa.push(e.name);
   add(
@@ -133,6 +135,14 @@ for (const e of src) {
   );
 }
 for (const x of extras) add({ img: 0, jt: [], cat: "strength", ...x.meta }, x.en, x.ja);
+
+// Twins: hide the second, share photos both ways; then borrowed photos.
+const byId = new Map(out.map(r => [r.id, r]));
+const unknown = [...Object.keys(OVERRIDES), ...TWINS.flat(), ...Object.entries(IMAGE_FROM).flat()].filter(id => !byId.has(id));
+if (unknown.length) { console.error("Unknown ids in library-fixes:", unknown); process.exit(1); }
+const share = (to, from) => { const a = byId.get(to), b = byId.get(from); if (!a.img && b.img) { a.img = b.img; a.im = b.im ?? b.id; } };
+for (const [keep, hide] of TWINS) { byId.get(hide).hid = 1; share(keep, hide); share(hide, keep); }
+for (const [to, from] of Object.entries(IMAGE_FROM)) share(to, from);
 
 if (missingJa.length) { console.error("Missing JA names:", missingJa); process.exit(1); }
 

@@ -44,9 +44,9 @@ export default function ExercisePreview({ ex, onClose }: { ex: Exercise; onClose
           </div>
         )}
         {list.length > 0 && (
-          <details>
-            <summary className="font-bold cursor-pointer" style={{ minHeight: 44, display: "flex", alignItems: "center" }}>{t("lib.how")}</summary>
-            <ol className="grid gap-2 pl-5 list-decimal">{list.map((s, i) => <li key={i}>{s}</li>)}</ol>
+          <details className="disclosure">
+            <summary><span className="flex-1">{t("lib.how")}</span><Icon name="down" /></summary>
+            <ol className="grid gap-2 pl-5 pt-2 list-decimal">{list.map((s, i) => <li key={i}>{s}</li>)}</ol>
           </details>
         )}
       </div>
