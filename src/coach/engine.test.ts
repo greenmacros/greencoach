@@ -303,6 +303,23 @@ describe("load progression", () => {
     expect(slotFor(out, DB).next.weightKg).toBe(21);
   });
 
+  it("with the user's dumbbell steps, only dumbbells that exist are suggested", () => {
+    const DB = "Dumbbell_Bench_Press";
+    const prog = program([session("A", [{ ex: DB, sets: 3, lo: 8, hi: 12 }])], [0, null, null, null, null, null, null]);
+    const at = (w: number, reps: number, rir = 2) => [workout(week(2), [{ ex: DB, sets: x3(w, reps, rir), target: { repMin: 8, repMax: 12, rir: 2 } }])];
+    const next = (w: number, reps: number, p: Parameters<typeof profile>[0], rir = 2) => slotFor(run(all, { program: prog, workouts: at(w, reps, rir), profile: profile(p) }), DB).next.weightKg;
+    // 2 kg steps: 24 -> 26, never 25 or 26.5; backing off from 24 lands on 22, not 21.5
+    expect(next(24, 12, { dumbbellSteps: 2 })).toBe(26);
+    expect(next(24, 6, { dumbbellSteps: 2 }, 0) ?? 0).toSatisfy((w: number) => w % 2 === 0 && w < 24);
+    // mixed rack (1 kg to 10 kg, then 2 kg): 8 -> 9 (never 8.5); 10 -> 12
+    expect(next(8, 12, { dumbbellSteps: "mixed" })).toBe(9);
+    expect(next(10, 12, { dumbbellSteps: "mixed" })).toBe(12);
+    // 2.5 kg steps with a heaviest of 25: 22.5 -> 25, then reps go up
+    expect(next(22.5, 12, { dumbbellSteps: 2.5, dumbbellMaxKg: 25 })).toBe(25);
+    const top = slotFor(run(all, { program: prog, workouts: at(25, 12), profile: profile({ dumbbellSteps: 2.5, dumbbellMaxKg: 25 }) }), DB);
+    expect(top.reason.key).toBe("why.load.dbReps");
+  });
+
   it("suggested weights stay loadable from the weight actually used (24 kg + 2.5 = 26.5, not 26.25)", () => {
     const GB = "Barbell_Glute_Bridge";
     const prog = program([session("A", [{ ex: GB, sets: 3, lo: 12, hi: 15 }])], [0, null, null, null, null, null, null]);

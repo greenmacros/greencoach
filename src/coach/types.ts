@@ -22,6 +22,8 @@ export interface CoachProfile {
   focus?: readonly Muscle[];
   /** Heaviest dumbbell the user owns (kg); suggestions never go above it. */
   dumbbellMaxKg?: number | null;
+  /** How the user's dumbbells step; suggestions only use dumbbells that exist. */
+  dumbbellSteps?: import("../library/dumbbells").DumbbellSteps;
 }
 
 export interface BodyWeightPoint { dayKey: string; kg: number }

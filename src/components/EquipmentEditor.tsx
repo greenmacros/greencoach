@@ -2,11 +2,12 @@ import { useApp } from "../app-context";
 import type { Equipment, Profile } from "../db/types";
 import { PICKABLE, PRESETS, myEquipment, setupFor } from "../library/equipment";
 import type { EquipmentId } from "../library/types";
+import { DUMBBELL_STEP_CHOICES, type DumbbellSteps } from "../library/dumbbells";
 import { fmtWeight, fromDisplayWeight } from "../lib/format";
 import Icon from "./Icon";
 import NumInput from "./NumInput";
 
-type Value = Pick<Profile, "equipment" | "myEquipment" | "dumbbellMaxKg">;
+type Value = Pick<Profile, "equipment" | "myEquipment" | "dumbbellMaxKg" | "dumbbellSteps">;
 
 /** "My equipment": quick presets, then tick exactly what you have; dumbbells get a heaviest-weight field. */
 export default function EquipmentEditor({ value, onChange }: { value: Value; onChange: (v: Value) => void }) {
@@ -44,6 +45,20 @@ export default function EquipmentEditor({ value, onChange }: { value: Value; onC
           </div>
           <span className="muted text-xs">{t("equip.dbMaxHint")}</span>
         </label>
+      )}
+      {have.has("dumbbell") && (
+        <div className="grid gap-1 text-sm">
+          <span className="muted" id="db-steps">{t("equip.dbSteps")}</span>
+          <div className="flex flex-wrap gap-2" role="group" aria-labelledby="db-steps">
+            {([null, ...DUMBBELL_STEP_CHOICES[unit]] as (DumbbellSteps | null)[]).map(s => (
+              <button key={String(s)} type="button" className="chip" aria-pressed={(value.dumbbellSteps ?? null) === s}
+                onClick={() => onChange({ ...value, dumbbellSteps: s ?? undefined })}>
+                {s === null ? t("equip.dbStepsAny") : s === "mixed" ? t("equip.dbStepsMixed") : t("equip.dbStepsEvery", { n: fmtWeight(s, unit), u: unit })}
+              </button>
+            ))}
+          </div>
+          <span className="muted text-xs">{t("equip.dbStepsHint")}</span>
+        </div>
       )}
       <p className="muted text-xs">{t("equip.always")}</p>
     </div>

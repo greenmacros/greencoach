@@ -61,6 +61,8 @@ export interface Profile extends BaseRecord {
   myEquipment?: import("../library/types").EquipmentId[];
   /** Heaviest dumbbell the user has, in kg (per dumbbell). The coach never suggests more. */
   dumbbellMaxKg?: number | null;
+  /** How the user's dumbbells step ("mixed" = 1 kg to 10 kg then 2 kg; or a step in kg). */
+  dumbbellSteps?: import("../library/dumbbells").DumbbellSteps;
   /** Muscles to prioritize (up to 3), used by the weekly coach and the program check. */
   focusMuscles?: import("../library/types").Muscle[];
 }

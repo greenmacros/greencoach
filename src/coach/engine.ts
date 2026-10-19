@@ -16,6 +16,7 @@ import type { SkipReason, WorkoutLog } from "../workout/types";
 import { wasSkipped } from "../workout/model";
 import { nutritionNotes, summarize as summarizeNutrition } from "../nutrition/nutrition";
 import { bandFor, nextMuscleTarget, startVolume, type Modifiers } from "./volume";
+import { dumbbellRack } from "../library/dumbbells";
 
 const P = (key: string, params?: Reason["params"]): Reason => ({ key, params });
 const trend = (a: number | null, b: number | null): Trend => (a === null || b === null || Math.abs(a - b) < 1e-9 ? "same" : b > a ? "up" : "down");
@@ -155,6 +156,7 @@ export function planNextWeek(input: CoachInput): CoachPlan {
     const sets = a.mult === 0 && mode !== "deload" ? a.slot.sets : a.sets;
     const plan = planSlot(a.slot, a.exercise, sets, sessions, {
       m: mods, mode, targetRir, unit: profile.weightUnit, restAddSec: season?.restAddSec ?? 0, today, rejectedLoad: rejectedRecently("slot", a.slot.id, "load"), bands: input.bands, dumbbellMaxKg: profile.dumbbellMaxKg ?? null,
+      dumbbellRack: profile.dumbbellSteps != null ? dumbbellRack(profile.dumbbellSteps, profile.dumbbellMaxKg) : undefined,
     });
     const lastSession = sessions[sessions.length - 1];
     const lastW = lastSession?.weightKg ?? a.slot.weightKg ?? null;

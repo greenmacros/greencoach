@@ -8,6 +8,7 @@ import { clamp, type SessionPerf } from "./stats";
 import type { PlanMode, Reason, SlotState } from "./types";
 import type { Modifiers } from "./volume";
 import { isBandsOnly, nextBandRange, stepUp } from "../bands/bands";
+import { nearestOnRack, stepOnRack } from "../library/dumbbells";
 
 const P = (key: string, params?: Reason["params"]): Reason => ({ key, params });
 const LOWER = ["quadriceps", "hamstrings", "glutes", "lower-back", "calves"];
@@ -50,6 +51,8 @@ export interface LoadCtx {
   bands?: readonly { id: string; name: string; kg?: number | null }[];
   /** Heaviest dumbbell the user owns (kg). */
   dumbbellMaxKg?: number | null;
+  /** Every dumbbell weight the user has (kg), lightest first. */
+  dumbbellRack?: readonly number[];
 }
 
 /** A dumbbell exercise whose load is the dumbbells (not a barbell or machine that also lists them). */
@@ -103,28 +106,35 @@ export function planSlot(slot: ExerciseSlot, ex: Exercise, newSets: number, sess
   const dir = isAssisted(ex) ? -1 : 1;
   // Round on the user's own grid: steps of half an increment counted from the weight they actually use (24 kg + 2.5
   // gives 26.5, never 26.25). Without a current weight, the plain grid from zero.
+  const rack = isDumbbellLoad(ex) && ctx.dumbbellRack?.length ? ctx.dumbbellRack : null;
   const wRound = (w: number) => {
+    if (rack) return nearestOnRack(rack, w); // dumbbells: only weights that exist
     if (!inc) return w;
     if (lastW === null) return roundTo(w, inc);
     const half = inc / 2;
     return Math.max(0, Math.round((lastW + Math.round((w - lastW) / half) * half) * 1000) / 1000);
+  };
+  // A lighter weight: on a dumbbell rack, at least one dumbbell down (rounding must not cancel the drop).
+  const wDown = (from: number, factor: number) => {
+    const w = wRound(from * factor);
+    return rack && w >= from - 1e-6 ? stepOnRack(rack, from, -1) : w;
   };
   const fmt = (kg: number) => Math.round(toDisplayWeight(kg, ctx.unit) * 100) / 100;
   const daysSince = daysBetween(last.dayKey, ctx.today);
 
   // --- Mode overrides ------------------------------------------------------
   if (mode === "deload") {
-    const w = lastW === null ? null : wRound(lastW * cfg.deload.loadFactor);
+    const w = lastW === null ? null : wDown(lastW, cfg.deload.loadFactor);
     return mk(w, cfg.deload.rir, last.avgReps, P("why.load.deload", { pct: Math.round((1 - cfg.deload.loadFactor) * 100), rir: cfg.deload.rir }));
   }
   if (mode === "ramp") {
-    const w = lastW === null ? null : wRound(lastW * cfg.gap.rampLoadFactor);
+    const w = lastW === null ? null : wDown(lastW, cfg.gap.rampLoadFactor);
     return mk(w, cfg.gap.rampRir, range.min, P("why.load.ramp", { pct: Math.round((1 - cfg.gap.rampLoadFactor) * 100) }));
   }
   if (mode === "welcome-back" || daysSince > cfg.load.staleDays) {
     const g = cfg.gap;
     const f = g.loadFactorStart + (g.loadFactorEnd - g.loadFactorStart) * clamp((Math.max(daysSince, g.welcomeBackDays) - g.welcomeBackDays) / (g.rampDays - g.welcomeBackDays), 0, 1);
-    const w = lastW === null ? null : wRound(lastW * f);
+    const w = lastW === null ? null : wDown(lastW, f);
     return mk(w, ctx.targetRir, last.avgReps, P(mode === "welcome-back" ? "why.load.welcome" : "why.load.stale", { pct: Math.round((1 - f) * 100), days: daysSince }));
   }
 
@@ -153,14 +163,14 @@ export function planSlot(slot: ExerciseSlot, ex: Exercise, newSets: number, sess
   };
 
   // 1. Joint pain overrides everything.
-  if (joint >= cfg.load.jointDrop) return mk(keep === null ? null : wRound(keep * cfg.load.jointDropFactor), ctx.targetRir, range.min, P("why.load.drop.joint", { pct: Math.round((1 - cfg.load.jointDropFactor) * 100) }), P("why.swap.joint"));
+  if (joint >= cfg.load.jointDrop) return mk(keep === null ? null : wDown(keep, cfg.load.jointDropFactor), ctx.targetRir, range.min, P("why.load.drop.joint", { pct: Math.round((1 - cfg.load.jointDropFactor) * 100) }), P("why.swap.joint"));
   if (joint >= cfg.load.jointHold) return mk(keep, ctx.targetRir, last.avgReps, P("why.load.hold.joint"), P("why.swap.joint"));
 
   // 2. Much harder than planned: back off.
   const hardNote = shortfall >= tolRir + (cutMode ? 1 : 0) || (diff !== undefined && diff >= cfg.load.difficultyHard && shortfall >= 1 && !cutMode);
   if (hardNote && keep !== null) {
     const pct = shortfall >= tolRir + 1 ? cfg.load.backoffMax : cfg.load.backoffMin;
-    return withPlateau(mk(wRound(keep * (1 - pct)), ctx.targetRir, range.min, P("why.load.back.rir", { rir: Math.round((avgRir ?? 0) * 10) / 10, target: lastT, pct: Math.round(pct * 1000) / 10 })));
+    return withPlateau(mk(wDown(keep, 1 - pct), ctx.targetRir, range.min, P("why.load.back.rir", { rir: Math.round((avgRir ?? 0) * 10) / 10, target: lastT, pct: Math.round(pct * 1000) / 10 })));
   }
 
   // 3. Below the rep range.
@@ -170,7 +180,7 @@ export function planSlot(slot: ExerciseSlot, ex: Exercise, newSets: number, sess
     const dropAllowed = severe && (!cutMode || gap >= belowGap * 2);
     if (dropAllowed && keep !== null) {
       const pct = cfg.load.backoffMin;
-      return withPlateau(mk(wRound(keep * (1 - pct)), ctx.targetRir, range.min, P("why.load.back.below", { lo: range.min, pct: Math.round(pct * 1000) / 10 })));
+      return withPlateau(mk(wDown(keep, 1 - pct), ctx.targetRir, range.min, P("why.load.back.below", { lo: range.min, pct: Math.round(pct * 1000) / 10 })));
     }
     return withPlateau(mk(keep, ctx.targetRir, range.min, cutMode ? P("why.load.hold.cut") : P("why.load.hold.below", { lo: range.min })));
   }
@@ -206,14 +216,18 @@ export function planSlot(slot: ExerciseSlot, ex: Exercise, newSets: number, sess
       return { ...mk(null, Math.min(ctx.targetRir, 1), range.max, P("why.load.bandOutgrown", { n: range.max }), P("why.swap.bandOutgrown")), extra: [...extra, ...kgHint] };
     }
     if (keep === null) return withPlateau(mk(inc, ctx.targetRir, range.min, P("why.load.bw", { inc: fmt(inc), u: ctx.unit })));
-    if (dbMax !== null && keep + inc * steps > dbMax + 1e-6) {
+    // With the user's rack: the next dumbbell(s) up; none heavier means they are on their heaviest.
+    const onRack = rack ? stepOnRack(rack, keep, dir * steps) : null;
+    const topped = dbMax !== null && (onRack !== null ? dir > 0 && onRack <= keep + 1e-6 : keep + inc * steps > dbMax + 1e-6);
+    if (dbMax !== null && topped) {
+      const top = dbMax;
       // Never above the heaviest dumbbell the user has: go up to it, then add reps (to 30 at most, near failure).
-      if (keep < dbMax - 1e-6) return withPlateau(mk(dbMax, ctx.targetRir, range.min, P("why.load.dbCap", { w: fmt(dbMax), u: ctx.unit })));
+      if (keep < top - 1e-6) return withPlateau(mk(top, ctx.targetRir, range.min, P("why.load.dbCap", { w: fmt(top), u: ctx.unit })));
       const wider = nextBandRange(range.max);
-      if (wider) return { next: { ...base, repMin: wider.min, repMax: wider.max, rir: Math.min(ctx.targetRir, 1), weightKg: keep, targetReps: wider.min, bands: lastBands }, reason: P("why.load.dbReps", { w: fmt(dbMax), u: ctx.unit, lo: wider.min, hi: wider.max }), extra };
-      return { ...mk(keep, Math.min(ctx.targetRir, 1), range.max, P("why.load.dbOutgrown", { w: fmt(dbMax), u: ctx.unit }), P("why.swap.dbOutgrown")), extra };
+      if (wider) return { next: { ...base, repMin: wider.min, repMax: wider.max, rir: Math.min(ctx.targetRir, 1), weightKg: keep, targetReps: wider.min, bands: lastBands }, reason: P("why.load.dbReps", { w: fmt(top), u: ctx.unit, lo: wider.min, hi: wider.max }), extra };
+      return { ...mk(keep, Math.min(ctx.targetRir, 1), range.max, P("why.load.dbOutgrown", { w: fmt(top), u: ctx.unit }), P("why.swap.dbOutgrown")), extra };
     }
-    const w = wRound(keep + dir * inc * steps);
+    const w = onRack ?? wRound(keep + dir * inc * steps);
     const key = bigSurplus ? "why.load.up2" : "why.load.up";
     return withPlateau(mk(w, ctx.targetRir, range.min, P(key, { reps: Math.round(last.avgReps), rir: avgRir === null ? "–" : Math.round(avgRir * 10) / 10, inc: fmt(Math.abs(w - keep)), u: ctx.unit })));
   }

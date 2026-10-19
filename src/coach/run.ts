@@ -59,7 +59,7 @@ export function makePlan(a: PlanArgs): CoachPlan | null {
   return planNextWeek({
     today: a.today, targetWeekStart: a.targetWeekStart, program: a.program, workouts: a.finished, soreness: a.soreness,
     bodyWeights: a.bodyWeights, rejections: a.rejections, bands: bandsOf(a.settings), keptSlots: a.keptSlots, nutrition: a.settings.nutrition ?? null,
-    profile: { experience: a.profile.experience, goal: a.profile.goal, phase: a.profile.phase, equipment: a.profile.equipment, region: a.settings.region, weightUnit: a.settings.weightUnit, dumbbellMaxKg: a.profile.dumbbellMaxKg ?? null, focus: a.profile.focusMuscles ?? [] },
+    profile: { experience: a.profile.experience, goal: a.profile.goal, phase: a.profile.phase, equipment: a.profile.equipment, region: a.settings.region, weightUnit: a.settings.weightUnit, dumbbellMaxKg: a.profile.dumbbellMaxKg ?? null, dumbbellSteps: a.profile.dumbbellSteps, focus: a.profile.focusMuscles ?? [] },
     lookup: a.lib.byId, substitutes: ex => substitutes(a.lib.all, ex, avail),
   });
 }
