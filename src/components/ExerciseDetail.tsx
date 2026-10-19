@@ -6,6 +6,7 @@ import { myEquipment } from "../library/equipment";
 import type { LibraryApi } from "../library/useLibrary";
 import type { Exercise } from "../library/types";
 import ExerciseMedia from "./ExerciseMedia";
+import ExercisePreview from "./ExercisePreview";
 import ExerciseHistory from "./ExerciseHistory";
 import { useHistory } from "../workout/useHistory";
 import Icon from "./Icon";
@@ -26,6 +27,7 @@ export default function ExerciseDetail({ ex, lib, onClose, onOpen, onPick, onDel
   const [steps, setSteps] = useState<Steps | null>(null);
   const [showSwap, setShowSwap] = useState(false);
   const [showHist, setShowHist] = useState(false);
+  const [zoom, setZoom] = useState(false);
   const hist = useHistory();
 
   useEffect(() => {
@@ -34,10 +36,11 @@ export default function ExerciseDetail({ ex, lib, onClose, onOpen, onPick, onDel
   }, [ex.id, ex.custom]);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    // While the large view is open, Escape closes only that.
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !zoom && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, zoom]);
 
   const fav = lib.favorites.has(ex.id);
   const list = steps ? (lang === "ja" && steps.ja ? steps.ja : steps.en) : [];
@@ -50,7 +53,9 @@ export default function ExerciseDetail({ ex, lib, onClose, onOpen, onPick, onDel
     <div className="sheet" onClick={onClose}>
       <div className="sheet-body" role="dialog" aria-modal="true" aria-label={ex.name[lang]} onClick={e => e.stopPropagation()}>
         <div className="flex gap-3 items-start">
-          <ExerciseMedia ex={ex} size={112} lazy={false} />
+          <button className="flex-none" style={{ background: "none", border: 0, padding: 0, cursor: "zoom-in" }} aria-label={t("wk.enlarge")} onClick={() => setZoom(true)}>
+            <ExerciseMedia ex={ex} size={112} lazy={false} />
+          </button>
           <div className="flex-1 min-w-0">
             <h2 className="text-xl font-bold leading-tight">{ex.name[lang]}</h2>
             {other !== ex.name[lang] && <p className="muted text-sm">{other}</p>}
@@ -113,6 +118,7 @@ export default function ExerciseDetail({ ex, lib, onClose, onOpen, onPick, onDel
       </div>
     </div>
     {showHist && <ExerciseHistory ex={ex} workouts={hist.finished} onClose={() => setShowHist(false)} />}
+    {zoom && <ExercisePreview ex={ex} onClose={() => setZoom(false)} />}
     </>
   );
 }

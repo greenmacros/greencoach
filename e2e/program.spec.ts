@@ -120,6 +120,11 @@ test("the plan lists each session's exercises; tapping one opens its card (how-t
   const card = page.getByRole("dialog", { name: "Barbell Squat" });
   await expect(card).toBeVisible();
   await expect(card.getByText("How to")).toBeVisible();
+  // Tapping the photo shows it large, like during a workout; Escape closes only the large view.
+  await card.getByRole("button", { name: "Show larger with target muscles" }).click();
+  await expect(page.getByRole("dialog", { name: "Barbell Squat" })).toHaveCount(2);
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: "Barbell Squat" })).toHaveCount(1);
   await card.getByRole("button", { name: "Close" }).click();
   await expect(card).toBeHidden();
   // No sideways scrolling with the list in place (long names are cut, not widening the page).
