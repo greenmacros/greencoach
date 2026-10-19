@@ -5,11 +5,13 @@
 :root {
   --bg: #f6f7f9; --surface: #ffffff; --text: #111827; --muted: #4b5563;
   --border: #d9dde3; --accent: #047857; --accent-fg: #ffffff; --danger: #b91c1c;
+  --tone-good: #047857; --tone-mild: #a16207; --tone-warn: #c2410c; --tone-bad: #b91c1c; --tone-none: #6b7280;
   color-scheme: light;
 }
 :root[data-theme="dark"] {
   --bg: #0b0f14; --surface: #151b23; --text: #e8edf2; --muted: #9aa7b4;
   --border: #263040; --accent: #34d399; --accent-fg: #06251a; --danger: #f87171;
+  --tone-good: #34d399; --tone-mild: #facc15; --tone-warn: #fb923c; --tone-bad: #f87171; --tone-none: #6b7280;
   color-scheme: dark;
 }
 
@@ -41,6 +43,13 @@ body {
 @media (prefers-reduced-motion: reduce) { .xfade .xfade-b { display: none; } }
 
 .chip { display: inline-flex; align-items: center; justify-content: center; gap: 4px; box-sizing: border-box; min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; font-size: 14px; cursor: pointer; white-space: nowrap; }
+/* Feedback scales: one coloured step per answer; the words and numbers carry the meaning, colour only helps. */
+.scale { display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; gap: 6px; }
+.scale button { display: grid; align-content: start; justify-items: center; gap: 2px; min-height: 64px; padding: 0 4px 6px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; cursor: pointer; overflow: hidden; text-align: center; }
+.scale button::before { content: ""; justify-self: stretch; height: 6px; margin: 0 -4px 4px; background: var(--tone); }
+.scale .n { font-weight: 700; font-size: 16px; line-height: 1.1; }
+.scale .l { font-size: 12px; line-height: 1.2; overflow-wrap: anywhere; }
+.scale button[aria-pressed="true"] { border: 2px solid var(--tone); background: color-mix(in srgb, var(--tone) 18%, var(--surface)); font-weight: 600; }
 .chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: transparent; font-weight: 600; }
 .field { min-height: 44px; width: 100%; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; box-sizing: border-box; }
 textarea.field { padding: 10px 12px; min-height: 96px; }

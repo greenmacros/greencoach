@@ -33,21 +33,21 @@ export default function FeedbackSheet({ log, name, muscle, soreness, onSave, onC
         </div>
 
         <ChipRow<0 | 1 | 2 | 3> label={t("fb.jointQ", { name })} value={d.jointPain} onChange={v => setD({ ...d, jointPain: v })}
-          options={range(0, 3).map(n => ({ value: n as 0 | 1 | 2 | 3, label: t(`fb.joint.${n}`) }))} />
+          options={range(0, 3).map(n => ({ value: n as 0 | 1 | 2 | 3, label: t(`fb.joint.${n}`) }))} tones={["good", "mild", "warn", "bad"]} />
 
         {soreness && (
           <ChipRow<SorenessLevel> label={t("fb.soreQ", { muscle: m })} value={sore} onChange={setSore}
-            options={([0, 1, 2, 3] as SorenessLevel[]).map(n => ({ value: n, label: t(`fb.sore.${n}`) }))} />
+            options={([0, 1, 2, 3] as SorenessLevel[]).map(n => ({ value: n, label: t(`fb.sore.${n}`) }))} tones={["mild", "good", "good", "bad"]} />
         )}
 
         <ChipRow<0 | 1 | 2 | 3> label={t("fb.pumpQ", { muscle: m })} value={d.pump} onChange={v => setD({ ...d, pump: v })}
-          options={range(0, 3).map(n => ({ value: n as 0 | 1 | 2 | 3, label: t(`fb.pump.${n}`) }))} />
+          options={range(0, 3).map(n => ({ value: n as 0 | 1 | 2 | 3, label: t(`fb.pump.${n}`) }))} tones={["none", "mild", "good", "good"]} />
 
         <ChipRow<1 | 2 | 3 | 4> label={t("fb.volumeQ", { muscle: m })} value={d.volume} onChange={v => setD({ ...d, volume: v })}
-          options={range(1, 4).map(n => ({ value: n as 1 | 2 | 3 | 4, label: t(`fb.vol.${n}`) }))} />
+          options={range(1, 4).map(n => ({ value: n as 1 | 2 | 3 | 4, label: t(`fb.vol.${n}`) }))} tones={["mild", "good", "warn", "bad"]} />
 
         <ChipRow<1 | 2 | 3 | 4 | 5> label={t("fb.difficulty")} value={d.difficulty} onChange={v => setD({ ...d, difficulty: v })}
-          options={range(1, 5).map(n => ({ value: n as 1 | 2 | 3 | 4 | 5, label: t(`fb.diff.${n}`) }))} />
+          options={range(1, 5).map(n => ({ value: n as 1 | 2 | 3 | 4 | 5, label: t(`fb.diff.${n}`) }))} tones={["warn", "mild", "good", "mild", "bad"]} />
 
         <div className="flex justify-end gap-2">
           <button className="btn" onClick={onCancel}>{t("data.cancel")}</button>

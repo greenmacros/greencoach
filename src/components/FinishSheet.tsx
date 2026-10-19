@@ -64,9 +64,9 @@ export default function FinishSheet({ workout, history, onFeel, lookup, onSave, 
               </div>
             )}
             <ChipRow<1 | 2 | 3 | 4 | 5> label={t("fb.feel")} value={workout.feel} onChange={v => onFeel({ feel: v })}
-              options={[1, 2, 3, 4, 5].map(n => ({ value: n as 1 | 2 | 3 | 4 | 5, label: t(`fb.feel.${n}`) }))} />
+              options={[1, 2, 3, 4, 5].map(n => ({ value: n as 1 | 2 | 3 | 4 | 5, label: t(`fb.feel.${n}`) }))} tones={["bad", "warn", "mild", "good", "good"]} />
             <ChipRow<1 | 2 | 3 | 4 | 5> label={t("fb.fatigue")} value={workout.sessionFatigue} onChange={v => onFeel({ sessionFatigue: v })}
-              options={[1, 2, 3, 4, 5].map(n => ({ value: n as 1 | 2 | 3 | 4 | 5, label: t(`fb.fatigue.${n}`) }))} />
+              options={[1, 2, 3, 4, 5].map(n => ({ value: n as 1 | 2 | 3 | 4 | 5, label: t(`fb.fatigue.${n}`) }))} tones={["good", "good", "mild", "warn", "bad"]} />
             <TextInput multiline className="field" placeholder={t("wk.sumNote")} aria-label={t("wk.sumNote")} value={workout.notes} onValue={onNotes} />
             {unfinished > 0 && <p className="muted text-sm">{t("wk.unfinishedNote", { n: unfinished })}</p>}
             <div className="flex gap-2">
