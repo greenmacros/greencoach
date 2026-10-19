@@ -132,6 +132,10 @@ export function checkProgram(input: CheckInput): Finding[] {
   const minutes = new Map(sessions.map(x => [x.s.id, estimateMinutes(x.s)]));
   // Weighted sets per muscle in each session, kept up to date as suggestions reserve sets.
   const perMuscle = new Map(sessions.map(x => [x.s.id, weightedSets(x.s.exercises.map(e => ({ exercise: lookup(e.exerciseId), sets: e.sets })), cfg.secondaryWeight)]));
+  // The per-session cap counts direct sets only: rows and pulldowns brush the rear delts, but that is not shoulder
+  // work that crowds a session.
+  const direct = (s: SessionTemplate) => weightedSets(s.exercises.map(e => ({ exercise: lookup(e.exerciseId), sets: e.sets })), 0);
+  const directPer = new Map(sessions.map(x => [x.s.id, direct(x.s)]));
   /**
    * Where a muscle's new exercise goes: first a session that already trains it (a split keeps its logic: back work on
    * the back day), as long as it stays under ~75 minutes and the per-session cap. When that day is full, another day
@@ -142,7 +146,7 @@ export function checkProgram(input: CheckInput): Finding[] {
     const byMinutes = [...sessions].sort((a, b) => minutes.get(a.s.id)! - minutes.get(b.s.id)!);
     const trains = (x: { s: SessionTemplate }) => muscles.some(m => (perMuscle.get(x.s.id)!.get(m) ?? 0) >= 1);
     const roomy = (x: { s: SessionTemplate }) => minutes.get(x.s.id)! + sets * 2.5 <= 75;
-    const fits = byMinutes.filter(x => trains(x) && roomy(x) && muscles.every(m => (perMuscle.get(x.s.id)!.get(m) ?? 0) + sets <= cfg.volume.sessionCap));
+    const fits = byMinutes.filter(x => trains(x) && roomy(x) && muscles.every(m => (directPer.get(x.s.id)!.get(m) ?? 0) + sets <= cfg.volume.sessionCap));
     if (fits[0]) return { at: fits[0] };
     const full = byMinutes.find(trains)?.s.id;
     const half = halfOf(muscles[0]);
@@ -200,7 +204,7 @@ export function checkProgram(input: CheckInput): Finding[] {
 
   // One muscle crowded into one session, and very long sessions.
   for (const { s } of sessions) {
-    const per = weightedSets(s.exercises.map(e => ({ exercise: lookup(e.exerciseId), sets: e.sets })), cfg.secondaryWeight);
+    const per = direct(s);
     for (const [muscle, n] of per) if (CHECK_MUSCLES.includes(muscle) && n > cfg.volume.sessionCap) push2({ id: `crowded:${s.id}:${muscle}`, kind: "crowded", muscle, sessionId: s.id, sets: Math.round(n * 10) / 10, cap: cfg.volume.sessionCap });
     const minutes = estimateMinutes(s);
     if (minutes > LONG_SESSION_MIN) push2({ id: `long:${s.id}`, kind: "long", sessionId: s.id, minutes });

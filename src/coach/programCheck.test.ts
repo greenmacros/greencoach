@@ -120,4 +120,12 @@ describe("program check", () => {
     expect(split.sessions.find(x => x.id === chest.sessionId)!.name).toBe("Back");
     expect(split.sessions.find(x => x.id === chest.fullSessionId)!.name).toBe("Chest");
   });
+  it("a back day's pulldowns and rows do not count as crowding the shoulders (direct sets only)", () => {
+    const back = program([
+      session("Back", [{ ex: "Wide-Grip_Lat_Pulldown", sets: 5, lo: 10, hi: 12 }, { ex: ROW, sets: 4, lo: 10, hi: 12 }, { ex: "Close-Grip_Front_Lat_Pulldown", sets: 3, lo: 10, hi: 12 },
+        { ex: "Dumbbell_Shoulder_Press", sets: 3, lo: 8, hi: 12 }, { ex: "Pushups", sets: 2, lo: 10, hi: 20 }]),
+      session("Legs", [{ ex: SQUAT, sets: 3, lo: 5, hi: 8 }]),
+    ], [0, null, 1, null, null, null, null]);
+    expect(checkProgram(base({ program: back })).some(f => f.kind === "crowded" && f.muscle === "shoulders")).toBe(false);
+  });
 });
