@@ -99,6 +99,8 @@ export const PROGRAM_MESSAGES = {
   "prog.pickFor": { en: "Choose an exercise", ja: "種目を選ぶ" },
   "prog.undo": { en: "Undo", ja: "元に戻す" },
   "prog.minSec": { en: "{m}:{s}", ja: "{m}:{s}" },
+  "prog.view": { en: "Show {name}: photo, how-to and history", ja: "{name}を表示（写真・やり方・履歴）" },
+  "prog.slotLine": { en: "{sets} × {reps} reps · {rir} RIR", ja: "{sets}セット × {reps}回・RIR {rir}" },
   "prog.missing": { en: "Unknown exercise", ja: "不明な種目" },
   "stepper.dec": { en: "Decrease", ja: "減らす" },
   "stepper.inc": { en: "Increase", ja: "増やす" },

@@ -14,6 +14,9 @@ import TextInput from "./TextInput";
 import SharePlanSheet from "./SharePlanSheet";
 import PasteLinkSheet from "./PasteLinkSheet";
 import Icon from "./Icon";
+import ExerciseDetail from "./ExerciseDetail";
+import ExerciseMedia from "./ExerciseMedia";
+import type { Exercise } from "../library/types";
 
 interface Props { prog: ProgramApi; lib: LibraryApi; program: Program; onNew: () => void }
 
@@ -24,6 +27,8 @@ export default function ProgramBuilder({ prog, lib, program, onNew }: Props) {
   const lang = settings.lang;
   const [openId, setOpenId] = useState<string | null>(null);
   const [picker, setPicker] = useState<Picker>(null);
+  /** The exercise card opened from the plan (same as in the library: how-to, history, swaps). */
+  const [viewing, setViewing] = useState<Exercise | null>(null);
   const [undo, setUndo] = useState<{ text: string; run: () => Promise<void> } | null>(null);
   const [sharing, setSharing] = useState(false);
   const [pasting, setPasting] = useState(false);
@@ -139,13 +144,34 @@ export default function ProgramBuilder({ prog, lib, program, onNew }: Props) {
                 </div>
                 <button className="btn" aria-expanded={open} onClick={() => setOpenId(open ? null : s.id)}>{open ? t("prog.collapse") : t("prog.edit")}</button>
               </div>
+              {!open && s.exercises.length > 0 && (
+                <ul className="grid gap-1" style={{ gridTemplateColumns: "minmax(0, 1fr)" }}>
+                  {s.exercises.map(slot => {
+                    const ex = lib.byId(slot.exerciseId);
+                    return (
+                      <li key={slot.id} className="min-w-0">
+                        <button className="flex items-center gap-3 w-full min-w-0 text-left" disabled={!ex} aria-label={t("prog.view", { name: ex?.name[lang] ?? "" })}
+                          style={{ background: "none", border: 0, padding: "2px 0", minHeight: 48, color: "var(--text)", cursor: ex ? "pointer" : "default", font: "inherit" }}
+                          onClick={() => ex && setViewing(ex)}>
+                          {ex && <ExerciseMedia ex={ex} size={44} />}
+                          <span className="flex-1 min-w-0">
+                            <span className="block truncate">{ex?.name[lang] ?? t("prog.missing")}</span>
+                            <span className="block muted text-xs">{t("prog.slotLine", { sets: slot.sets, reps: slot.repMin === slot.repMax ? slot.repMin : `${slot.repMin}${lang === "ja" ? "〜" : "-"}${slot.repMax}`, rir: slot.rir })}</span>
+                          </span>
+                          {ex && <Icon name="info" />}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
               {open && (
                 <>
                   <TextInput className="field" aria-label={t("prog.sessionName")} value={s.name} onValue={v => void patchSession(s.id, x => ({ ...x, name: v }))} />
                   {s.exercises.length === 0 && <p className="muted">{t("prog.emptySession")}</p>}
                   <ol className="grid gap-3">
                     {s.exercises.map((slot, i) => (
-                      <SlotEditor key={slot.id} slot={slot} ex={lib.byId(slot.exerciseId)} lookup={lib.byId} index={i} count={s.exercises.length} hasNext={i < s.exercises.length - 1}
+                      <SlotEditor key={slot.id} slot={slot} ex={lib.byId(slot.exerciseId)} onView={setViewing} lookup={lib.byId} index={i} count={s.exercises.length} hasNext={i < s.exercises.length - 1}
                         onChange={x => void updateSlot(s, x)} onMove={d => void move(s, i, d)}
                         onRemove={() => void patchSession(s.id, x => ({ ...x, exercises: x.exercises.filter(e => e.id !== slot.id) }))}
                         onReplace={() => setPicker({ sessionId: s.id, replaceSlotId: slot.id })} />
@@ -164,6 +190,7 @@ export default function ProgramBuilder({ prog, lib, program, onNew }: Props) {
         <button className="btn" onClick={() => void addSession()}><Icon name="plus" /> {t("prog.addSession")}</button>
       </div>
 
+      {viewing && <ExerciseDetail ex={viewing} lib={lib} onClose={() => setViewing(null)} onOpen={setViewing} />}
       {pasting && <PasteLinkSheet onClose={() => setPasting(false)} />}
       {sharing && <SharePlanSheet program={program} lib={lib} onClose={() => setSharing(false)} />}
       {picker && <PickerSheet lib={lib} title={t("prog.pickFor")} onClose={() => setPicker(null)} onPick={ex => void pick(ex.id, ex.mechanic !== "isolation")} />}

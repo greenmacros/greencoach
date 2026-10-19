@@ -110,3 +110,18 @@ test("replacing an exercise keeps sets and reps but drops the old target weight"
   await expect(bench.getByRole("textbox", { name: "Set 3 Reps" })).toBeVisible();
   await expect(bench.getByRole("textbox", { name: /^Set 1 Weight/ })).toHaveValue("");
 });
+
+test("the plan lists each session's exercises; tapping one opens its card (how-to, history) without leaving the plan", async ({ page }) => {
+  await page.goto("/");
+  await skipOnboarding(page);
+  await page.getByRole("button", { name: "Program", exact: true }).click();
+  await page.getByRole("article").filter({ hasText: "Full body 3×" }).getByRole("button", { name: "Use this template" }).click();
+  await page.getByRole("button", { name: /^Show Barbell Squat:/ }).first().click();
+  const card = page.getByRole("dialog", { name: "Barbell Squat" });
+  await expect(card).toBeVisible();
+  await expect(card.getByText("How to")).toBeVisible();
+  await card.getByRole("button", { name: "Close" }).click();
+  await expect(card).toBeHidden();
+  // No sideways scrolling with the list in place (long names are cut, not widening the page).
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+});

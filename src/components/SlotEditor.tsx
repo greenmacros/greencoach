@@ -5,6 +5,7 @@ import type { ExerciseSlot } from "../program/types";
 import Stepper from "./Stepper";
 import TextInput from "./TextInput";
 import Icon from "./Icon";
+import ExerciseMedia from "./ExerciseMedia";
 
 interface Props {
   slot: ExerciseSlot;
@@ -18,9 +19,11 @@ interface Props {
   onReplace: () => void;
   /** Exercise lookup, to name the exercise old notes were written for. */
   lookup?: (id: string) => Exercise | undefined;
+  /** Open the exercise card (photo, how-to, history). */
+  onView?: (ex: Exercise) => void;
 }
 
-export default function SlotEditor({ slot, ex, index, count, hasNext, onChange, onMove, onRemove, onReplace, lookup }: Props) {
+export default function SlotEditor({ slot, ex, index, count, hasNext, onChange, onMove, onRemove, onReplace, lookup, onView }: Props) {
   const { t, settings } = useApp();
   const set = (patch: Partial<ExerciseSlot>) => onChange({ ...slot, ...patch });
   const name = ex ? ex.name[settings.lang] : t("prog.missing");
@@ -28,6 +31,11 @@ export default function SlotEditor({ slot, ex, index, count, hasNext, onChange, 
   return (
     <li className="card grid gap-3" style={{ padding: 12 }}>
       <div className="flex items-start gap-2">
+        {ex && onView && (
+          <button className="flex-none" style={{ background: "none", border: 0, padding: 0, cursor: "pointer" }} aria-label={t("prog.view", { name })} onClick={() => onView(ex)}>
+            <ExerciseMedia ex={ex} size={44} />
+          </button>
+        )}
         <p className="flex-1 font-semibold min-w-0">{slot.supersetGroup !== null && <><Icon name="swap" label={t("prog.superset")} /> </>}{name}
           {slot.optional && <span className="chip" style={{ cursor: "default", minHeight: 22, fontSize: 11, padding: "0 8px", marginLeft: 6, borderStyle: "dashed" }}>{t("wk.optional")}</span>}</p>
         <button className="btn" style={{ minWidth: 44, padding: 0 }} aria-label={`${t("prog.up")}: ${name}`} disabled={index === 0} onClick={() => onMove(-1)}><Icon name="up" /></button>
