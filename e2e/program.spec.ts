@@ -1,4 +1,4 @@
-import { skipOnboarding } from "./helpers";
+import { acceptSafety, dismissTour, skipOnboarding } from "./helpers";
 import { expect, test } from "@playwright/test";
 
 // Monday 2026-10-05, mid-morning local time.
@@ -129,4 +129,18 @@ test("the plan lists each session's exercises; tapping one opens its card (how-t
   await expect(card).toBeHidden();
   // No sideways scrolling with the list in place (long names are cut, not widening the page).
   expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+});
+
+test("first setup: choosing the empty program opens the Program tab to build it", async ({ page }) => {
+  await page.goto("/");
+  await acceptSafety(page);
+  for (let i = 0; i < 4; i++) await page.getByRole("button", { name: "Next", exact: true }).click();
+  await page.getByRole("article", { name: "Blank" }).getByRole("button").click();
+  await dismissTour(page);
+  await expect(page.getByRole("heading", { name: "Program", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Build your program" })).toBeVisible();
+  await page.screenshot({ path: "test-results/blank-start.png" });
+  await page.getByRole("button", { name: "Add your first session" }).click();
+  await expect(page.getByRole("button", { name: "Add exercise" })).toBeInViewport();
+  await expect(page.getByRole("heading", { name: "Build your program" })).toBeHidden();
 });

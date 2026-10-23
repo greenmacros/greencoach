@@ -10,7 +10,7 @@ interface Props<T extends number> {
   onChange: (v: T) => void;
 }
 
-/** One-tap rating scale (1-5 or 0-3): a numbered, coloured step per answer, with its word underneath. */
+/** One-tap rating scale: a coloured step per answer, with its word. */
 export default function ChipRow<T extends number>({ label, value, options, tones, onChange }: Props<T>) {
   return (
     <div className="grid gap-1" role="group" aria-label={label}>
@@ -19,7 +19,6 @@ export default function ChipRow<T extends number>({ label, value, options, tones
         {options.map((o, i) => (
           <button key={o.value} type="button" aria-pressed={value === o.value} aria-label={o.label}
             style={{ "--tone": `var(--tone-${tones[i] ?? "none"})` } as React.CSSProperties} onClick={() => onChange(o.value)}>
-            <span className="n" aria-hidden="true">{o.value}</span>
             <span className="l" aria-hidden="true">{o.label}</span>
           </button>
         ))}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useApp } from "../app-context";
 import { formatDayKey, weekdayLong } from "../lib/format";
 import { newId } from "../lib/id";
@@ -29,6 +29,7 @@ export default function ProgramBuilder({ prog, lib, program, onNew }: Props) {
   const [picker, setPicker] = useState<Picker>(null);
   /** The exercise card opened from the plan (same as in the library: how-to, history, swaps). */
   const [viewing, setViewing] = useState<Exercise | null>(null);
+  const [scrollTo, setScrollTo] = useState<string | null>(null);
   const [undo, setUndo] = useState<{ text: string; run: () => Promise<void> } | null>(null);
   const [sharing, setSharing] = useState(false);
   const [pasting, setPasting] = useState(false);
@@ -42,7 +43,15 @@ export default function ProgramBuilder({ prog, lib, program, onNew }: Props) {
     const s = prog.newSession(t("prog.newSession"));
     await patch({ sessions: [...program.sessions, s] });
     setOpenId(s.id);
+    setScrollTo(s.id);
   };
+  // The new session is at the bottom of the page: once it is on screen, bring it into view, ready to name and fill.
+  useEffect(() => {
+    const el = scrollTo && document.getElementById(`session-${scrollTo}`);
+    if (!el) return;
+    el.scrollIntoView({ block: "start" });
+    setScrollTo(null);
+  }, [scrollTo, program]);
 
   const duplicate = async (s: SessionTemplate) => {
     const copy: SessionTemplate = { ...s, id: newId(), name: `${s.name} (2)`, exercises: s.exercises.map(e => ({ ...e, id: newId() })) };
@@ -85,6 +94,17 @@ export default function ProgramBuilder({ prog, lib, program, onNew }: Props) {
 
   return (
     <div className="grid gap-4">
+      {program.sessions.length === 0 && (
+        <section className="card grid gap-3" style={{ borderColor: "var(--accent)" }} aria-labelledby="pb-start">
+          <h2 id="pb-start" className="font-bold text-lg">{t("prog.startTitle")}</h2>
+          <ol className="grid gap-1 pl-5 list-decimal text-sm">
+            <li>{t("prog.start1")}</li>
+            <li>{t("prog.start2")}</li>
+            <li>{t("prog.start3")}</li>
+          </ol>
+          <button className="btn btn-primary" onClick={() => void addSession()}><Icon name="plus" /> {t("prog.addFirstSession")}</button>
+        </section>
+      )}
       <div className="card grid gap-3">
         {prog.programs.length > 1 && (
           <label className="grid gap-1"><span className="muted text-sm">{t("prog.switch")}</span>
@@ -136,7 +156,7 @@ export default function ProgramBuilder({ prog, lib, program, onNew }: Props) {
         {program.sessions.map(s => {
           const open = openId === s.id;
           return (
-            <article key={s.id} className="card grid gap-3">
+            <article key={s.id} id={`session-${s.id}`} className="card grid gap-3" style={{ scrollMarginTop: 16 }}>
               <div className="flex items-center gap-2">
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold truncate">{s.name}</h3>

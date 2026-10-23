@@ -13,7 +13,7 @@ const STEPS = 5;
 const phaseFor = (g: Goal): Phase => (g === "cut" ? "cut" : g === "muscle" ? "bulk" : "maintain");
 
 /** First-run setup: preferences, optional body data, training profile, starting program. Everything is editable later. */
-export default function Onboarding({ prog, onDone }: { prog: ProgramApi; onDone: () => void }) {
+export default function Onboarding({ prog, onDone }: { prog: ProgramApi; onDone: (goTo: "today" | "program") => void }) {
   const { t, settings, update, profile, updateProfile } = useApp();
   const [step, setStep] = useState(1);
   const [p, setP] = useState<Profile>(profile);
@@ -28,7 +28,8 @@ export default function Onboarding({ prog, onDone }: { prog: ProgramApi; onDone:
     if (bodyWeightKg) await repo.put("bodyMetrics", { id: `bm:${newId()}`, dayKey: prog.todayKey, weightKg: bodyWeightKg } as never);
     if (spec) await prog.createFromTemplate(spec);
     await update({ onboarded: true });
-    onDone();
+    // An empty program is built on the Program tab, so start there.
+    onDone(spec?.id === "blank" ? "program" : "today");
   };
 
   const rec = TEMPLATES.find(x => x.id === recommendTemplate(p))!;
