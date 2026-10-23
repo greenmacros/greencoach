@@ -158,6 +158,8 @@ export default function Workout({ initial, lib, history, onExit, onClose, coachC
   const title = workout.sessionName || t("wk.quick");
   const doneSets = workout.exercises.reduce((n, e) => n + e.sets.filter(s => s.done).length, 0);
   const totalSets = workout.exercises.reduce((n, e) => n + e.sets.length, 0);
+  /** Sets neither done nor skipped (with a reason): what "Finish" at the bottom mentions. */
+  const setsLeft = workout.exercises.reduce((n, e) => n + (e.skip ? 0 : e.sets.filter(s => !s.done && !s.skipped).length), 0);
 
   return (
     <section className="grid gap-3" style={{ paddingBottom: "calc(14rem + env(safe-area-inset-bottom))" }}>
@@ -215,6 +217,13 @@ export default function Workout({ initial, lib, history, onExit, onClose, coachC
       ))}
 
       <button className="btn" onClick={() => setPicker({ swap: null })}><Icon name="plus" /> {t("wk.addExercise")}</button>
+      {/* Finish at the end too, so nobody scrolls back up. Never disabled: ending early is fine, and the finish sheet
+          says which sets were not done. Highlighted once everything is done or skipped. */}
+      {editMode
+        ? <button className="btn btn-primary" onClick={() => void saveEdit()}>{t("hist.saveEdit")}</button>
+        : <button className={setsLeft === 0 ? "btn btn-primary" : "btn"} style={{ minHeight: 52 }} onClick={() => setFinishing(true)}>
+            {setsLeft === 0 ? t("wk.finishWorkout") : t("wk.finishLeft", { n: setsLeft })}
+          </button>}
 
       {picker && (
         <PickerSheet lib={lib} title={picker.swap ? t("wk.swapExercise") : t("wk.addExercise")} onClose={() => setPicker(null)}

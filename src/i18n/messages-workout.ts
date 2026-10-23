@@ -6,6 +6,8 @@ export const WORKOUT_MESSAGES = {
   "wk.alsoWorks": { en: "Also works", ja: "補助的に使う筋肉" },
   "wk.enlarge": { en: "Show larger with target muscles", ja: "拡大してターゲット筋を表示" },
   "wk.finish": { en: "Finish", ja: "終了" },
+  "wk.finishWorkout": { en: "Finish workout", ja: "ワークアウトを終了" },
+  "wk.finishLeft": { en: "Finish workout ({n} sets not done)", ja: "ワークアウトを終了（未完了 {n}セット）" },
   "wk.quick": { en: "Quick workout", ja: "クイックワークアウト" },
   "wk.empty": { en: "Add your first exercise to begin.", ja: "最初の種目を追加して始めましょう。" },
   "wk.addExercise": { en: "Add exercise", ja: "種目を追加" },

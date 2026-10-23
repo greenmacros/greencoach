@@ -29,7 +29,8 @@ async function japaneseOnScreen(page: import("@playwright/test").Page) {
 test("English stays English on a Japanese phone: Workout tab, workout, history, progress calendar, coach, settings", async ({ page }) => {
   await page.clock.install({ time: new Date(2026, 9, 14, 10, 0, 0) });
   await page.goto("/");
-  await page.getByRole("button", { name: "English" }).first().click(); // safety notice language switch
+  // The safety notice's own language switch (the setup page behind it has one too).
+  await page.getByRole("dialog", { name: /^(Before you start|はじめる前に)$/ }).getByRole("button", { name: "English" }).click();
   await acceptSafety(page);
   await page.getByRole("button", { name: "Skip setup" }).click();
   await dismissTour(page);

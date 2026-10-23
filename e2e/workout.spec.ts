@@ -243,7 +243,7 @@ test("edit a past session: change reps and date, or cancel to keep it as it was"
   await page.getByRole("article", { name: "Barbell Squat" }).getByRole("textbox", { name: "Set 1 Reps" }).fill("7");
   await page.getByLabel("Date").fill("2026-10-04");
   await page.screenshot({ path: "test-results/edit-session.png" });
-  await page.getByRole("button", { name: "Save changes" }).click();
+  await page.getByRole("button", { name: "Save changes" }).first().click();
   detail = await openDetail();
   await expect(detail.getByText("100 kg × 7")).toBeVisible();
   await expect(detail.getByText(/Oct 4/)).toBeVisible();
@@ -286,4 +286,12 @@ test("the rest timer goes back to ready when it reaches zero (it never sits at 0
   await expect(page.getByRole("timer")).toHaveCount(0);
   await page.clock.runFor(5_000);
   await expect(page.getByText("Rest timer ready")).toBeVisible();
+});
+
+test("finish from the bottom of the workout: always available, says how many sets are not done", async ({ page }) => {
+  await startFullBody(page);
+  const bottom = page.getByRole("button", { name: /^Finish workout \(\d+ sets not done\)$/ });
+  await expect(bottom).toBeEnabled();
+  await bottom.click();
+  await expect(page.getByRole("dialog", { name: "Finish workout" })).toBeVisible();
 });
